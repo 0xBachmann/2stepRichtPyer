@@ -15,7 +15,7 @@ class Dimension(Enum):
         return NotImplemented
 
 
-def pbc(grid: np.ndarray, *, dim: Dimension):
+def pbc(grid: np.ndarray, dim: Dimension):
     if dim >= Dimension.oneD:
         # x dimension
         grid[0, ...] = grid[-2, ...]
@@ -52,5 +52,10 @@ def avg_y(grid_vals: np.ndarray) -> np.ndarray:
 
 def avg_z(grid_vals: np.ndarray) -> np.ndarray:
     return (grid_vals[:, :, 1:, ...] + grid_vals[:, :, :-1, ...]) / 2
+
+
+def log(msg):
+    print("=" * 10, f"{msg:^30s}", "=" * 10)
+
 
 
