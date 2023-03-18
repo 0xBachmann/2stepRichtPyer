@@ -1,6 +1,7 @@
 from two_step_richtmeyer_util import *
 from PDE_Types import *
 from plotter import *
+from richtmeyer_two_step_scheme import Richtmeyer2step
 
 log("definition of variables")
 
@@ -16,14 +17,10 @@ elif Type == PDE_Type.Euler:
 else:
     raise "PDE_Type not known"
 
-
 log("calculate initial conditions")
-L = 10
-dx = L / 100
-ncells = int(L / dx)
 
-grid = np.zeros((ncells + 2, F.ncomp))  # pad with zero
-
+L = 1
+stepper = Richtmeyer2step(F, np.array([L]), np.array([100]))
 
 
 # TODO: initial values
@@ -32,49 +29,25 @@ def f(x):
     # return np.cos(2 * np.pi / L * x)
     # return np.exp(-(x - 3)**2)
     # return np.array(list(map(lambda x: 1 if 1 < x < 2 else 0, x)))
-    func = F.waves(1, np.array([1, 1, 1]), 1e-3)
-    return func(x/L, 0)
+    func = F.waves(0, np.array([1, 1, 1]), amp=1e-3)
+    return func(x / L, 0)
 
 
-# initial conditions
-domain = np.linspace(0, L, ncells + 1)
-grid[1:-1, :] = f(avg_x(domain))
-# for i in range(ncells):
-#     grid[i + 1, :] = f((domain[i] + domain[i + 1])/2) #quadrature(f, domain[i], domain[i + 1])[0] / dx
+stepper.initial_cond(f)
 
-plotter = Plotter(F, grid[1:-1, :], action="show", writeout=1, dim=DIM, coords=[domain[:-1]])
+plotter = Plotter(F, action="save", writeout=1, dim=stepper.dim,
+                  coords=[stepper.coords[i][:-1] for i in range(stepper.dim.value)])
 
-
-
-
-
-T = 100
-time = 0
+T = 1
+time = 0.
 traj = []
 while time < T:
-    # TODO: Boundary conditions?
-    pbc(grid, dim=DIM)
-    Fprime = F.derivative(grid[1:-1, :])
-    a = np.max(np.abs(Fprime))
+    dt = stepper.cfl()
+    stepper.step(dt)
 
-    dt = dx / (2 * a)  # damp?
-    c = dt / dx
+    plotter.write(stepper.grid_no_ghost, dt)
+
     print(f"dt = {dt}, time = {time:.3f}/{T}")
-
-
-    staggered_grid = avg_x(grid)  # get average
-
-    Fgrid, = F(grid)
-    staggered_grid -= c / 2 * del_x(Fgrid)
-
-    Fstaggered_grid, = F(staggered_grid)
-    grid[1:-1, :] -= c * del_x(Fstaggered_grid)
-
-
-    plotter.write(grid[1:-1, :], dt)
-
     time += dt
 
 plotter.finlaize()
-
-

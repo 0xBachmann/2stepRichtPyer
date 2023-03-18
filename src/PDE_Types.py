@@ -94,9 +94,9 @@ class Euler(PDE):
 
     # TODO
     def derivative(self, v: np.ndarray) -> np.ndarray:
-        vels = v[..., 1:self.dim.value + 1] / v[..., 0]
+        vels = v[..., 1:self.dim.value + 1] / v[..., 0][..., np.newaxis]
         csnd = self.csnd(v)
-        return np.abs(vels) + csnd
+        return np.abs(vels) + csnd[..., np.newaxis]
 
     def waves(self, k, w0, amp):
         if self.dim != Dimension.oneD:
