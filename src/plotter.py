@@ -1,16 +1,12 @@
 import matplotlib.pyplot as plt
-from PDE_Types import PDE
-import numpy as np
-from enum import Enum
-from copy import deepcopy
 from matplotlib.animation import FuncAnimation
+
+import numpy as np
 import os
+
+from PDE_Types import PDE
+from copy import deepcopy
 from two_step_richtmeyer_util import Dimension
-
-
-class plotting_Type(Enum):
-    show = 1
-    save = 2
 
 
 class Plotter:

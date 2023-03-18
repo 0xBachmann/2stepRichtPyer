@@ -1,0 +1,2 @@
+- [x] initial values better
+- [ ] 2D

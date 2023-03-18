@@ -1,8 +1,6 @@
 import numpy as np
-
-from two_step_richtmeyer_util import *
-from PDE_Types import *
-from plotter import *
+from PDE_Types import Euler
+from two_step_richtmeyer_util import Dimension
 from richtmeyer_two_step_scheme import Richtmeyer2step
 
 
