@@ -66,12 +66,12 @@ while time < T:
     # TODO: Boundary conditions?
     pbc(grid, dim=DIM)
 
-    staggerd_grid = avg_x(avg_y(grid))  # get average
+    staggered_grid = avg_x(avg_y(grid))  # get average
 
     Fgrid, Ggrid = F(grid)
-    staggerd_grid -= c / 2 * (del_x(avg_y(Fgrid)) + del_y(avg_x(Ggrid)))
+    staggered_grid -= c / 2 * (del_x(avg_y(Fgrid)) + del_y(avg_x(Ggrid)))
 
-    Fstaggered_grid, Gstaggered_grid = F(staggerd_grid)
+    Fstaggered_grid, Gstaggered_grid = F(staggered_grid)
     grid[1:-1, 1:-1, :] -= c * (del_x(avg_y(Fstaggered_grid)) + del_y(avg_x(Gstaggered_grid)))
 
     plotter.write(grid[1:-1, 1:-1, :], dt)

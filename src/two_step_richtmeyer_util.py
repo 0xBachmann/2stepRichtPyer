@@ -25,7 +25,7 @@ def pbc(grid: np.ndarray, dim: Dimension):
         grid[:, 0, ...] = grid[:, -2, ...]
         grid[:, -1, ...] = grid[:, 1, ...]
     if dim >= Dimension.threeD:
-        # y dimension
+        # z dimension
         grid[:, :, 0, ...] = grid[:, :, -2, ...]
         grid[:, :, -1, ...] = grid[:, :, 1, ...]
 

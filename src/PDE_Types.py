@@ -17,6 +17,12 @@ class PDE(object):
         self.comp_names = None
         self.Type = Type
 
+    def __call__(self, v: np.ndarray):
+        raise NotImplementedError
+
+    def derivative(self, v: np.ndarray):
+        raise NotImplementedError
+
 
 class LinearAdvection(PDE):
     def __init__(self, a: np.ndarray, dim: Dimension):
@@ -54,16 +60,13 @@ class Euler(PDE):
         super().__init__(dim=dim, ncomp=dim.value + 2,
                          Type=PDE_Type.Euler)  # nr of dims velocities + density plus energy
         self.gamma = gamma
-        self.comp_names = ["density", *[f"momenta_{d}" for d in "xyz"[:self.dim.value + 1]], "Energy"]
+        self.comp_names = ["density", *[f"momenta_{dim}" for dim in "xyz"[:self.dim.value]], "Energy"]
 
     def pres(self, v):
         dens = v[..., 0]
-        eint = v[..., -1]  # Etot
-
-        # Ekin
-        for i in range(self.dim.value):
-            eint -= 0.5 * v[..., i + 1]**2 / dens
-
+        Etot = v[..., -1]
+        Ekin = 0.5 * np.sum(v[..., 1:self.dim.value + 1] ** 2, axis=-1) / dens
+        eint = Etot - Ekin
         return eint * (self.gamma - 1.)
 
     def csnd(self, v):
@@ -79,13 +82,13 @@ class Euler(PDE):
         p = self.pres(v)
         dens = v[..., 0]
         vels = v[..., 1:self.dim.value + 1] / dens[..., np.newaxis]
-        E = v[..., -1]
+        Etot = v[..., -1]
         result = np.empty((*v.shape, self.dim.value))
 
-        # TODO error probably here somewhere
         result[..., 0, :] = v[..., 1:self.dim.value + 1]
-        result[..., 1:self.dim.value + 1, :] = np.einsum("...i,...j->...ij", vels, vels) * dens[..., np.newaxis, np.newaxis] + np.einsum("...i,...jk->...ijk", p, np.identity(self.dim.value))
-        result[..., -1, :] = np.einsum("...,...i->...i", E + p, vels)
+        result[..., 1:self.dim.value + 1, :] = np.einsum("...i,...j->...ij", vels, vels) * dens[
+            ..., np.newaxis, np.newaxis] + np.einsum("...i,...jk->...ijk", p, np.identity(self.dim.value))
+        result[..., -1, :] = np.einsum("...,...i->...i", Etot + p, vels)
 
         return tuple(result[..., i] for i in range(self.dim.value))
 
@@ -124,7 +127,7 @@ class Euler(PDE):
         primitives[..., 0] = dens
         for i in range(self.dim.value):
             primitives[..., i] = mom[..., i] / dens
-        primitives[..., -1] = (self.gamma - 1) * (E - 0.5 * np.sum(mom**2, axis=-1)) / dens
+        primitives[..., -1] = (self.gamma - 1) * (E - 0.5 * np.sum(mom ** 2, axis=-1)) / dens
         return primitives
 
     def primitive_to_conserved(self, w):
@@ -135,5 +138,5 @@ class Euler(PDE):
         conserved_w[..., 0] = dens
         for i in range(self.dim.value):
             conserved_w[..., i + 1] = dens * v[..., i]
-        conserved_w[..., -1] = p / (self.gamma - 1) + 0.5 * dens * np.sum(v**2, axis=-1)
+        conserved_w[..., -1] = p / (self.gamma - 1) + 0.5 * dens * np.sum(v ** 2, axis=-1)
         return conserved_w
