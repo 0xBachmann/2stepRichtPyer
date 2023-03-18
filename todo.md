@@ -1,2 +1,4 @@
 - [x] initial values better
 - [ ] 2D
+- [ ] waves for 2D
+- [ ] derivative mybe not correct and add for burgers
