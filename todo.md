@@ -2,3 +2,4 @@
 - [ ] 2D
 - [ ] waves for 2D
 - [ ] derivative mybe not correct and add for burgers
+- [ ] TODO's in src
