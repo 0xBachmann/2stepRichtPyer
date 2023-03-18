@@ -31,7 +31,7 @@ class LinearAdvection(PDE):
     def derivative(self, v: np.ndarray) -> np.ndarray:
         return np.full((*v.shape[0:self.dim.value], *self.a.shape), self.a)
 
-    def initial_cond(self):
+    def initial_cond(self):  # TODO
         def gaussian(x):
             pass
 
@@ -62,7 +62,7 @@ class Euler(PDE):
 
         # Ekin
         for i in range(self.dim.value):
-            eint -= 0.5 * v[..., i + 1] ** 2 / dens
+            eint -= 0.5 * v[..., i + 1]**2 / dens
 
         return eint * (self.gamma - 1.)
 
@@ -78,16 +78,14 @@ class Euler(PDE):
         # define p and E
         p = self.pres(v)
         dens = v[..., 0]
+        vels = v[..., 1:self.dim.value + 1] / dens[..., np.newaxis]
         E = v[..., -1]
         result = np.empty((*v.shape, self.dim.value))
 
+        # TODO error probably here somewhere
         result[..., 0, :] = v[..., 1:self.dim.value + 1]
-        result[..., 1:self.dim.value + 1, :] = np.einsum("...i,...j->...ij", v[..., 1:self.dim.value + 1],
-                                                         v[..., 1:self.dim.value + 1]) / dens[
-                                                   ..., np.newaxis, np.newaxis] \
-                                               + np.identity(self.dim.value)[np.newaxis, np.newaxis, ...] * p[
-                                                   ..., np.newaxis, np.newaxis]
-        result[..., -1, :] = (E + p)[..., np.newaxis] * v[..., 1:self.dim.value + 1] / dens[..., np.newaxis]
+        result[..., 1:self.dim.value + 1, :] = np.einsum("...i,...j->...ij", vels, vels) * dens[..., np.newaxis, np.newaxis] + np.einsum("...i,...jk->...ijk", p, np.identity(self.dim.value))
+        result[..., -1, :] = np.einsum("...,...i->...i", E + p, vels)
 
         return tuple(result[..., i] for i in range(self.dim.value))
 
@@ -113,7 +111,7 @@ class Euler(PDE):
 
         def wave(x, t):
             """x needs to be normalized to [0, 1]"""
-            w = w0 + amp * eigen_vectors[:, k] * np.sin(2 * np.pi * (x - eigen_vals[k] * t))
+            w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k], np.sin(2 * np.pi * (x - eigen_vals[k] * t)))
             return self.primitive_to_conserved(w)
 
         return wave
@@ -122,14 +120,20 @@ class Euler(PDE):
         dens = v[..., 0]
         mom = v[..., 1:self.dim.value + 1]
         E = v[..., -1]
-        primitives = np.array([dens, *[mom[..., i] / dens for i in range(self.dim.value)],
-                               (self.gamma - 1) * (E - 0.5 * np.sum(v ** 2, axis=-1)) / dens])
+        primitives = np.empty(w.shape)
+        primitives[..., 0] = dens
+        for i in range(self.dim.value):
+            primitives[..., i] = mom[..., i] / dens
+        primitives[..., -1] = (self.gamma - 1) * (E - 0.5 * np.sum(mom**2, axis=-1)) / dens
         return primitives
 
     def primitive_to_conserved(self, w):
         dens = w[..., 0]
         v = w[..., 1:self.dim.value + 1]
         p = w[..., -1]
-        conserved_w = np.array([dens, *[dens * v[..., i] for i in range(self.dim.value)],
-                                p / (self.gamma - 1) + dens / 2 * np.sum(v ** 2, axis=-1)])
+        conserved_w = np.empty(w.shape)
+        conserved_w[..., 0] = dens
+        for i in range(self.dim.value):
+            conserved_w[..., i + 1] = dens * v[..., i]
+        conserved_w[..., -1] = p / (self.gamma - 1) + 0.5 * dens * np.sum(v**2, axis=-1)
         return conserved_w
