@@ -37,21 +37,38 @@ class LinearAdvection(PDE):
     def derivative(self, v: np.ndarray) -> np.ndarray:
         return np.full((*v.shape[0:self.dim.value], *self.a.shape), self.a)
 
-    def initial_cond(self):  # TODO
+    def initial_cond(self, type):  # TODO
         def gaussian(x):
             pass
+
+        def sin(x):
+            pass
+
+        def cos(x):
+            pass
+
+        if type == "gaussian":
+            return gaussian
+        if type == "cos":
+            return cos
+        if type == "sin":
+            return sin
+
+        raise NotImplementedError
 
 
 class BurgersEq(PDE):
     def __init__(self, *, dim: Dimension):
-        super().__init__(dim=dim, ncomp=1, Type=PDE_Type.Burgers_equation)
-        self.comp_names = ["u"]
-        self.Type = PDE_Type.Burgers_equation
+        super().__init__(dim=dim, ncomp=dim.value, Type=PDE_Type.Burgers_equation)
+        self.comp_names = [f"{vel}" for vel in "uvw"]
 
-    def __call__(self, v: np.ndarray) -> np.ndarray:
-        return 0.5 * np.square(v)
+    def __call__(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
+        result = np.einsum("...i,...j->...ij", v, v) / 2
+        return tuple(result[..., i] for i in range(self.dim.value))
 
     def derivative(self, v: np.ndarray) -> np.ndarray:
+        if self.dim != Dimension.oneD:
+            raise NotImplementedError
         return v
 
 
@@ -123,7 +140,7 @@ class Euler(PDE):
         dens = v[..., 0]
         mom = v[..., 1:self.dim.value + 1]
         E = v[..., -1]
-        primitives = np.empty(w.shape)
+        primitives = np.empty(v.shape)
         primitives[..., 0] = dens
         for i in range(self.dim.value):
             primitives[..., i] = mom[..., i] / dens
