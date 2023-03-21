@@ -59,4 +59,4 @@ class Richtmeyer2step:
         prime = self.pde.derivative(self.grid[self.no_ghost])
         a = np.max(np.reshape(np.abs(prime), (np.product(self.ncellsxyz), self.dim.value)), axis=0)
         dts = self.dxyz / (2 * a)
-        return np.max(dts)
+        return np.min(dts)
