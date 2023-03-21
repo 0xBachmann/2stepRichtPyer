@@ -25,12 +25,13 @@ def pbc(grid: np.ndarray, dim: Dimension):
         # y dimension
         grid[:, 0, ...] = grid[:, -2, ...]
         grid[:, -1, ...] = grid[:, 1, ...]
-        if dim == Dimension.twoD:
-            grid[0, 0, ...] = grid[-2, -2, ...]
-            grid[0, -1, ...] = grid[-2, 1, ...]
-            grid[-1, 0, ...] = grid[1, -2, ...]
-            grid[-1, -1, ...] = grid[1, 1, ...]
-            # TODO same for 3D
+        # TODO necessary?
+        # if dim == Dimension.twoD:
+        #     grid[0, 0, ...] = grid[-2, -2, ...]
+        #     grid[0, -1, ...] = grid[-2, 1, ...]
+        #     grid[-1, 0, ...] = grid[1, -2, ...]
+        #     grid[-1, -1, ...] = grid[1, 1, ...]
+        #     # TODO same for 3D
     if dim >= Dimension.threeD:
         # z dimension
         grid[:, :, 0, ...] = grid[:, :, -2, ...]

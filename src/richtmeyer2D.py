@@ -9,7 +9,7 @@ Type = PDE_Type.Euler
 DIM = Dimension.twoD
 
 if Type == PDE_Type.Linear_advection:
-    F = LinearAdvection(np.array([3, 3]), dim=DIM)
+    F = LinearAdvection(np.array([3, -4]), dim=DIM)
 elif Type == PDE_Type.Burgers_equation:
     F = BurgersEq(dim=DIM)
 elif Type == PDE_Type.Euler:

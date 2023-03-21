@@ -41,8 +41,7 @@ class Richtmeyer2step:
                 return c[0] * del_x(avg_y(avg_z(source_fluxes[0]))) + c[1] * del_y(avg_x(avg_z(source_fluxes[1]))) \
                         + c[2] * del_z(avg_x(avg_y(source_fluxes[2])))
 
-        # TODO correct in case of D > 1?
-        # TODO INCORRECT!
+        # TODO correct in case of D > 1? yes should be
         c = dt / self.dxyz
         # TODO other bd cond?
         pbc(self.grid, self.dim)
