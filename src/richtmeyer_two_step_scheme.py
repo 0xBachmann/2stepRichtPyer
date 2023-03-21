@@ -31,14 +31,14 @@ class Richtmeyer2step:
                 np.array([self.coords[i][j] + self.coords[i][j] for i, j in zip(range(self.dim.value), indices)]) / 2)
 
     def step(self, dt):
-        def div_fluxes(dest: np.ndarray, source: np.ndarray):
+        def div_fluxes(source: np.ndarray):
             source_fluxes = self.pde(source)
             if self.dim == Dimension.oneD:
-                dest -= c[0] * del_x(source_fluxes[0])
+                return c[0] * del_x(source_fluxes[0])
             if self.dim == Dimension.twoD:
-                dest -= c[0] * del_x(avg_y(source_fluxes[0])) + c[1] * del_y(avg_x(source_fluxes[1]))
+                return c[0] * del_x(avg_y(source_fluxes[0])) + c[1] * del_y(avg_x(source_fluxes[1]))
             if self.dim == Dimension.threeD:
-                dest -= c[0] * del_x(avg_y(avg_z(source_fluxes[0]))) + c[1] * del_y(avg_x(avg_z(source_fluxes[1]))) \
+                return c[0] * del_x(avg_y(avg_z(source_fluxes[0]))) + c[1] * del_y(avg_x(avg_z(source_fluxes[1]))) \
                         + c[2] * del_z(avg_x(avg_y(source_fluxes[2])))
 
         # TODO correct in case of D > 1?
@@ -53,8 +53,8 @@ class Richtmeyer2step:
         if self.dim == Dimension.threeD:
             staggered = avg_z(staggered)
 
-        div_fluxes(staggered, self.grid)
-        div_fluxes(self.grid_no_ghost, staggered)
+        staggered -= 0.5 * div_fluxes(self.grid)
+        self.grid_no_ghost -= div_fluxes(staggered)
 
     def cfl(self):
         prime = self.pde.derivative(self.grid[self.no_ghost])
