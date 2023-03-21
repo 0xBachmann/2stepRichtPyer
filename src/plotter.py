@@ -44,8 +44,15 @@ class Plotter:
             return
 
         self.init = True
-        self.fig, self.ax = plt.subplots(self.ncomp)
-        self.axs = [self.ax] if self.ncomp == 1 else [ax for ax in self.ax]
+        layout = {
+            1: (1,),
+            2: (2,),
+            3: (3,),
+            4: (2, 2),
+            5: (2, 3),
+        }
+        self.fig, self.ax = plt.subplots(*layout[self.ncomp])
+        self.axs = [self.ax] if self.ncomp == 1 else self.ax.flatten()
 
         if self.dim == Dimension.oneD:
             self.ims = [self.axs[i].plot(self.x_coords, vals[..., i])[0] for i in range(self.ncomp)]
@@ -55,18 +62,20 @@ class Plotter:
                 self.fig.colorbar(self.ims[i])
 
         for i in range(self.ncomp):
-            self.axs[i].set_title(f"{self.comp_names[i]}\ntime: {time:.5}")
+            self.axs[i].set_title(f"{self.comp_names[i]}")
+        self.fig.suptitle(f"time: {time:.5}")
 
     def plot(self, vals: np.ndarray, time):
         if not self.init:
             self.init_plots(vals, time)
         else:
             for i in range(self.ncomp):
-                self.axs[i].set_title(f"{self.comp_names[i]}\ntime: {time:.5}")
+                self.axs[i].set_title(f"{self.comp_names[i]}")
                 if self.dim == Dimension.oneD:
                     self.ims[i].set_data(self.x_coords, vals[..., i])
                 if self.dim == Dimension.twoD:
                     self.ims[i].set_data(vals[..., i])
+            self.fig.suptitle(f"time: {time:.5}")
 
     def write(self, vals: np.ndarray, dt):
         if self.step % self.writeout == 0:

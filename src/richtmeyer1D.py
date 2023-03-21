@@ -35,7 +35,7 @@ def f(x):
 
 stepper.initial_cond(f)
 
-plotter = Plotter(F, action="save", writeout=1, dim=stepper.dim,
+plotter = Plotter(F, action="show", writeout=1, dim=stepper.dim,
                   coords=[stepper.coords[i][:-1] for i in range(stepper.dim.value)])
 
 T = 1

@@ -5,7 +5,7 @@ from richtmeyer_two_step_scheme import Richtmeyer2step
 
 log("definition of variables")
 
-Type = PDE_Type.Linear_advection
+Type = PDE_Type.Euler
 DIM = Dimension.twoD
 
 if Type == PDE_Type.Linear_advection:
@@ -44,7 +44,7 @@ def f(x):
 
 stepper.initial_cond(f)
 
-plotter = Plotter(F, action="show", writeout=10, dim=stepper.dim,
+plotter = Plotter(F, action="show", writeout=1, dim=stepper.dim,
                   coords=[stepper.coords[i][:-1] for i in range(stepper.dim.value)])
 
 T = 1
