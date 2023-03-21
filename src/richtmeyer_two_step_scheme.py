@@ -42,6 +42,7 @@ class Richtmeyer2step:
                         + c[2] * del_z(avg_x(avg_y(source_fluxes[2])))
 
         # TODO correct in case of D > 1?
+        # TODO INCORRECT!
         c = dt / self.dxyz
         # TODO other bd cond?
         pbc(self.grid, self.dim)
@@ -55,12 +56,8 @@ class Richtmeyer2step:
         div_fluxes(staggered, self.grid)
         div_fluxes(self.grid_no_ghost, staggered)
 
-
     def cfl(self):
         prime = self.pde.derivative(self.grid[self.no_ghost])
-        a = np.max(np.reshape(np.abs(prime), (np.product(self.ncellsxyz), 1)), axis=0)
+        a = np.max(np.reshape(np.abs(prime), (np.product(self.ncellsxyz), self.dim.value)), axis=0)
         dts = self.dxyz / (2 * a)
         return np.max(dts)
-
-
-

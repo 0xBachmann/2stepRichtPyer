@@ -26,16 +26,16 @@ stepper = Richtmeyer2step(F, np.array([L]), np.array([100]))
 # TODO: initial values
 def f(x):
     # return np.array([1. + 0.1*np.sin(2 * np.pi / L * x), 1, 1])
-    return np.cos(2 * np.pi / L * x)
+    # return np.cos(2 * np.pi / L * x)
     # return np.exp(-(x - 3)**2)
     # return np.array(list(map(lambda x: 1 if 1 < x < 2 else 0, x)))
-    # func = F.waves(0, np.array([1, 1, 1]), amp=1e-3)
-    # return func(x / L, 0)
+    func = F.waves(1, np.array([1, 1, 1]), amp=1e-3)
+    return func(x / L, 0)
 
 
 stepper.initial_cond(f)
 
-plotter = Plotter(F, action="show", writeout=1, dim=stepper.dim,
+plotter = Plotter(F, action="save", writeout=1, dim=stepper.dim,
                   coords=[stepper.coords[i][:-1] for i in range(stepper.dim.value)])
 
 T = 1

@@ -1,8 +1,7 @@
-import itertools
-
-from two_step_richtmeyer_util import *
+from two_step_richtmeyer_util import Dimension, log
 from PDE_Types import *
-from plotter import *
+from plotter import Plotter
+from richtmeyer_two_step_scheme import Richtmeyer2step
 
 log("definition of variables")
 
@@ -10,7 +9,7 @@ Type = PDE_Type.Linear_advection
 DIM = Dimension.twoD
 
 if Type == PDE_Type.Linear_advection:
-    F = LinearAdvection(np.array([10, 10]), dim=DIM)
+    F = LinearAdvection(np.array([3, 3]), dim=DIM)
 elif Type == PDE_Type.Burgers_equation:
     F = BurgersEq(dim=DIM)
 elif Type == PDE_Type.Euler:
@@ -18,66 +17,45 @@ elif Type == PDE_Type.Euler:
 else:
     raise "PDE_Type not known"
 
-Lx = 10
-Ly = 10
-dx = Lx / 100
-dy = Ly / 100
-ncellsx = int(Lx / dx)
-ncellsy = int(Ly / dy)
-
-grid = np.zeros((ncellsx + 2, ncellsy + 2, F.ncomp))  # pad with zero
-
-
-# TODO: better solution for init
-def f(x):
-    # return np.array([1. + 0.001*np.sin(2 * np.pi / Lx * x[0]) * np.sin(2 * np.pi / Ly * x[1]), 1, 1, 2])
-    # return np.cos(2 * np.pi / L * x)
-    return np.exp(-np.linalg.norm(x - np.array([3, 3])) ** 2)
-    # return np.array(list(map(lambda x: 1 if 1 < x < 2 else 0, x)))
-
-
 log("calculate initial conditions")
 
-# initial conditions
-coords_x = np.linspace(0, Lx, ncellsx + 1)
-coords_y = np.linspace(0, Ly, ncellsy + 1)
-X, Y = np.meshgrid(coords_x[:-1], coords_y[:-1])
-# TODO takes too long
-for i, j in itertools.product(range(ncellsx), range(ncellsy)):
-    grid[i + 1, j + 1, :] = f(np.array([coords_x[i] + coords_x[i + 1], coords_y[j] + coords_y[j + 1]]) / 2)
+Lx = 1
+Ly = 1
+stepper = Richtmeyer2step(F, np.array([Lx, Ly]), np.array([200, 200]))
 
-plotter = Plotter(F, grid[1:-1, 1:-1, :], action="show", writeout=1, dim=DIM, coords=[coords_x, coords_y])
 
-log("start time evaluation")
+# TODO: initial values
+def f(x):
+    if Type == PDE_Type.Euler:
+        rho = 0.1
+        delta = 0.05
+        init = np.empty(F.ncomp)
+        init[0] = 1
+        if x[1] < Ly / 2:
+            init[1] = np.tanh(2 * np.pi / rho * (x[1] - 0.25))
+        else:
+            init[1] = np.tanh(2 * np.pi / rho * (0.75 - x[1]))
+        init[2] = delta * np.sin(2 * np.pi * x[0])
+        init[3] = 1
+        return init
+    else:
+        return np.exp(-np.linalg.norm((x - np.array([0.3, 0.3])))**2 / 0.01)
+
+
+stepper.initial_cond(f)
+
+plotter = Plotter(F, action="show", writeout=10, dim=stepper.dim,
+                  coords=[stepper.coords[i][:-1] for i in range(stepper.dim.value)])
 
 T = 1
-traj: list[np.ndarray] = []
-time = 0
+time = 0.
 while time < T:
-    Fprime = F.derivative(grid[1:-1, 1:-1, ...])
-    ax = np.max(np.abs(Fprime[..., 0]))
-    ay = np.max(np.abs(Fprime[..., 1]))
-    dt = dx / (2 * max(ax, ay))  # damp?
-    time += dt
+    dt = stepper.cfl()
+    stepper.step(dt)
+
+    plotter.write(stepper.grid_no_ghost, dt)
+
     print(f"dt = {dt}, time = {time:.3f}/{T}")
-
-    c = dt / dx
-
-    # TODO: Boundary conditions?
-    pbc(grid, dim=DIM)
-
-    staggered_grid = avg_x(avg_y(grid))  # get average
-
-    Fgrid, Ggrid = F(grid)
-    staggered_grid -= c / 2 * (del_x(avg_y(Fgrid)) + del_y(avg_x(Ggrid)))
-
-    Fstaggered_grid, Gstaggered_grid = F(staggered_grid)
-    grid[1:-1, 1:-1, :] -= c * (del_x(avg_y(Fstaggered_grid)) + del_y(avg_x(Gstaggered_grid)))
-
-    plotter.write(grid[1:-1, 1:-1, :], dt)
-
-log("generating plots")
+    time += dt
 
 plotter.finlaize()
-
-log("finished")

@@ -36,7 +36,7 @@ class Plotter:
         self.step = 0
         self.writeout = writeout
         self.PDE_type = f"{F.Type}"
-        self.filename = filename if filename is not None else f"{self.PDE_type}.mp4"
+        self.filename = filename if filename is not None else f"{self.PDE_type}_{self.dim.value}D.mp4"
         self.time = 0.
 
     def init_plots(self, vals: np.ndarray, time):
