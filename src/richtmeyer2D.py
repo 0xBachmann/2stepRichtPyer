@@ -1,7 +1,7 @@
-from two_step_richtmeyer_util import Dimension, log
 from PDE_Types import *
 from plotter import Plotter
 from richtmeyer_two_step_scheme import Richtmeyer2step
+from two_step_richtmeyer_util import Dimension, log
 
 log("definition of variables")
 
@@ -41,7 +41,7 @@ def f(x):
             return init
         else:
             init = np.empty(F.ncomp)
-            init[0] = 1 + 0.001 * np.sin(2 * np.pi / Lx * x[0]) * np.sin(2 * np.pi / Ly * x[1])
+            init[0] = 1 + 0.01 * np.sin(2 * np.pi / Lx * x[0]) * np.sin(2 * np.pi / Ly * x[1])
             init[1] = 1
             init[2] = 1
             init[3] = 2
@@ -53,7 +53,7 @@ def f(x):
 
 stepper.initial_cond(f)
 
-plotter = Plotter(F, action="show", writeout=1, dim=stepper.dim,
+plotter = Plotter(F, action="show", writeout=5, dim=stepper.dim,
                   coords=[stepper.coords[i][:-1] for i in range(stepper.dim.value)])
 
 T = 1

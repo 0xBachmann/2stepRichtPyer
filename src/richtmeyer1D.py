@@ -1,7 +1,7 @@
-from two_step_richtmeyer_util import Dimension, log
 from PDE_Types import *
 from plotter import Plotter
 from richtmeyer_two_step_scheme import Richtmeyer2step
+from two_step_richtmeyer_util import Dimension, log
 
 log("definition of variables")
 
