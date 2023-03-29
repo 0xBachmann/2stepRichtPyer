@@ -1,5 +1,10 @@
 - [x] initial values better
-- [ ] 2D
-- [ ] waves for 2D
-- [ ] derivative mybe not correct and add for burgers
+- [x] 2D
+- [x] waves for 2D - not possible
+- [ ] derivative maybe not correct and add for burgers
 - [ ] TODO's in src
+- [ ] rotation of 1D wave for 2D
+- [ ] implicit scheme
+- [ ] vortex test
+- [ ] reference solutions?
+- [ ] 

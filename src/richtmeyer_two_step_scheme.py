@@ -58,5 +58,5 @@ class Richtmeyer2step:
     def cfl(self):
         prime = self.pde.derivative(self.grid[self.no_ghost])
         a = np.max(np.reshape(np.abs(prime), (np.product(self.ncellsxyz), self.dim.value)), axis=0)
-        dts = self.dxyz / (2 * a)
+        dts = self.dxyz / (2 * a)  # TODO (2 bc half step)
         return np.min(dts)
