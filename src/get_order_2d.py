@@ -11,7 +11,8 @@ F = Euler(5. / 3, dim=DIM)
 L = 1
 resolutions = np.array([[int(2**(i/2)), int(2**(i/2))] for i in range(4, 18)])
 w0 = np.array([1, 1, 1])
-wave = F.waves(0, w0, amp=1e-3, alpha=np.pi/4)
+w02d = np.array([1, 1, 0, 1])
+waves = [F.waves(i, w0, amp=1e-3, alpha=0) for i in range(3)]
 
 print("resolution\tL2 norm of w-wref")
 print("="*40)
@@ -22,19 +23,22 @@ for r in resolutions:
     coords_y = np.linspace(0, L, r[1] + 1)
     X, Y = np.meshgrid(avg_x(coords_x), avg_x(coords_y))
 
-    stepper = Richtmeyer2step(F, np.array([L, L]), r)
-    stepper.initial_cond(wave)
-
-    a = F.csnd(w0)
-
+    a = F.csnd(F.primitive_to_conserved(w02d))
     T = 1 / (w0[1] + a)
-    time = 0.
-    while time < T:
-        dt = stepper.cfl()
-        stepper.step(dt)
-        time += dt
 
-    ref = wave(np.stack([X, Y], axis=-1), time)
-    print(np.product(L / r) * np.sum((ref - stepper.grid_no_ghost)**2))
+    for i in range(3):
+        stepper = Richtmeyer2step(F, np.array([L, L]), r)
+        stepper.initial_cond(waves[i])
+
+        time = 0.
+        while time < T:
+            dt = stepper.cfl()
+            stepper.step(dt)
+            time += dt
+
+        ref = waves[i](np.stack([X, Y], axis=-1), time)
+        print(np.product(L / r) * np.sum((ref - stepper.grid_no_ghost)**2), end="\t")
+
+    print("")
 
 

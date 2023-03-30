@@ -10,7 +10,7 @@ F = Euler(5. / 3, dim=DIM)
 
 L = 1
 w0 = np.array([1, 1, 1])
-wave = F.waves(0, w0, amp=1e-3)
+waves = [F.waves(i, w0, amp=1e-3) for i in range(3)]
 
 print("resolution\tL2 norm of w-wref")
 print("="*40)
@@ -20,18 +20,21 @@ for r in range(2, 17):
 
     coords_x = np.linspace(0, L, r + 1)
 
-    stepper = Richtmeyer2step(F, np.array([L]), np.array([r]))
-    stepper.initial_cond(lambda x: wave(x, 0))
-
-    a = F.csnd(w0)
-
+    a = F.csnd(F.primitive_to_conserved(w0))
     T = 1 / (w0[1] + a)
-    time = 0.
-    while time < T:
-        dt = stepper.cfl()
-        stepper.step(dt)
-        time += dt
 
-    print(L / r * np.sum((wave(coords_x[:-1], time) - stepper.grid_no_ghost)**2))
+    for i in range(3):
+        stepper = Richtmeyer2step(F, np.array([L]), np.array([r]))
+        stepper.initial_cond(lambda x: waves[i](x))
+
+        time = 0.
+        while time < T:
+            dt = stepper.cfl()
+            stepper.step(dt)
+            time += dt
+
+        print(L / r * np.sum((waves[i](coords_x[:-1], time) - stepper.grid_no_ghost)**2), end="\t")
+
+    print("")
 
 

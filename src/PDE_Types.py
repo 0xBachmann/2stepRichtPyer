@@ -149,13 +149,14 @@ class Euler(PDE):
                 rotx = x @ Rinv
                 w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k], np.sin(2 * np.pi * (rotx[..., 0] / cos_alpha - eigen_vals[k] * t)))
                 # first rotate then transform
+                # TODO correct??
                 vxy = np.zeros((*w.shape[:-1], self.dim.value))
                 vxy[..., 0] = w[..., 1]
                 rotv = vxy @ R
 
-                w2d = np.empty((*w.shape[:-1], 4))
+                w2d = np.empty((*w.shape[:-1], self.ncomp))
                 w2d[..., 0] = w[..., 0]
-                w2d[..., 1:3] = rotv
+                w2d[..., 1:self.dim.value + 1] = rotv
                 w2d[..., 3] = w[..., 2]
                 return self.primitive_to_conserved(w2d)
 

@@ -4,6 +4,7 @@
   - not possible
   - [x] rotate 1d waves
     - [ ] now check accuracy
+    - [ ] check correctness of rotating and a sound depending on w0 ofc wrong
 - [ ] derivative maybe not correct and add for burgers
 - [ ] TODO's in src
 - [ ] implicit scheme

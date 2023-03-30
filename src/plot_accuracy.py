@@ -2,14 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.rcParams['text.usetex'] = True
 
-file = "accuracy/euler2d_conv_0deg.txt"
+file = "accuracy/euler1d_conv.txt"
 data = np.loadtxt(file, skiprows=2)
 
-slope = np.polyfit(np.log(data[:, 0]), np.log(data[:, 1]), deg=1)[0]
-
-plt.loglog(data[:, 0], data[:, 1], label=r"$\|w -w_{{ref}}\|_{L^2}$")
+for i in range(3):
+    slope = np.polyfit(np.log(data[:, 0]), np.log(data[:, i + 1]), deg=1)[0]
+    plt.loglog(data[:, 0], data[:, i + 1], label=f"wave {i}: "r"$\|w -w_{{ref}}\|_{L^2}$"f", slope={slope}")
 plt.ylabel("error")
 plt.xlabel("1/dx")
-plt.title(f"slope = {slope}")
 plt.legend()
 plt.show()
