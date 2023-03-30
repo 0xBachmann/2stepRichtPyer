@@ -88,7 +88,7 @@ class Plotter:
         self.time += dt
         self.step += 1
 
-    def finlaize(self):
+    def finalize(self):
         if self.action == "show":
             self.init_plots(*self.traj[0])
             ani = FuncAnimation(self.fig, lambda s: self.plot(*self.traj[s]), frames=int(self.step / self.writeout),

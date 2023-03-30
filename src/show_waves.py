@@ -33,4 +33,4 @@ while time < T:
     time += dt
 
 
-plotter.finlaize()
+plotter.finalize()

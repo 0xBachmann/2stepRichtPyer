@@ -141,18 +141,21 @@ class Euler(PDE):
         if self.dim == Dimension.oneD:
             def wave(x, t=0):
                 """x needs to be normalized to [0, 1]"""
-                w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k], np.sin(2 * np.pi * (x[..., 0] - eigen_vals[k] * t)))
+                w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k],
+                                         np.sin(2 * np.pi * (x[..., 0] - eigen_vals[k] * t)))
                 return self.primitive_to_conserved(w)
         if self.dim == Dimension.twoD:
             def wave(x, t=0):
                 """x needs to be normalized to [0, 1]"""
-                rotx = x @ Rinv
-                w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k], np.sin(2 * np.pi * (rotx[..., 0] / cos_alpha - eigen_vals[k] * t)))
+                rotx = x @ R
+                # 2 * cos bc * cos would not work with pbc
+                w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k],
+                                         np.sin(2 * np.pi * (rotx[..., 0] * 2 * cos_alpha - eigen_vals[k] * t)))
                 # first rotate then transform
                 # TODO correct??
                 vxy = np.zeros((*w.shape[:-1], self.dim.value))
                 vxy[..., 0] = w[..., 1]
-                rotv = vxy @ R
+                rotv = vxy @ Rinv
 
                 w2d = np.empty((*w.shape[:-1], self.ncomp))
                 w2d[..., 0] = w[..., 0]

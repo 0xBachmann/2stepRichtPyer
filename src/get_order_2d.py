@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from PDE_Types import Euler
 from two_step_richtmeyer_util import Dimension, avg_x
@@ -10,9 +11,10 @@ F = Euler(5. / 3, dim=DIM)
 
 L = 1
 resolutions = np.array([[int(2**(i/2)), int(2**(i/2))] for i in range(4, 18)])
+# resolutions = np.array([[50, 50]])
 w0 = np.array([1, 1, 1])
 w02d = np.array([1, 1, 0, 1])
-waves = [F.waves(i, w0, amp=1e-3, alpha=0) for i in range(3)]
+waves = [F.waves(i, w0, amp=1e-3, alpha=np.pi/4) for i in range(3)]
 
 print("resolution\tL2 norm of w-wref")
 print("="*40)
@@ -34,13 +36,40 @@ for r in resolutions:
         time = 0.
         while time < T:
             dt = stepper.cfl()
+            if time + dt > T:
+                dt = T - time
+                time = T
+            else:
+                time += dt
             stepper.step(dt)
-            time += dt
 
         ref = waves[i](grid, time)
         print((np.product(L / r) * np.sum((ref - stepper.grid_no_ghost)**2)), end="\t")
         # print(np.max(np.abs(ref - stepper.grid_no_ghost)), end="\t")
 
+        # fig, ax = plt.subplots(2, 2)
+        # for k in range(2):
+        #     for j in range(2):
+        #         im = ax[k][j].imshow((ref - stepper.grid_no_ghost)[..., k * 2 + j])
+        #         fig.colorbar(im)
+        # fig.suptitle("ref - stepper")
+        #
+        # fig, ax = plt.subplots(2, 2)
+        # for k in range(2):
+        #     for j in range(2):
+        #         im = ax[k][j].imshow(ref[..., k * 2 + j])
+        #         fig.colorbar(im)
+        # fig.suptitle("ref")
+        #
+        # fig, ax = plt.subplots(2, 2)
+        # for k in range(2):
+        #     for j in range(2):
+        #         im = ax[k][j].imshow(stepper.grid_no_ghost[..., k * 2 + j])
+        #         fig.colorbar(im)
+        # fig.suptitle("stepper")
+
     print("")
+
+plt.show()
 
 

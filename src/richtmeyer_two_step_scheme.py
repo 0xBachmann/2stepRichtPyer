@@ -1,8 +1,6 @@
-import numpy as np
-
 from two_step_richtmeyer_util import *
 from PDE_Types import PDE
-import itertools
+import numpy as np
 
 
 class Richtmeyer2step:
@@ -27,7 +25,8 @@ class Richtmeyer2step:
     def initial_cond(self, f):
         # TODO make more efficient
         # for indices in itertools.product(*[range(n) for n in self.ncellsxyz]):
-        #     self.grid[self.no_ghost][indices] = f(np.array([[self.coords[i][j] + self.coords[i][j] for i, j in zip(range(self.dim.value), indices)]]) / 2)
+        #     self.grid[self.no_ghost][indices] = f(np.array([[self.coords[i][j]
+        #     + self.coords[i][j] for i, j in zip(range(self.dim.value), indices)]]) / 2)
         avg_coords = [avg_x(coord) for coord in self.coords]
         XYZ = np.stack(np.meshgrid(*avg_coords), axis=-1)
 

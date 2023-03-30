@@ -73,4 +73,4 @@ while time < T:
     print(f"dt = {dt}, time = {time:.3f}/{T}")
     time += dt
 
-plotter.finlaize()
+plotter.finalize()
