@@ -9,7 +9,6 @@ F = Euler(5. / 3, dim=DIM)
 
 
 L = 1
-resolutions = np.array([10, 100, 1000, 10000, 100000])
 w0 = np.array([1, 1, 1])
 wave = F.waves(0, w0, amp=1e-3)
 

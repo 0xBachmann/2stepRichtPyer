@@ -29,7 +29,8 @@ def f(x):
     if Type == PDE_Type.Euler:
         if True:
             func = F.waves(1, np.array([1, 1, 1]), amp=1e-3, alpha=np.pi / 4)
-            return func(np.array([x[0] / Lx, x[1] / Ly]))
+            # TODO not normalized in case of Lx/Ly != 1
+            return func(x)
 
         if False:
             rho = 0.1
@@ -61,7 +62,7 @@ stepper.initial_cond(f)
 plotter = Plotter(F, action="show", writeout=2, dim=stepper.dim,
                   coords=[stepper.coords[i][:-1] for i in range(stepper.dim.value)])
 
-T = 0.2
+T = 1
 time = 0.
 while time < T:
     dt = stepper.cfl()

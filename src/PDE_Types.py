@@ -116,13 +116,15 @@ class Euler(PDE):
         return np.abs(vels) + csnd[..., np.newaxis]
 
     def waves(self, k, w0, amp, alpha=None):
+        if self.dim == Dimension.twoD:
+            assert alpha is not None
         if self.dim == Dimension.threeD:
             raise NotImplementedError
 
         dens = w0[0]
         v = w0[1]
         p = w0[2]
-        conserved_w = np.array([dens, dens * v, p / (self.gamma - 1) + dens / 2 * v ** 2])
+        # conserved_w = np.array([dens, dens * v, p / (self.gamma - 1) + dens / 2 * v ** 2])
         a = np.sqrt(self.gamma * p / dens)
         eigen_vectors = np.array([[2, dens / a, -dens / a],
                                   [0, 1, 1],
@@ -136,26 +138,26 @@ class Euler(PDE):
             R = np.array([[cos_alpha, -np.sin(alpha)],
                           [np.sin(alpha), cos_alpha]])
 
-        def wave(x, t=0):
-            """x needs to be normalized to [0, 1]"""
-            if self.dim == Dimension.oneD:
+        if self.dim == Dimension.oneD:
+            def wave(x, t=0):
+                """x needs to be normalized to [0, 1]"""
                 w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k], np.sin(2 * np.pi * (x - eigen_vals[k] * t)))
                 return self.primitive_to_conserved(w)
-            if self.dim == Dimension.twoD:
-                xr = Rinv @ x
-                w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k], np.sin(2 * np.pi * (xr[0, :] / cos_alpha - eigen_vals[k] * t)))
+        if self.dim == Dimension.twoD:
+            def wave(x, t=0):
+                """x needs to be normalized to [0, 1]"""
+                rotx = x @ Rinv
+                w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k], np.sin(2 * np.pi * (rotx[..., 0] / cos_alpha - eigen_vals[k] * t)))
                 # first rotate then transform
-                vxy = np.zeros((w.shape[0], 2))
-                vxy[:, 0] = w[:, 1]
-                rotv = R @ vxy.T
+                vxy = np.zeros((*w.shape[:-1], self.dim.value))
+                vxy[..., 0] = w[..., 1]
+                rotv = vxy @ R
 
-                w2d = np.empty((w.shape[0], 4))
-                w2d[:, 0] = w[:, 0]
-                w2d[:, 1:3] = rotv.T
-                w2d[:, 3] = w[:, 2]
+                w2d = np.empty((*w.shape[:-1], 4))
+                w2d[..., 0] = w[..., 0]
+                w2d[..., 1:3] = rotv
+                w2d[..., 3] = w[..., 2]
                 return self.primitive_to_conserved(w2d)
-
-
 
         return wave
 
