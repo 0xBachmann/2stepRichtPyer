@@ -27,6 +27,10 @@ stepper = Richtmeyer2step(F, np.array([Lx, Ly]), np.array([200, 200]))
 # TODO: initial values
 def f(x):
     if Type == PDE_Type.Euler:
+        if True:
+            func = F.waves(1, np.array([1, 1, 1]), amp=1e-3, alpha=np.pi / 4)
+            return func(np.array([x[0] / Lx, x[1] / Ly]))
+
         if False:
             rho = 0.1
             delta = 0.05
@@ -39,7 +43,8 @@ def f(x):
             init[2] = delta * np.sin(2 * np.pi * x[0])
             init[3] = 1
             return init
-        else:
+
+        if False:
             init = np.empty(F.ncomp)
             init[0] = 1 + 0.01 * np.sin(2 * np.pi / Lx * x[0]) * np.sin(2 * np.pi / Ly * x[1])
             init[1] = 1
@@ -56,7 +61,7 @@ stepper.initial_cond(f)
 plotter = Plotter(F, action="show", writeout=2, dim=stepper.dim,
                   coords=[stepper.coords[i][:-1] for i in range(stepper.dim.value)])
 
-T = 1
+T = 0.2
 time = 0.
 while time < T:
     dt = stepper.cfl()

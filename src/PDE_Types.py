@@ -115,8 +115,8 @@ class Euler(PDE):
         csnd = self.csnd(v)
         return np.abs(vels) + csnd[..., np.newaxis]
 
-    def waves(self, k, w0, amp):
-        if self.dim != Dimension.oneD:
+    def waves(self, k, w0, amp, alpha=None):
+        if self.dim == Dimension.threeD:
             raise NotImplementedError
 
         dens = w0[0]
@@ -129,10 +129,33 @@ class Euler(PDE):
                                   [0, dens * a, -dens * a]]) / 2
         eigen_vals = np.array([v, v + a, v - a])
 
-        def wave(x, t):
+        if self.dim == Dimension.twoD:
+            cos_alpha = np.cos(alpha)
+            Rinv = np.array([[cos_alpha, np.sin(alpha)],
+                          [-np.sin(alpha), cos_alpha]])
+            R = np.array([[cos_alpha, -np.sin(alpha)],
+                          [np.sin(alpha), cos_alpha]])
+
+        def wave(x, t=0):
             """x needs to be normalized to [0, 1]"""
-            w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k], np.sin(2 * np.pi * (x - eigen_vals[k] * t)))
-            return self.primitive_to_conserved(w)
+            if self.dim == Dimension.oneD:
+                w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k], np.sin(2 * np.pi * (x - eigen_vals[k] * t)))
+                return self.primitive_to_conserved(w)
+            if self.dim == Dimension.twoD:
+                xr = Rinv @ x
+                w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k], np.sin(2 * np.pi * (xr[0, :] / cos_alpha - eigen_vals[k] * t)))
+                # first rotate then transform
+                vxy = np.zeros((w.shape[0], 2))
+                vxy[:, 0] = w[:, 1]
+                rotv = R @ vxy.T
+
+                w2d = np.empty((w.shape[0], 4))
+                w2d[:, 0] = w[:, 0]
+                w2d[:, 1:3] = rotv.T
+                w2d[:, 3] = w[:, 2]
+                return self.primitive_to_conserved(w2d)
+
+
 
         return wave
 

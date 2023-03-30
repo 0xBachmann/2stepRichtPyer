@@ -1,9 +1,11 @@
 - [x] initial values better
 - [x] 2D
-- [x] waves for 2D - not possible
+- [x] waves for 2D
+  - not possible
+  - [x] rotate 1d waves
+    - [ ] now check accuracy
 - [ ] derivative maybe not correct and add for burgers
 - [ ] TODO's in src
-- [ ] rotation of 1D wave for 2D
 - [ ] implicit scheme
 - [ ] vortex test
 - [ ] reference solutions?
