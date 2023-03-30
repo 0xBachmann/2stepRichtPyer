@@ -1,6 +1,6 @@
 import numpy as np
 from PDE_Types import Euler
-from two_step_richtmeyer_util import Dimension
+from two_step_richtmeyer_util import Dimension, avg_x
 from richtmeyer_two_step_scheme import Richtmeyer2step
 
 
@@ -33,7 +33,7 @@ for r in range(2, 17):
             stepper.step(dt)
             time += dt
 
-        print(L / r * np.sum((waves[i](coords_x[:-1], time) - stepper.grid_no_ghost)**2), end="\t")
+        print((L / r * np.sum((waves[i](avg_x(coords_x), time) - stepper.grid_no_ghost)**2)), end="\t")
 
     print("")
 

@@ -29,7 +29,7 @@ def f(x):
     # return np.cos(2 * np.pi / L * x)
     # return np.exp(-(x - 3)**2)
     # return np.array(list(map(lambda x: 1 if 1 < x < 2 else 0, x)))
-    func = F.waves(2, np.array([1, 1, 1]), amp=1e-3)
+    func = F.waves(0, np.array([1, 1, 1]), amp=1e-3)
     return func(x / L)
 
 

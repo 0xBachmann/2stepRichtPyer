@@ -141,7 +141,7 @@ class Euler(PDE):
         if self.dim == Dimension.oneD:
             def wave(x, t=0):
                 """x needs to be normalized to [0, 1]"""
-                w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k], np.sin(2 * np.pi * (x - eigen_vals[k] * t)))
+                w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k], np.sin(2 * np.pi * (x[..., 0] - eigen_vals[k] * t)))
                 return self.primitive_to_conserved(w)
         if self.dim == Dimension.twoD:
             def wave(x, t=0):

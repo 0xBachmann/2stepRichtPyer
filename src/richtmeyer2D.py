@@ -21,7 +21,7 @@ log("calculate initial conditions")
 
 Lx = 1
 Ly = 1
-stepper = Richtmeyer2step(F, np.array([Lx, Ly]), np.array([200, 200]))
+stepper = Richtmeyer2step(F, np.array([Lx, Ly]), np.array([50, 50]))
 
 
 # TODO: initial values
@@ -59,7 +59,7 @@ def f(x):
 
 stepper.initial_cond(f)
 
-plotter = Plotter(F, action="show", writeout=2, dim=stepper.dim,
+plotter = Plotter(F, action="show", writeout=1, dim=stepper.dim,
                   coords=[stepper.coords[i][:-1] for i in range(stepper.dim.value)])
 
 T = 1

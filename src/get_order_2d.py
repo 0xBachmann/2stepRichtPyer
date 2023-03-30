@@ -22,6 +22,7 @@ for r in resolutions:
     coords_x = np.linspace(0, L, r[0] + 1)
     coords_y = np.linspace(0, L, r[1] + 1)
     X, Y = np.meshgrid(avg_x(coords_x), avg_x(coords_y))
+    grid = np.stack([X, Y], axis=-1)
 
     a = F.csnd(F.primitive_to_conserved(w02d))
     T = 1 / (w0[1] + a)
@@ -36,8 +37,9 @@ for r in resolutions:
             stepper.step(dt)
             time += dt
 
-        ref = waves[i](np.stack([X, Y], axis=-1), time)
-        print(np.product(L / r) * np.sum((ref - stepper.grid_no_ghost)**2), end="\t")
+        ref = waves[i](grid, time)
+        print((np.product(L / r) * np.sum((ref - stepper.grid_no_ghost)**2)), end="\t")
+        # print(np.max(np.abs(ref - stepper.grid_no_ghost)), end="\t")
 
     print("")
 

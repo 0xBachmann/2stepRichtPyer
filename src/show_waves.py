@@ -9,31 +9,26 @@ F = Euler(5. / 3, dim=DIM)
 
 
 L = 1
-resolutions = np.array([[int(2**(i/2)), int(2**(i/2))] for i in range(4, 18)])
 w0 = np.array([1, 1, 1])
-w02d = np.array([1, 1, 0, 1])
 waves = [F.waves(i, w0, amp=1e-3, alpha=np.pi/4) for i in range(3)]
 
-r = np.array([200, 200])
-print(np.product(r), end="\t\t")
+r = np.array([50 for i in range(DIM.value)])
 
-coords_x = np.linspace(0, L, r[0] + 1)
-coords_y = np.linspace(0, L, r[1] + 1)
-X, Y = np.meshgrid(avg_x(coords_x), avg_x(coords_y))
+coords = [np.linspace(0, L, r[i] + 1) for i in range(DIM.value)]
+XY = np.meshgrid(*[avg_x(coord) for coord in coords])
+grid = np.stack(XY, axis=-1)
 
-a = F.csnd(F.primitive_to_conserved(w02d))
+T = 1
+dt = 0.005
 
-T = 1 / (w0[1] + a)
-dt = 0.001
+wave = 1
 
-wave = 0
-
-plotter = Plotter(F, action="show", writeout=2, dim=DIM,
-                  coords=[coords_x[:-1], coords_y[:-1]])
+plotter = Plotter(F, action="show", writeout=1, dim=DIM,
+                  coords=[coord[:-1] for coord in coords], filename=f"wave{wave}.mp4")
 
 time = 0.
 while time < T:
-    ref = waves[wave](np.stack([X, Y], axis=-1), time)
+    ref = waves[wave](grid, time)
     plotter.write(ref, dt)
     time += dt
 

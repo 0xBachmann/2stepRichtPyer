@@ -26,8 +26,12 @@ class Richtmeyer2step:
 
     def initial_cond(self, f):
         # TODO make more efficient
-        for indices in itertools.product(*[range(n) for n in self.ncellsxyz]):
-            self.grid[self.no_ghost][indices] = f(np.array([[self.coords[i][j] + self.coords[i][j] for i, j in zip(range(self.dim.value), indices)]]) / 2)
+        # for indices in itertools.product(*[range(n) for n in self.ncellsxyz]):
+        #     self.grid[self.no_ghost][indices] = f(np.array([[self.coords[i][j] + self.coords[i][j] for i, j in zip(range(self.dim.value), indices)]]) / 2)
+        avg_coords = [avg_x(coord) for coord in self.coords]
+        XYZ = np.stack(np.meshgrid(*avg_coords), axis=-1)
+
+        self.grid_no_ghost = f(XYZ)
 
     def step(self, dt):
         def div_fluxes(source: np.ndarray):
