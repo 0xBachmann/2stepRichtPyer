@@ -19,16 +19,32 @@ else:
 
 log("calculate initial conditions")
 
+resolution = np.array([80] * DIM.value)
+alpha = np.pi / 4
+offset = int(np.round(resolution[0] * np.tan(alpha)) / 2)
+
+
+def rot_pbc(grid):
+    grid[0, 1:-1, ...] = np.roll(grid[-2, 1:-1, ...], 0, axis=0)
+    grid[-1, 1:-1, ...] = np.roll(grid[1, 1:-1, ...], 0, axis=0)
+    grid[:, 0, ...] = np.roll(grid[:, -2, ...], 40, axis=0)
+    grid[:, -1, ...] = np.roll(grid[:, 1, ...], -40, axis=0)
+    # grid[0, 1:-1, ...] = grid[1, 1:-1, ...]
+    # grid[-1, 1:-1, ...] = grid[-2, 1:-1, ...]
+    # grid[:, 0, ...] = grid[:, 1, ...]
+    # grid[:, -1, ...] = grid[:, -2, ...]
+
+
 Lx = 1
 Ly = 1
-stepper = Richtmeyer2step(F, np.array([Lx, Ly]), np.array([80] * DIM.value))
+stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, bdc=None)
 
 
 # TODO: initial values
 def f(x):
     if Type == PDE_Type.Euler:
         if True:
-            func = F.waves(0, np.array([1, 1, 1]), amp=1e-3, alpha=0 * np.pi / 4)
+            func = F.waves(0, np.array([1, 1, 1]), amp=1e-3, alpha=alpha)
             # TODO not normalized in case of Lx/Ly != 1
             return func(x)
 
@@ -54,7 +70,7 @@ def f(x):
             return init
 
     else:
-        return np.exp(-np.linalg.norm((x - np.array([0.3, 0.3])))**2 / 0.01)
+        return np.exp(-np.linalg.norm((x - np.array([0.3, 0.3]))) ** 2 / 0.01)
 
 
 stepper.initial_cond(f)

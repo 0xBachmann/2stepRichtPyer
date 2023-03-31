@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.rcParams['text.usetex'] = True
 
-file = "accuracy/euler2d_conv_0deg.txt"
+file = "accuracy/euler2d_conv_45deg.txt"
 data = np.loadtxt(file, skiprows=2)
 
 for i in range(3):

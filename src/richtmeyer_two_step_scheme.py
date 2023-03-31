@@ -4,7 +4,7 @@ import numpy as np
 
 
 class Richtmeyer2step:
-    def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray):
+    def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc=None):
         self.pde = pde
         self.dim = pde.dim
         self.domain = domain
@@ -13,6 +13,7 @@ class Richtmeyer2step:
         self.dxyz = self.domain / self.ncellsxyz
         self.grid = np.empty((*(self.ncellsxyz + 2), self.pde.ncomp))
         self.no_ghost = tuple(slice(1, -1) for _ in range(self.dim.value))
+        self.bdc = bdc if bdc is not None else lambda grid: pbc(grid, self.dim)
 
     @property
     def grid_no_ghost(self):
@@ -46,7 +47,7 @@ class Richtmeyer2step:
         # TODO correct in case of D > 1? yes should be
         c = dt / self.dxyz
         # TODO other bd cond?
-        pbc(self.grid, self.dim)
+        self.bdc(self.grid)
 
         staggered = avg_x(self.grid)
         if self.dim == Dimension.twoD:
