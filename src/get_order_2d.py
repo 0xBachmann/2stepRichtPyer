@@ -14,7 +14,7 @@ resolutions = np.array([[int(2**(i/2)), int(2**(i/2))] for i in range(4, 18)])
 # resolutions = np.array([[50, 50]])
 w0 = np.array([1, 1, 1])
 w02d = np.array([1, 1, 0, 1])
-waves = [F.waves(i, w0, amp=1e-3, alpha=np.pi/4) for i in range(3)]
+waves = [F.waves(i, w0, amp=1e-5, alpha=0*np.pi/4) for i in range(3)]
 
 print("resolution\tL2 norm of w-wref")
 print("="*40)
@@ -24,7 +24,7 @@ for r in resolutions:
     coords_x = np.linspace(0, L, r[0] + 1)
     coords_y = np.linspace(0, L, r[1] + 1)
     X, Y = np.meshgrid(avg_x(coords_x), avg_x(coords_y))
-    grid = np.stack([X, Y], axis=-1)
+    grid = np.stack([X, Y][::-1], axis=-1)
 
     a = F.csnd(F.primitive_to_conserved(w02d))
     T = 1 / (w0[1] + a)
@@ -52,7 +52,7 @@ for r in resolutions:
         #     for j in range(2):
         #         im = ax[k][j].imshow((ref - stepper.grid_no_ghost)[..., k * 2 + j])
         #         fig.colorbar(im)
-        # fig.suptitle("ref - stepper")
+        # fig.suptitle(f"ref - stepper, time = {time}")
         #
         # fig, ax = plt.subplots(2, 2)
         # for k in range(2):

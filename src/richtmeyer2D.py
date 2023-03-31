@@ -21,14 +21,14 @@ log("calculate initial conditions")
 
 Lx = 1
 Ly = 1
-stepper = Richtmeyer2step(F, np.array([Lx, Ly]), np.array([50, 50]))
+stepper = Richtmeyer2step(F, np.array([Lx, Ly]), np.array([80] * DIM.value))
 
 
 # TODO: initial values
 def f(x):
     if Type == PDE_Type.Euler:
         if True:
-            func = F.waves(1, np.array([1, 1, 1]), amp=1e-3, alpha=np.pi / 4)
+            func = F.waves(0, np.array([1, 1, 1]), amp=1e-3, alpha=0 * np.pi / 4)
             # TODO not normalized in case of Lx/Ly != 1
             return func(x)
 

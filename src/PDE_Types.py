@@ -148,9 +148,8 @@ class Euler(PDE):
             def wave(x, t=0):
                 """x needs to be normalized to [0, 1]"""
                 rotx = x @ R
-                # 2 * cos bc * cos would not work with pbc
                 w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k],
-                                         np.sin(2 * np.pi * (rotx[..., 0] * 2 * cos_alpha - eigen_vals[k] * t)))
+                                         np.sin(2 * np.pi * (rotx[..., 0] - eigen_vals[k] * t)))  # TODO maybe * cos_alpha?
                 # first rotate then transform
                 # TODO correct??
                 vxy = np.zeros((*w.shape[:-1], self.dim.value))

@@ -28,7 +28,7 @@ class Richtmeyer2step:
         #     self.grid[self.no_ghost][indices] = f(np.array([[self.coords[i][j]
         #     + self.coords[i][j] for i, j in zip(range(self.dim.value), indices)]]) / 2)
         avg_coords = [avg_x(coord) for coord in self.coords]
-        XYZ = np.stack(np.meshgrid(*avg_coords), axis=-1)
+        XYZ = np.stack(np.meshgrid(*avg_coords, indexing='ij'), axis=-1)
 
         self.grid_no_ghost = f(XYZ)
 
@@ -38,7 +38,7 @@ class Richtmeyer2step:
             if self.dim == Dimension.oneD:
                 return c[0] * del_x(source_fluxes[0])
             if self.dim == Dimension.twoD:
-                return c[0] * del_x(avg_y(source_fluxes[0])) + c[1] * del_y(avg_x(source_fluxes[1]))
+                return c[0] * del_x(avg_y(source_fluxes[0])) + c[1] * del_y(avg_x(source_fluxes[1]))  # TODO smth wrong... check order of x,y coords in init and so on
             if self.dim == Dimension.threeD:
                 return c[0] * del_x(avg_y(avg_z(source_fluxes[0]))) + c[1] * del_y(avg_x(avg_z(source_fluxes[1]))) \
                         + c[2] * del_z(avg_x(avg_y(source_fluxes[2])))
