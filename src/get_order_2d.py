@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PDE_Types import Euler
 from two_step_richtmeyer_util import Dimension, avg_x
-from richtmeyer_two_step_scheme import Richtmeyer2step
+from richtmeyer_two_step_scheme import Richtmeyer2step, Richtmeyer2stepImplicit
 
 
 DIM = Dimension.twoD
@@ -30,7 +30,7 @@ for r in resolutions:
     T = 1 / (w0[1] + a)
 
     for i in range(3):
-        stepper = Richtmeyer2step(F, np.array([L, L]), r)
+        stepper = Richtmeyer2stepImplicit(F, np.array([L, L]), r)
         stepper.initial_cond(waves[i])
 
         time = 0.

@@ -10,16 +10,16 @@ F = Euler(5. / 3, dim=DIM)
 
 L = 1
 w0 = np.array([1, 1, 1])
-waves = [F.waves(i, w0, amp=1e-3, alpha=0.5*np.pi/4) for i in range(3)]
+waves = [F.waves(i, w0, amp=1e-3, alpha=0*np.pi/4) for i in range(3)]
 
-r = np.array([80] * DIM.value)
+r = np.array([20] * DIM.value)
 
 coords = [np.linspace(0, L, r[i] + 1) for i in range(DIM.value)]
 XY = np.meshgrid(*[avg_x(coord) for coord in coords], indexing="ij")
 grid = np.stack(XY, axis=-1)
 
 T = 1
-dt = 0.0027
+dt = 0.0109
 
 wave = 0
 

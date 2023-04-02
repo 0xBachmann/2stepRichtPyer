@@ -3,11 +3,14 @@
 - [x] waves for 2D
   - not possible
   - [x] rotate 1d waves
-    - [ ] now check accuracy
-    - [ ] check correctness of rotating and a sound depending on w0 ofc wrong
+    - [x] now check accuracy
+    - [x] check correctness of rotating and a sound depending on w0 ofc wrong
 - [ ] derivative maybe not correct and add for burgers
 - [ ] TODO's in src
 - [ ] implicit scheme
+  - [x] speed not correct...
+    - correct when using avg = id
+  - [ ] fails for dt too large
 - [ ] vortex test
 - [ ] reference solutions?
 - [ ] 

@@ -83,34 +83,33 @@ class Richtmeyer2stepImplicit(Solver):
         return (grid_vals[:, 2:, ...] - grid_vals[:, :-2, ...]) / 2
 
     def avg_x(self, grid_vals: np.ndarray) -> np.ndarray:
-        # return grid_vals[1:-1, ...]
-        return (grid_vals[2:, ...] + grid_vals[1:-1, ...] + grid_vals[:-2, ...]) / 4
+        return grid_vals[1:-1, ...]
+        # return (grid_vals[2:, ...] + grid_vals[1:-1, ...] + grid_vals[:-2, ...]) / 4
 
     def avg_y(self, grid_vals: np.ndarray) -> np.ndarray:
-        # return grid_vals[:, 1:-1, ...]
-        return (grid_vals[:, 2:, ...] + grid_vals[:, 1:-1, ...] + grid_vals[:, :-2, ...]) / 4
+        return grid_vals[:, 1:-1, ...]
+        # return (grid_vals[:, 2:, ...] + grid_vals[:, 1:-1, ...] + grid_vals[:, :-2, ...]) / 4
 
     def step(self, dt):
         c = dt / self.dxyz
 
-        self.bdc(self.grid)
         grid_old = deepcopy(self.grid)
 
         if self.dim == Dimension.oneD:
-            def FJ(grid_new: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-                avg_t = 0.5 * (grid_new + grid_old)
+            def FJ() -> tuple[np.ndarray, np.ndarray]:
+                avg_t = 0.5 * (self.grid + grid_old)
                 fluxes = self.pde(avg_t)
-                F = grid_new[self.no_ghost] - grid_old[self.no_ghost] + c[0] * self.del_x(fluxes[0])
+                F = self.grid_no_ghost - grid_old[self.no_ghost] + c[0] * self.del_x(fluxes[0])
                 jacobians = self.pde.jacobian(avg_t)
                 J = np.eye(self.pde.ncomp, self.pde.ncomp) + c[0] / 2 * self.del_x(jacobians[0])
                 return F, J
 
         elif self.dim == Dimension.twoD:
-            def FJ(grid_new: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-                avg_t = 0.5 * (grid_new + grid_old)
+            def FJ() -> tuple[np.ndarray, np.ndarray]:
+                avg_t = 0.5 * (self.grid + grid_old)
                 fluxes = self.pde(avg_t)
-                F = grid_new[self.no_ghost] - grid_old[self.no_ghost] + c[0] * self.del_x(self.avg_y(fluxes[0])) \
-                                                                      + c[1] * self.del_y(self.avg_x(fluxes[1]))
+                F = self.grid_no_ghost - grid_old[self.no_ghost] + c[0] * self.del_x(self.avg_y(fluxes[0])) \
+                                                                 + c[1] * self.del_y(self.avg_x(fluxes[1]))
                 jacobians = self.pde.jacobian(avg_t)
                 J = np.eye(self.pde.ncomp, self.pde.ncomp) + c[0] / 2 * self.del_x(self.avg_y(jacobians[0])) \
                                                            + c[1] / 2 * self.del_y(self.avg_x(jacobians[1]))
@@ -119,11 +118,11 @@ class Richtmeyer2stepImplicit(Solver):
             def FJ(grid_new: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
                 raise NotImplementedError("not implemented for 3D")
 
-        F_value, J_value = FJ(self.grid)
+        F_value, J_value = FJ()
         F_norm = np.linalg.norm(F_value)
         while abs(F_norm) > self.eps * np.product(self.ncellsxyz):
             for index in it.product(*[range(n) for n in self.ncellsxyz]):
-                self.grid_no_ghost[index] += np.linalg.solve(J_value[index], -F_value[index])
+                self.grid_no_ghost[index] -= np.linalg.solve(J_value[index], F_value[index])
             self.bdc(self.grid)
-            F_value, J_value = FJ(self.grid)
+            F_value, J_value = FJ()
             F_norm = np.linalg.norm(F_value)
