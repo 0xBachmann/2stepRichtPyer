@@ -216,7 +216,7 @@ class Euler(PDE):
                 w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k],
                                          np.sin(2 * np.pi * (x[..., 0] - eigen_vals[k] * t)))
                 return self.primitive_to_conserved(w)
-        if self.dim == Dimension.twoD:
+        elif self.dim == Dimension.twoD:
             def wave(x, t=0):
                 """x needs to be normalized to [0, 1]"""
                 rotx = x @ R
@@ -234,6 +234,8 @@ class Euler(PDE):
                 w2d[..., 1:self.dim.value + 1] = rotv
                 w2d[..., 3] = w[..., 2]
                 return self.primitive_to_conserved(w2d)
+        else:
+            raise NotImplementedError("Wave not implemented for 3D")
 
         return wave
 

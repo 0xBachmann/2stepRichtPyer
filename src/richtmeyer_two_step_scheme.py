@@ -115,8 +115,7 @@ class Richtmeyer2stepImplicit(Solver):
                                                            + c[1] / 2 * self.del_y(self.avg_x(jacobians[1]))
                 return F, J
         else:
-            def FJ(grid_new: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-                raise NotImplementedError("not implemented for 3D")
+            raise NotImplementedError("Jacobians not implemented for 3D")
 
         F_value, J_value = FJ()
         F_norm = np.linalg.norm(F_value)
