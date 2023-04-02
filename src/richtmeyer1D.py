@@ -20,7 +20,7 @@ else:
 log("calculate initial conditions")
 
 L = 1
-stepper = Richtmeyer2stepImplicit(F, np.array([L]), np.array([100]))
+stepper = Richtmeyer2stepImplicit(F, np.array([L]), np.array([10]))
 
 
 # TODO: initial values

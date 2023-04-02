@@ -23,6 +23,9 @@ class PDE(object):
     def derivative(self, v: np.ndarray):
         raise NotImplementedError
 
+    def jacobian(self, v: np.ndarray):
+        raise NotImplementedError
+
 
 class LinearAdvection(PDE):
     def __init__(self, a: np.ndarray, dim: Dimension):

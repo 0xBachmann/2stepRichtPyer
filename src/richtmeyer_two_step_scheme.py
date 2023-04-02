@@ -31,6 +31,7 @@ class Solver:
         XYZ = np.stack(np.meshgrid(*avg_coords, indexing='ij'), axis=-1)
 
         self.grid_no_ghost = f(XYZ)
+        self.bdc(self.grid)
 
     def cfl(self):
         prime = self.pde.derivative(self.grid[self.no_ghost])
@@ -92,7 +93,7 @@ class Richtmeyer2stepImplicit(Solver):
     def step(self, dt):
         c = dt / self.dxyz
 
-        # self.bdc(self.grid)
+        self.bdc(self.grid)
         grid_old = deepcopy(self.grid)
 
         if self.dim == Dimension.oneD:
@@ -114,11 +115,15 @@ class Richtmeyer2stepImplicit(Solver):
                 J = np.eye(self.pde.ncomp, self.pde.ncomp) + c[0] / 2 * self.del_x(self.avg_y(jacobians[0])) \
                                                            + c[1] / 2 * self.del_y(self.avg_x(jacobians[1]))
                 return F, J
+        else:
+            def FJ(grid_new: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+                raise NotImplementedError("not implemented for 3D")
 
         F_value, J_value = FJ(self.grid)
-        F_norm = np.linalg.norm(F_value, ord=2)
+        F_norm = np.linalg.norm(F_value)
         while abs(F_norm) > self.eps * np.product(self.ncellsxyz):
             for index in it.product(*[range(n) for n in self.ncellsxyz]):
-                self.grid[index] += np.linalg.solve(J_value[index], -F_value[index])
+                self.grid_no_ghost[index] += np.linalg.solve(J_value[index], -F_value[index])
+            self.bdc(self.grid)
             F_value, J_value = FJ(self.grid)
-            F_norm = np.linalg.norm(F_value, ord=2)
+            F_norm = np.linalg.norm(F_value)
