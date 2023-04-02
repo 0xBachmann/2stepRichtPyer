@@ -1,6 +1,6 @@
 from PDE_Types import *
 from plotter import Plotter
-from richtmeyer_two_step_scheme import Richtmeyer2step
+from richtmeyer_two_step_scheme import Richtmeyer2step, Richtmeyer2stepImplicit
 from two_step_richtmeyer_util import Dimension, log
 
 log("definition of variables")
@@ -20,7 +20,7 @@ else:
 log("calculate initial conditions")
 
 resolution = np.array([80] * DIM.value)
-alpha = np.pi / 4
+alpha = 0 * np.pi / 4
 offset = int(np.round(resolution[0] * np.tan(alpha)) / 2)
 
 

@@ -1,9 +1,12 @@
 from two_step_richtmeyer_util import *
 from PDE_Types import PDE
 import numpy as np
+from copy import deepcopy
+import itertools as it
+import sys
 
 
-class Richtmeyer2step:
+class Solver:
     def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc=None):
         self.pde = pde
         self.dim = pde.dim
@@ -24,14 +27,21 @@ class Richtmeyer2step:
         self.grid[self.no_ghost] = v
 
     def initial_cond(self, f):
-        # TODO make more efficient
-        # for indices in itertools.product(*[range(n) for n in self.ncellsxyz]):
-        #     self.grid[self.no_ghost][indices] = f(np.array([[self.coords[i][j]
-        #     + self.coords[i][j] for i, j in zip(range(self.dim.value), indices)]]) / 2)
         avg_coords = [avg_x(coord) for coord in self.coords]
         XYZ = np.stack(np.meshgrid(*avg_coords, indexing='ij'), axis=-1)
 
         self.grid_no_ghost = f(XYZ)
+
+    def cfl(self):
+        prime = self.pde.derivative(self.grid[self.no_ghost])
+        a = np.max(np.reshape(np.abs(prime), (np.product(self.ncellsxyz), self.dim.value)), axis=0)
+        dts = self.dxyz / (2 * a)  # TODO (2 bc half step)
+        return np.min(dts)
+
+
+class Richtmeyer2step(Solver):
+    def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc=None):
+        super().__init__(pde, domain, resolutions, bdc)
 
     def step(self, dt):
         def div_fluxes(source: np.ndarray):
@@ -39,10 +49,10 @@ class Richtmeyer2step:
             if self.dim == Dimension.oneD:
                 return c[0] * del_x(source_fluxes[0])
             if self.dim == Dimension.twoD:
-                return c[0] * del_x(avg_y(source_fluxes[0])) + c[1] * del_y(avg_x(source_fluxes[1]))  # TODO smth wrong... check order of x,y coords in init and so on
+                return c[0] * del_x(avg_y(source_fluxes[0])) + c[1] * del_y(avg_x(source_fluxes[1]))
             if self.dim == Dimension.threeD:
                 return c[0] * del_x(avg_y(avg_z(source_fluxes[0]))) + c[1] * del_y(avg_x(avg_z(source_fluxes[1]))) \
-                        + c[2] * del_z(avg_x(avg_y(source_fluxes[2])))
+                    + c[2] * del_z(avg_x(avg_y(source_fluxes[2])))
 
         # TODO correct in case of D > 1? yes should be
         c = dt / self.dxyz
@@ -58,8 +68,57 @@ class Richtmeyer2step:
         staggered -= 0.5 * div_fluxes(self.grid)
         self.grid_no_ghost -= div_fluxes(staggered)
 
-    def cfl(self):
-        prime = self.pde.derivative(self.grid[self.no_ghost])
-        a = np.max(np.reshape(np.abs(prime), (np.product(self.ncellsxyz), self.dim.value)), axis=0)
-        dts = self.dxyz / (2 * a)  # TODO (2 bc half step)
-        return np.min(dts)
+
+class Richtmeyer2stepImplicit(Solver):
+    def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc=None, eps=sys.float_info.epsilon):
+        super().__init__(pde, domain, resolutions, bdc)
+        self.eps = eps
+
+    # TODO correct?
+    def del_x(self, grid_vals: np.ndarray) -> np.ndarray:
+        return (grid_vals[2:, ...] - grid_vals[:-2, ...]) / 2
+
+    def del_y(self, grid_vals: np.ndarray) -> np.ndarray:
+        return (grid_vals[:, 2:, ...] - grid_vals[:, :-2, ...]) / 2
+
+    def avg_x(self, grid_vals: np.ndarray) -> np.ndarray:
+        # return grid_vals[1:-1, ...]
+        return (grid_vals[2:, ...] + grid_vals[1:-1, ...] + grid_vals[:-2, ...]) / 4
+
+    def avg_y(self, grid_vals: np.ndarray) -> np.ndarray:
+        # return grid_vals[:, 1:-1, ...]
+        return (grid_vals[:, 2:, ...] + grid_vals[:, 1:-1, ...] + grid_vals[:, :-2, ...]) / 4
+
+    def step(self, dt):
+        c = dt / self.dxyz
+
+        # self.bdc(self.grid)
+        grid_old = deepcopy(self.grid)
+
+        if self.dim == Dimension.oneD:
+            def FJ(grid_new: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+                avg_t = 0.5 * (grid_new + grid_old)
+                fluxes = self.pde(avg_t)
+                F = grid_new[self.no_ghost] - grid_old[self.no_ghost] + c[0] * self.del_x(fluxes[0])
+                jacobians = self.pde.jacobian(avg_t)
+                J = np.eye(self.pde.ncomp, self.pde.ncomp) + c[0] / 2 * self.del_x(jacobians[0])
+                return F, J
+
+        elif self.dim == Dimension.twoD:
+            def FJ(grid_new: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+                avg_t = 0.5 * (grid_new + grid_old)
+                fluxes = self.pde(avg_t)
+                F = grid_new[self.no_ghost] - grid_old[self.no_ghost] + c[0] * self.del_x(self.avg_y(fluxes[0])) \
+                                                                      + c[1] * self.del_y(self.avg_x(fluxes[1]))
+                jacobians = self.pde.jacobian(avg_t)
+                J = np.eye(self.pde.ncomp, self.pde.ncomp) + c[0] / 2 * self.del_x(self.avg_y(jacobians[0])) \
+                                                           + c[1] / 2 * self.del_y(self.avg_x(jacobians[1]))
+                return F, J
+
+        F_value, J_value = FJ(self.grid)
+        F_norm = np.linalg.norm(F_value, ord=2)
+        while abs(F_norm) > self.eps * np.product(self.ncellsxyz):
+            for index in it.product(*[range(n) for n in self.ncellsxyz]):
+                self.grid[index] += np.linalg.solve(J_value[index], -F_value[index])
+            F_value, J_value = FJ(self.grid)
+            F_norm = np.linalg.norm(F_value, ord=2)

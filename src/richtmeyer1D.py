@@ -1,6 +1,6 @@
 from PDE_Types import *
 from plotter import Plotter
-from richtmeyer_two_step_scheme import Richtmeyer2step
+from richtmeyer_two_step_scheme import Richtmeyer2stepImplicit, Richtmeyer2step
 from two_step_richtmeyer_util import Dimension, log
 
 log("definition of variables")
@@ -20,7 +20,7 @@ else:
 log("calculate initial conditions")
 
 L = 1
-stepper = Richtmeyer2step(F, np.array([L]), np.array([100]))
+stepper = Richtmeyer2stepImplicit(F, np.array([L]), np.array([100]))
 
 
 # TODO: initial values
@@ -29,14 +29,14 @@ def f(x):
     # return np.cos(2 * np.pi / L * x)
     # return np.exp(-(x - 3)**2)
     # return np.array(list(map(lambda x: 1 if 1 < x < 2 else 0, x)))
-    func = F.waves(0, np.array([1, 1, 1]), amp=1e-3)
+    func = F.waves(1, np.array([1, 1, 1]), amp=1e-3)
     return func(x / L)
 
 
 stepper.initial_cond(f)
 
 plotter = Plotter(F, action="show", writeout=1, dim=stepper.dim,
-                  coords=[stepper.coords[i][:-1] for i in range(stepper.dim.value)])
+                  coords=[stepper.coords[i][:-1] for i in range(stepper.dim.value)], filename="Euler_1D_impl.mp4")
 
 T = 1
 time = 0.

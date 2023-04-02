@@ -115,6 +115,75 @@ class Euler(PDE):
         csnd = self.csnd(v)
         return np.abs(vels) + csnd[..., np.newaxis]
 
+    def jacobian(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
+        p = self.pres(v)
+        dens = v[..., 0]
+        Etot = v[..., -1]
+
+        if self.dim == Dimension.oneD:
+            vel = v[..., 1] / dens
+            vel2 = vel ** 2
+            
+            J = np.empty((*v.shape, v.shape[-1]))
+
+            J[..., 0, :] = np.array([0, 1, 0])
+
+            J[..., 1, 0] = vel2 * (self.gamma - 3) / 2
+            J[..., 1, 1] = vel * (3 - self.gamma)
+            J[..., 1, 2] = self.gamma - 1
+
+            J[..., 2, 0] = vel * (vel2[..., 0] * (self.gamma - 1) - Etot / dens)
+            J[..., 2, 1] = vel2 * 1.5 * (1 - self.gamma) + self.gamma * Etot / dens
+            J[..., 2, 2] = vel * self.gamma
+
+            return J,
+
+        if self.dim == Dimension.twoD:
+            velx = v[..., 1] / dens
+            vely = v[..., 2] / dens
+            velx2 = velx ** 2
+            vely2 = vely ** 2
+            
+            J = np.empty((self.dim.value, *v.shape, v.shape[-1]))
+
+            # Df
+            J[0, ..., 0, :] = np.array([0, 1, 0, 0])
+
+            J[0, ..., 1, 0] = velx2 * ((self.gamma - 3) / 2) + vely2 * ((self.gamma - 1) / 2)
+            J[0, ..., 1, 1] = velx * (3 - self.gamma)
+            J[0, ..., 1, 2] = vely * (1 - self.gamma)
+            J[0, ..., 1, 3] = self.gamma - 1
+
+            J[0, ..., 2, 0] = velx * vely
+            J[0, ..., 2, 1] = vely
+            J[0, ..., 2, 2] = velx
+            J[0, ..., 2, 3] = 0
+
+            J[0, ..., 3, 0] = velx * ((velx2 + vely2) * ((self.gamma - 1) / 2) - self.gamma * Etot / dens)
+            J[0, ..., 3, 1] = (3 * velx2 + vely2) * ((self.gamma - 1) / 2) + self.gamma * Etot / dens
+            J[0, ..., 3, 2] = velx * vely * (1 - self.gamma)
+            J[0, ..., 3, 3] = self.gamma * velx
+
+            # Dg
+            J[1, ..., 0, :] = np.array([0, 0, 1, 0])
+
+            J[1, ..., 2, 0] = -velx * vely
+            J[1, ..., 2, 1] = vely
+            J[1, ..., 2, 2] = velx
+            J[1, ..., 2, 3] = 0
+
+            J[1, ..., 1, 0] = velx2 * ((self.gamma - 1) / 1) + vely2 * ((self.gamma - 3) / 2)
+            J[1, ..., 1, 1] = velx * (1 - self.gamma)
+            J[1, ..., 1, 2] = vely * (3 - self.gamma)
+            J[1, ..., 1, 3] = self.gamma - 1
+
+            J[1, ..., 3, 0] = vely * ((velx2 + vely2) * ((self.gamma - 1) / 2) - self.gamma * Etot / dens)
+            J[1, ..., 3, 1] = velx * vely * (1 - self.gamma)
+            J[1, ..., 3, 2] = (velx2 + 3 * vely2) * ((self.gamma - 1) / 2) + self.gamma * Etot / dens
+            J[1, ..., 3, 3] = self.gamma * vely
+
+            return J[0, ...], J[1, ...]
+
     def waves(self, k, w0, amp, alpha=None):
         if self.dim == Dimension.twoD:
             assert alpha is not None
@@ -134,7 +203,7 @@ class Euler(PDE):
         if self.dim == Dimension.twoD:
             cos_alpha = np.cos(alpha)
             Rinv = np.array([[cos_alpha, np.sin(alpha)],
-                          [-np.sin(alpha), cos_alpha]])
+                             [-np.sin(alpha), cos_alpha]])
             R = np.array([[cos_alpha, -np.sin(alpha)],
                           [np.sin(alpha), cos_alpha]])
 
@@ -148,8 +217,9 @@ class Euler(PDE):
             def wave(x, t=0):
                 """x needs to be normalized to [0, 1]"""
                 rotx = x @ R
+                # NOTE: whole input * 2 * cos_alpha in case of pi/4
                 w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k],
-                                         np.sin(2 * np.pi * (rotx[..., 0] - eigen_vals[k] * t)))  # whole input * 2 * cos_alpha in case of pi/4 NOTE
+                                         np.sin(2 * np.pi * (rotx[..., 0] - eigen_vals[k] * t)))
                 # first rotate then transform
                 # TODO correct??
                 vxy = np.zeros((*w.shape[:-1], self.dim.value))
