@@ -246,7 +246,7 @@ class Euler(PDE):
         primitives = np.empty(v.shape)
         primitives[..., 0] = dens
         for i in range(self.dim.value):
-            primitives[..., i] = mom[..., i] / dens
+            primitives[..., i + 1] = mom[..., i] / dens
         primitives[..., -1] = (self.gamma - 1) * (E - 0.5 * np.sum(mom ** 2, axis=-1)) / dens
         return primitives
 

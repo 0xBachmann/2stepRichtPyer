@@ -44,7 +44,7 @@ for r in resolutions:
             stepper.step(dt)
 
         ref = waves[i](grid, time)
-        print((np.product(L / r) * np.sum((ref - stepper.grid_no_ghost)**2)), end="\t")
+        print(L / r[0] * np.sum((ref - stepper.grid_no_ghost)**2), end="\t")
         # print(np.max(np.abs(ref - stepper.grid_no_ghost)), end="\t")
 
         # fig, ax = plt.subplots(2, 2)

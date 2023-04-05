@@ -10,10 +10,10 @@ from two_step_richtmeyer_util import Dimension
 
 
 class Plotter:
-    def __init__(self, F: PDE, action, writeout, dim: Dimension, coords: list[np.ndarray, ...],
+    def __init__(self, F: PDE | int, action, writeout, dim: Dimension, coords=None,
                  filename=None):
-        self.ncomp = F.ncomp
-        self.comp_names = F.comp_names
+        self.ncomp = F.ncomp if isinstance(F, PDE) else F
+        self.comp_names = F.comp_names if isinstance(F, PDE) else None
         self.dim = dim
         self.init = False
         # Will be set the first time plotting happens
@@ -35,7 +35,7 @@ class Plotter:
         self.action = action
         self.step = 0
         self.writeout = writeout
-        self.PDE_type = f"{F.Type}"
+        self.PDE_type = f"{F.Type}" if isinstance(F, PDE) else ""
         self.filename = filename if filename is not None else f"{self.PDE_type}_{self.dim.value}D.mp4"
         self.time = 0.
 
@@ -61,8 +61,9 @@ class Plotter:
             for i in range(self.ncomp):
                 self.fig.colorbar(self.ims[i])
 
-        for i in range(self.ncomp):
-            self.axs[i].set_title(f"{self.comp_names[i]}")
+        if self.comp_names is not None:
+            for i in range(self.ncomp):
+                self.axs[i].set_title(f"{self.comp_names[i]}")
         self.fig.suptitle(f"time: {time:.5}")
 
     def plot(self, vals: np.ndarray, time):
@@ -70,7 +71,8 @@ class Plotter:
             self.init_plots(vals, time)
         else:
             for i in range(self.ncomp):
-                self.axs[i].set_title(f"{self.comp_names[i]}")
+                if self.comp_names is not None:
+                    self.axs[i].set_title(f"{self.comp_names[i]}")
                 if self.dim == Dimension.oneD:
                     self.ims[i].set_data(self.x_coords, vals[..., i])
                 if self.dim == Dimension.twoD:
