@@ -29,7 +29,7 @@ def gresho_vortex(x: np.ndarray, Mmax=None, period=1) -> np.ndarray:
     X = x[..., 0] - center[0]
     Y = x[..., 1] - center[1]
     global alpha
-    alpha = -np.arctan2(X, Y)
+    alpha = np.arctan2(X, Y)
     r2 = X ** 2 + Y ** 2
     r = np.sqrt(r2)
 
@@ -43,8 +43,8 @@ def gresho_vortex(x: np.ndarray, Mmax=None, period=1) -> np.ndarray:
     outer_ring = (0.2 <= r) & (r < 0.4)
     u[outer_ring] = (2. - 5. * r[outer_ring]) * qr
 
-    result[..., 1] = rho * u * np.sin(alpha)
-    result[..., 2] = rho * u * -np.cos(alpha)
+    result[..., 1] = rho * u * -np.sin(alpha)
+    result[..., 2] = rho * u * np.cos(alpha)
     gamma = F.gamma
 
     if Mmax is not None:
@@ -69,7 +69,7 @@ def u_phi(grid: np.ndarray) -> np.ndarray:
 
 
 M = 0.1
-t = 0.0
+t = 1
 stepper.initial_cond(lambda x: gresho_vortex(x, M))
 
 plotter = Plotter(F, action="show", writeout=1, dim=stepper.dim)

@@ -4,7 +4,7 @@ from matplotlib.patches import Polygon
 
 plt.rcParams['text.usetex'] = True
 
-file = "accuracy/euler1d_conv.txt"
+file = "accuracy/euler2d_impl_conv_45deg.txt"
 data = np.loadtxt(file, skiprows=2)
 
 slopes = []

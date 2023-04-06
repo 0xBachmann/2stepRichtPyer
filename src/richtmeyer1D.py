@@ -20,7 +20,7 @@ else:
 log("calculate initial conditions")
 
 L = 1
-stepper = Richtmeyer2stepImplicit(F, np.array([L]), np.array([10]))
+stepper = Richtmeyer2step(F, np.array([L]), np.array([100]))
 
 
 # TODO: initial values
@@ -29,8 +29,19 @@ def f(x):
     # return np.cos(2 * np.pi / L * x)
     # return np.exp(-(x - 3)**2)
     # return np.array(list(map(lambda x: 1 if 1 < x < 2 else 0, x)))
-    func = F.waves(1, np.array([1, 1, 1]), amp=1e-3)
-    return func(x / L)
+    # func = F.waves(1, np.array([1, 1, 1]), amp=1e-3)
+    # return func(x / L)
+    result = np.empty((*x.shape[:-1], 3))
+    result[:25, 0] = 1
+    result[25:75, 0] = 1/8
+    result[75:, 0] = 1
+    result[..., 1] = 0
+    result[:25, 2] = 1
+    result[25:75, 2] = 0.3
+    result[75:, 2] = 1
+    return F.primitive_to_conserved(result)
+
+
 
 
 stepper.initial_cond(f)

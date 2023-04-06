@@ -12,14 +12,19 @@
   - [x] speed not correct...
     - correct when using avg = id
   - [ ] fails for dt too large
+  - [ ] for linear advection
+    - [ ] linear stability analysis
 - [ ] vortex test
 - [ ] reference solutions?
 - [ ] review CFL for diagonal motion
 - [ ] neumann stability analysis
 - [x] check triangles in accuracy plotter for correctness
+- [ ] plotter dimensions correct order
+- [ ] submit short description
 
 
 # To Discuss
+## 06.04.23
 - bachelor thesis proposal
 - convergence of rot wave, only n * 45°
 - gresho vortex problem
@@ -28,3 +33,4 @@
   - evolution?
   - bdc?
 - implicit not stable for dt > 2 * dt_crit
+## 21.04.23

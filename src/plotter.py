@@ -57,7 +57,7 @@ class Plotter:
         if self.dim == Dimension.oneD:
             self.ims = [self.axs[i].plot(self.x_coords, vals[..., i])[0] for i in range(self.ncomp)]
         if self.dim == Dimension.twoD:
-            self.ims = [self.axs[i].imshow(vals[..., i]) for i in range(self.ncomp)]
+            self.ims = [self.axs[i].imshow(vals[..., i], origin="lower") for i in range(self.ncomp)]
             for i in range(self.ncomp):
                 self.fig.colorbar(self.ims[i])
 

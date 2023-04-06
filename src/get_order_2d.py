@@ -14,7 +14,7 @@ resolutions = np.array([[int(2**(i/2)), int(2**(i/2))] for i in range(4, 18)])
 # resolutions = np.array([[50, 50]])
 w0 = np.array([1, 1, 1])
 w02d = np.array([1, 1, 0, 1])
-waves = [F.waves(i, w0, amp=1e-5, alpha=0.5*np.pi/4) for i in range(3)]
+waves = [F.waves(i, w0, amp=1e-5, alpha=0*np.pi/4) for i in range(3)]
 
 print("resolution\tL2 norm of w-wref")
 print("="*40)
