@@ -19,8 +19,8 @@ else:
 
 log("calculate initial conditions")
 
-resolution = np.array([20] * DIM.value)
-alpha = 0 * np.pi / 4
+resolution = np.array([40] * DIM.value)
+alpha = 1 * np.pi / 4
 offset = int(np.round(resolution[0] * np.tan(alpha)) / 2)
 
 

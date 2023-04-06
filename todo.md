@@ -1,3 +1,4 @@
+# TODO's
 - [x] initial values better
 - [x] 2D
 - [x] waves for 2D
@@ -13,4 +14,17 @@
   - [ ] fails for dt too large
 - [ ] vortex test
 - [ ] reference solutions?
-- [ ] 
+- [ ] review CFL for diagonal motion
+- [ ] neumann stability analysis
+- [x] check triangles in accuracy plotter for correctness
+
+
+# To Discuss
+- bachelor thesis proposal
+- convergence of rot wave, only n * 45°
+- gresho vortex problem
+  - cfl?
+  - init?
+  - evolution?
+  - bdc?
+- implicit not stable for dt > 2 * dt_crit

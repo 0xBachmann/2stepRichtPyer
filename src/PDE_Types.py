@@ -92,7 +92,7 @@ class Euler(PDE):
     def csnd(self, v):
         p = self.pres(v)
         dens = v[..., 0]
-        return np.sqrt(self.gamma * p / dens)
+        return np.sqrt(self.gamma * p) / dens
 
     def __call__(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
         if self.dim == Dimension.threeD:
@@ -106,8 +106,9 @@ class Euler(PDE):
         result = np.empty((*v.shape, self.dim.value))
 
         result[..., 0, :] = v[..., 1:self.dim.value + 1]
-        result[..., 1:self.dim.value + 1, :] = np.einsum("...i,...j->...ij", vels, vels) * dens[
-            ..., np.newaxis, np.newaxis] + np.einsum("...i,...jk->...ijk", p, np.identity(self.dim.value))
+        result[..., 1:self.dim.value + 1, :] = np.einsum("...i,...j->...ij", vels, vels) \
+                                               * dens[..., np.newaxis, np.newaxis] \
+                                               + np.einsum("...i,jk->...ijk", p, np.identity(self.dim.value))
         result[..., -1, :] = np.einsum("...,...i->...i", Etot + p, vels)
 
         return tuple(result[..., i] for i in range(self.dim.value))
@@ -126,7 +127,7 @@ class Euler(PDE):
         if self.dim == Dimension.oneD:
             vel = v[..., 1] / dens
             vel2 = vel ** 2
-            
+
             J = np.empty((*v.shape, v.shape[-1]))
 
             J[..., 0, :] = np.array([0, 1, 0])
@@ -146,7 +147,7 @@ class Euler(PDE):
             vely = v[..., 2] / dens
             velx2 = velx ** 2
             vely2 = vely ** 2
-            
+
             J = np.empty((self.dim.value, *v.shape, v.shape[-1]))
 
             # Df

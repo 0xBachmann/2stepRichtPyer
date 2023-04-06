@@ -37,6 +37,7 @@ class Solver:
         prime = self.pde.derivative(self.grid[self.no_ghost])
         a = np.max(np.reshape(np.abs(prime), (np.product(self.ncellsxyz), self.dim.value)), axis=0)
         dts = self.dxyz / (2 * a)  # TODO (2 bc half step)
+        # TODO correct for diagonal?
         return np.min(dts)
 
 
@@ -45,7 +46,7 @@ class Richtmeyer2step(Solver):
         super().__init__(pde, domain, resolutions, bdc)
 
     def step(self, dt):
-        def div_fluxes(source: np.ndarray):
+        def div_fluxes(source: np.ndarray) -> np.ndarray:
             source_fluxes = self.pde(source)
             if self.dim == Dimension.oneD:
                 return c[0] * del_x(source_fluxes[0])
