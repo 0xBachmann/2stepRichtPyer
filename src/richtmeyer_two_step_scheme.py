@@ -4,6 +4,7 @@ import numpy as np
 from copy import deepcopy
 import itertools as it
 import sys
+from scipy.optimize import fsolve, newton
 
 
 class Solver:
@@ -72,9 +73,11 @@ class Richtmeyer2step(Solver):
 
 
 class Richtmeyer2stepImplicit(Solver):
-    def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc=None, eps=sys.float_info.epsilon):
+    def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc=None, eps=sys.float_info.epsilon, method="fsolve"):
         super().__init__(pde, domain, resolutions, bdc)
         self.eps = eps
+        assert method in ["fsolve", "newton"]
+        self.use_fsolve = method == "fsolve"
 
     # TODO correct?
     def del_x(self, grid_vals: np.ndarray) -> np.ndarray:
@@ -102,8 +105,24 @@ class Richtmeyer2stepImplicit(Solver):
                 fluxes = self.pde(avg_t)
                 F = self.grid_no_ghost - grid_old[self.no_ghost] + c[0] * self.del_x(fluxes[0])
                 jacobians = self.pde.jacobian(avg_t)
+                # TODO: grad(del_x(...)) != del_x(grad(...))?
                 J = np.eye(self.pde.ncomp, self.pde.ncomp) + c[0] / 2 * self.del_x(jacobians[0])
                 return F, J
+
+            def F(v: np.ndarray) -> np.ndarray:
+                self.grid_no_ghost = v.reshape(self.grid_no_ghost.shape)
+                self.bdc(self.grid)
+                avg_t = 0.5 * (self.grid + grid_old)
+                fluxes = self.pde(avg_t)
+                return (self.grid_no_ghost - grid_old[self.no_ghost] + c[0] * self.del_x(fluxes[0])).ravel()
+
+            def J(v: np.ndarray) -> np.ndarray:
+                self.grid_no_ghost = v.reshape(self.grid_no_ghost.shape)
+                self.bdc(self.grid)
+                avg_t = 0.5 * (self.grid + grid_old)
+                jacobians = self.pde.jacobian(avg_t)
+                # TODO: grad(del_x(...)) != del_x(grad(...))?
+                return (np.eye(self.pde.ncomp, self.pde.ncomp) + c[0] / 2 * self.del_x(jacobians[0]))
 
         elif self.dim == Dimension.twoD:
             def FJ() -> tuple[np.ndarray, np.ndarray]:
@@ -115,14 +134,34 @@ class Richtmeyer2stepImplicit(Solver):
                 J = np.eye(self.pde.ncomp, self.pde.ncomp) + c[0] / 2 * self.del_x(self.avg_y(jacobians[0])) \
                                                            + c[1] / 2 * self.del_y(self.avg_x(jacobians[1]))
                 return F, J
+
+            def F(v: np.ndarray) -> np.ndarray:
+                self.grid_no_ghost = v.reshape(self.grid_no_ghost.shape)
+                self.bdc(self.grid)
+                avg_t = 0.5 * (self.grid + grid_old)
+                fluxes = self.pde(avg_t)
+                return (self.grid_no_ghost - grid_old[self.no_ghost] + c[0] * self.del_x(self.avg_y(fluxes[0]))
+                                                                     + c[1] * self.del_y(self.avg_x(fluxes[1]))).ravel()
+
         else:
             raise NotImplementedError("Jacobians not implemented for 3D")
 
-        F_value, J_value = FJ()
-        F_norm = np.linalg.norm(F_value)
-        while abs(F_norm) > self.eps * np.product(self.ncellsxyz):
-            for index in it.product(*[range(n) for n in self.ncellsxyz]):
-                self.grid_no_ghost[index] -= np.linalg.solve(J_value[index], F_value[index])
+        if self.use_fsolve:
+            sol = fsolve(F, grid_old[self.no_ghost].ravel())
+            self.grid_no_ghost = sol.reshape(self.grid_no_ghost.shape)
             self.bdc(self.grid)
+        elif False:
             F_value, J_value = FJ()
             F_norm = np.linalg.norm(F_value)
+            while self.eps * np.product(self.ncellsxyz) < F_norm:
+            # for _ in range(2):
+                for index in it.product(*[range(n) for n in self.ncellsxyz]):
+                    self.grid_no_ghost[index] -= np.linalg.solve(J_value[index], F_value[index])
+                self.bdc(self.grid)
+                F_value, J_value = FJ()
+                F_norm = np.linalg.norm(F_value)
+        else:
+            sol = newton(F, grid_old[self.no_ghost].ravel(), fprime=None, tol=1e-6)
+            self.grid_no_ghost = sol.reshape(self.grid_no_ghost.shape)
+            self.bdc(self.grid)
+

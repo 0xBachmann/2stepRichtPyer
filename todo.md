@@ -19,8 +19,9 @@
 - [ ] review CFL for diagonal motion
 - [ ] neumann stability analysis
 - [x] check triangles in accuracy plotter for correctness
-- [ ] plotter dimensions correct order
-- [ ] submit short description
+- [x] plotter dimensions correct order
+- [x] submit short description
+- [ ] dirichlet bd
 
 
 # To Discuss

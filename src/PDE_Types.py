@@ -59,6 +59,10 @@ class LinearAdvection(PDE):
 
         raise NotImplementedError
 
+    def jacobian(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
+        return tuple(np.full((*v.shape, v.shape[-1]), self.a[i]) for i in range(self.dim.value))
+
+
 
 class BurgersEq(PDE):
     def __init__(self, *, dim: Dimension):
@@ -73,6 +77,8 @@ class BurgersEq(PDE):
         if self.dim != Dimension.oneD:
             raise NotImplementedError
         return v
+
+
 
 
 class Euler(PDE):
@@ -106,9 +112,8 @@ class Euler(PDE):
         result = np.empty((*v.shape, self.dim.value))
 
         result[..., 0, :] = v[..., 1:self.dim.value + 1]
-        result[..., 1:self.dim.value + 1, :] = np.einsum("...i,...j->...ij", vels, vels) \
-                                               * dens[..., np.newaxis, np.newaxis] \
-                                               + np.einsum("...i,jk->...ijk", p, np.identity(self.dim.value))
+        result[..., 1:self.dim.value + 1, :] = np.einsum("...i,...j->...ij", v[..., 1:self.dim.value + 1], vels) \
+                                             + np.einsum("...i,jk->...ijk", p, np.identity(self.dim.value))
         result[..., -1, :] = np.einsum("...,...i->...i", Etot + p, vels)
 
         return tuple(result[..., i] for i in range(self.dim.value))

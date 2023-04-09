@@ -58,8 +58,7 @@ class Plotter:
             self.ims = [self.axs[i].plot(self.x_coords, vals[..., i])[0] for i in range(self.ncomp)]
         if self.dim == Dimension.twoD:
             self.ims = [self.axs[i].imshow(vals[..., i], origin="lower") for i in range(self.ncomp)]
-            for i in range(self.ncomp):
-                self.fig.colorbar(self.ims[i])
+            self.cbar = [self.fig.colorbar(self.ims[i]) for i in range(self.ncomp)]
 
         if self.comp_names is not None:
             for i in range(self.ncomp):

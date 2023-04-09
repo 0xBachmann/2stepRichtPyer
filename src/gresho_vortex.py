@@ -23,48 +23,61 @@ alpha = None
 
 # TODO: initial values
 def gresho_vortex(x: np.ndarray, Mmax=None, period=1) -> np.ndarray:
-    result = np.empty((*x.shape[:-1], 4))
+    primitive = np.empty((*x.shape[:-1], 4))
+
+    # offset domain
     center = np.array([Lx / 2, Ly / 2])
-    rho = 1.
     X = x[..., 0] - center[0]
     Y = x[..., 1] - center[1]
+
+    # get angle
     global alpha
     alpha = np.arctan2(X, Y)
+
+    # calculate radius
     r2 = X ** 2 + Y ** 2
     r = np.sqrt(r2)
 
-    result[..., 0] = rho
+    # density
+    rho = 1.
+    primitive[..., 0] = rho
 
+    # reference speed
     qr = 0.4 * np.pi * Lx / period
-    qr = 1
+
+    # define u_phi
     u = np.zeros(x.shape[:-1])
     inner_ring = r < 0.2
     u[inner_ring] = 5. * r[inner_ring] * qr
     outer_ring = (0.2 <= r) & (r < 0.4)
     u[outer_ring] = (2. - 5. * r[outer_ring]) * qr
 
-    result[..., 1] = rho * u * -np.sin(alpha)
-    result[..., 2] = rho * u * np.cos(alpha)
+    # split u_phi int ux and uy
+    primitive[..., 1] = u * -np.sin(alpha)
+    primitive[..., 2] = u * np.cos(alpha)
     gamma = F.gamma
 
+    # background pressure
     if Mmax is not None:
         p0 = rho / (gamma * Mmax ** 2) - 0.5
     else:
         p0 = 5.
 
-    p = np.full(x.shape[:-1], p0)
-    inner_ring = r < 0.4
-    p[inner_ring] += 25. / 2 * r2[inner_ring]
-    p[outer_ring] += 4. * (1. - 5. * r[outer_ring] - np.log(0.2) + np.log(r[outer_ring]))
-    p[r >= 0.4] += -2. + 4. * np.log(2)
+    primitive[..., 3] = p0
 
-    result[..., 3] = p / (gamma - 1.) + 0.5 * rho * (u ** 2)
-    return result
+    # pressure disturbance
+    inner_ring = r < 0.4
+    primitive[inner_ring, 3] += 25. / 2 * r2[inner_ring]
+    primitive[outer_ring, 3] += 4. * (1. - 5. * r[outer_ring] - np.log(0.2) + np.log(r[outer_ring]))
+    primitive[r >= 0.4, 3] += -2. + 4. * np.log(2)
+
+    # convert to conserved variables
+    return F.primitive_to_conserved(primitive)
 
 
 def u_phi(grid: np.ndarray) -> np.ndarray:
     vels = stepper.grid_no_ghost[..., 1:3] / stepper.grid_no_ghost[..., 0:1]
-    u = vels[..., 0] * np.sin(alpha) - vels[..., 1] * np.cos(alpha)
+    u = -vels[..., 0] * np.sin(alpha) + vels[..., 1] * np.cos(alpha)
     return u
 
 
@@ -72,7 +85,7 @@ M = 0.1
 t = 1
 stepper.initial_cond(lambda x: gresho_vortex(x, M))
 
-plotter = Plotter(F, action="show", writeout=1, dim=stepper.dim)
+plotter = Plotter(1, action="show", writeout=1, dim=stepper.dim)
 
 if plotter.ncomp == 1:
     # plotter.write(alpha[..., np.newaxis], 0)
@@ -82,10 +95,10 @@ else:
     # plotter.write(F.conserved_to_primitive(stepper.grid_no_ghost), 0)
     plotter.write(stepper.grid_no_ghost, 0)
 
-T = t
+T = t * 1
 time = 0.05
 while time < T:
-    dt = stepper.cfl()
+    dt = stepper.cfl() / 4
     stepper.step(dt)
 
     if plotter.ncomp == 1:
