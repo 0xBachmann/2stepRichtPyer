@@ -4,7 +4,7 @@ import numpy as np
 from copy import deepcopy
 import itertools as it
 import sys
-from scipy.optimize import fsolve, newton
+from scipy.optimize import fsolve, newton, root
 
 
 class Solver:
@@ -147,8 +147,8 @@ class Richtmeyer2stepImplicit(Solver):
             raise NotImplementedError("Jacobians not implemented for 3D")
 
         if self.use_fsolve:
-            sol = fsolve(F, grid_old[self.no_ghost].ravel())
-            self.grid_no_ghost = sol.reshape(self.grid_no_ghost.shape)
+            sol = root(F, grid_old[self.no_ghost].ravel())
+            self.grid_no_ghost = sol.x.reshape(self.grid_no_ghost.shape)
             self.bdc(self.grid)
         elif False:
             F_value, J_value = FJ()
