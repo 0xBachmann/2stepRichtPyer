@@ -1,7 +1,7 @@
 import numpy as np
 from PDE_Types import Euler
 from two_step_richtmeyer_util import Dimension, avg_x
-from richtmeyer_two_step_scheme import Richtmeyer2step
+from richtmeyer_two_step_scheme import Richtmeyer2step, Richtmeyer2stepImplicit
 
 
 DIM = Dimension.oneD

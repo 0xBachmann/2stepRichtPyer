@@ -153,7 +153,7 @@ class Richtmeyer2stepImplicit(Solver):
             raise NotImplementedError("Jacobians not implemented for 3D")
 
         if self.use_root:
-            sol = root(F, grid_old[self.no_ghost].ravel(), tol=self.eps * np.product(self.ncellsxyz))
+            sol = root(F, self.grid_no_ghost.ravel(), tol=self.eps * np.product(self.ncellsxyz))
             self.nfevs.append(sol.nfev)
             self.grid_no_ghost = sol.x.reshape(self.grid_no_ghost.shape)
             self.bdc(self.grid)

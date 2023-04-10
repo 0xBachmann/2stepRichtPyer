@@ -19,9 +19,8 @@ else:
 
 log("calculate initial conditions")
 
-resolution = np.array([40] * DIM.value)
+resolution = np.array([10] * DIM.value)
 alpha = 1 * np.pi / 4
-offset = int(np.round(resolution[0] * np.tan(alpha)) / 2)
 
 
 def rot_pbc(grid):
@@ -37,7 +36,7 @@ def rot_pbc(grid):
 
 Lx = 1
 Ly = 1
-stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, bdc=None)
+stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution)
 
 
 # TODO: initial values
@@ -78,7 +77,7 @@ stepper.initial_cond(f)
 plotter = Plotter(F, action="show", writeout=1, dim=stepper.dim,
                   coords=[stepper.coords[i][:-1] for i in range(stepper.dim.value)])
 
-T = 1
+T = 10
 time = 0.
 while time < T:
     dt = stepper.cfl()

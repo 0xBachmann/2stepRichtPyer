@@ -37,3 +37,4 @@
   - bdc?
 - implicit not stable for dt > 2 * dt_crit
 ## 21.04.23
+- implicit works but not with newton
