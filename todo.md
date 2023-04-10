@@ -12,8 +12,10 @@
   - [x] speed not correct...
     - correct when using avg = id
   - [ ] fails for dt too large
-  - [ ] for linear advection
-    - [ ] linear stability analysis
+    - [ ] check jacobian
+    - [x] works now without jacobian
+  - [x] for linear advection
+    - [x] linear stability analysis
 - [ ] vortex test
 - [ ] reference solutions?
 - [ ] review CFL for diagonal motion

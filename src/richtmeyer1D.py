@@ -1,9 +1,8 @@
-import numpy as np
-
 from PDE_Types import *
 from plotter import Plotter
 from richtmeyer_two_step_scheme import Richtmeyer2stepImplicit, Richtmeyer2step
 from two_step_richtmeyer_util import Dimension, log
+import numpy as np
 
 log("definition of variables")
 
@@ -22,7 +21,7 @@ else:
 log("calculate initial conditions")
 
 L = 1
-stepper = Richtmeyer2stepImplicit(F, np.array([L]), np.array([100]), eps=1e-8, method="fsolve")
+stepper = Richtmeyer2stepImplicit(F, np.array([L]), np.array([10]), eps=1e-16, method="root")
 
 
 # TODO: initial values
@@ -64,4 +63,5 @@ while time < T:
     print(f"dt = {dt}, time = {time:.3f}/{T}")
     time += dt
 
+print(np.mean(stepper.nfevs))
 plotter.finalize()

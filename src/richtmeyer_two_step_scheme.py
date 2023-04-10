@@ -73,11 +73,12 @@ class Richtmeyer2step(Solver):
 
 
 class Richtmeyer2stepImplicit(Solver):
-    def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc=None, eps=sys.float_info.epsilon, method="fsolve"):
+    def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc=None, eps=sys.float_info.epsilon, method="root"):
         super().__init__(pde, domain, resolutions, bdc)
         self.eps = eps
-        assert method in ["fsolve", "newton"]
-        self.use_fsolve = method == "fsolve"
+        assert method in ["root"]
+        self.use_root = method == "root"
+        self.nfevs = []
 
     # TODO correct?
     def del_x(self, grid_vals: np.ndarray) -> np.ndarray:
@@ -109,6 +110,7 @@ class Richtmeyer2stepImplicit(Solver):
                 J = np.eye(self.pde.ncomp, self.pde.ncomp) + c[0] / 2 * self.del_x(jacobians[0])
                 return F, J
 
+
             def F(v: np.ndarray) -> np.ndarray:
                 self.grid_no_ghost = v.reshape(self.grid_no_ghost.shape)
                 self.bdc(self.grid)
@@ -122,7 +124,11 @@ class Richtmeyer2stepImplicit(Solver):
                 avg_t = 0.5 * (self.grid + grid_old)
                 jacobians = self.pde.jacobian(avg_t)
                 # TODO: grad(del_x(...)) != del_x(grad(...))?
-                return (np.eye(self.pde.ncomp, self.pde.ncomp) + c[0] / 2 * self.del_x(jacobians[0]))
+                jacobian = (np.diag(jacobians[0][:-3].ravel(), k=-1) - np.diag(jacobians[0][3:].ravel(), k=1)) / 2
+                jacobian[0, -1] = jacobians[0][0] / 2
+                jacobian[-1, 0] = -jacobians[0][-1] / 2
+
+                return (np.eye(v.shape[0], v.shape[0]) + c[0] / 2 * (jacobian))
 
         elif self.dim == Dimension.twoD:
             def FJ() -> tuple[np.ndarray, np.ndarray]:
@@ -146,22 +152,21 @@ class Richtmeyer2stepImplicit(Solver):
         else:
             raise NotImplementedError("Jacobians not implemented for 3D")
 
-        if self.use_fsolve:
-            sol = root(F, grid_old[self.no_ghost].ravel())
+        if self.use_root:
+            sol = root(F, grid_old[self.no_ghost].ravel(), tol=self.eps * np.product(self.ncellsxyz))
+            self.nfevs.append(sol.nfev)
             self.grid_no_ghost = sol.x.reshape(self.grid_no_ghost.shape)
             self.bdc(self.grid)
-        elif False:
+        else:
             F_value, J_value = FJ()
+            J_value = J(self.grid_no_ghost)
             F_norm = np.linalg.norm(F_value)
             while self.eps * np.product(self.ncellsxyz) < F_norm:
             # for _ in range(2):
-                for index in it.product(*[range(n) for n in self.ncellsxyz]):
-                    self.grid_no_ghost[index] -= np.linalg.solve(J_value[index], F_value[index])
+            #     for index in it.product(*[range(n) for n in self.ncellsxyz]):
+            #         self.grid_no_ghost[index] -= np.linalg.solve(J_value[index], F_value[index])
+                self.grid_no_ghost -= np.linalg.solve(J_value, F_value)
                 self.bdc(self.grid)
                 F_value, J_value = FJ()
+                J_value = J(self.grid_no_ghost)
                 F_norm = np.linalg.norm(F_value)
-        else:
-            sol = newton(F, grid_old[self.no_ghost].ravel(), fprime=None, tol=1e-6)
-            self.grid_no_ghost = sol.reshape(self.grid_no_ghost.shape)
-            self.bdc(self.grid)
-
