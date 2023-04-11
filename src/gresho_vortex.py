@@ -103,7 +103,7 @@ while time < T:
 
     if plotter.ncomp == 1:
         # plotter.write(np.sqrt(stepper.grid_no_ghost[..., 1] ** 2 + stepper.grid_no_ghost[..., 2] ** 2)[..., np.newaxis], dt)
-        plotter.write(u_phi(stepper.grid_no_ghost)[..., np.newaxis], 0)
+        plotter.write(u_phi(stepper.grid_no_ghost)[..., np.newaxis], dt)
     else:
         # plotter.write(F.conserved_to_primitive(stepper.grid_no_ghost), dt)
         plotter.write(stepper.grid_no_ghost, dt)
