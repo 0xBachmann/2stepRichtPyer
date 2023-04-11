@@ -32,7 +32,7 @@ def gresho_vortex(x: np.ndarray, Mmax=None, period=1) -> np.ndarray:
 
     # get angle
     global alpha
-    alpha = np.arctan2(X, Y)
+    alpha = np.arctan2(Y, X)
 
     # calculate radius
     r2 = X ** 2 + Y ** 2
@@ -53,8 +53,8 @@ def gresho_vortex(x: np.ndarray, Mmax=None, period=1) -> np.ndarray:
     u[outer_ring] = (2. - 5. * r[outer_ring]) * qr
 
     # split u_phi int ux and uy
-    primitive[..., 1] = u * -np.sin(alpha)
-    primitive[..., 2] = u * np.cos(alpha)
+    primitive[..., 1] = u * -np.sin(alpha) # or (-Y/r)
+    primitive[..., 2] = u * np.cos(alpha)  # or (+X/r)
     gamma = F.gamma
 
     # background pressure
