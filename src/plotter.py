@@ -57,7 +57,7 @@ class Plotter:
         if self.dim == Dimension.oneD:
             self.ims = [self.axs[i].plot(self.x_coords, vals[..., i])[0] for i in range(self.ncomp)]
         if self.dim == Dimension.twoD:
-            self.ims = [self.axs[i].imshow(vals[..., i], origin="lower") for i in range(self.ncomp)]
+            self.ims = [self.axs[i].imshow(vals[..., i].T, origin="lower") for i in range(self.ncomp)]
             self.cbar = [self.fig.colorbar(self.ims[i]) for i in range(self.ncomp)]
 
         if self.comp_names is not None:
@@ -75,7 +75,7 @@ class Plotter:
                 if self.dim == Dimension.oneD:
                     self.ims[i].set_data(self.x_coords, vals[..., i])
                 if self.dim == Dimension.twoD:
-                    self.ims[i].set_data(vals[..., i])
+                    self.ims[i].set_data(vals[..., i].T)
             self.fig.suptitle(f"time: {time:.5}")
 
     def write(self, vals: np.ndarray, dt):

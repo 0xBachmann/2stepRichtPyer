@@ -11,19 +11,25 @@
 - [ ] implicit scheme
   - [x] speed not correct...
     - correct when using avg = id
-  - [ ] fails for dt too large
+  - [x] fails for dt too large
     - [ ] check jacobian
     - [x] works now without jacobian
+    - works for root but not newton
+      - [ ] try giving J to root
   - [x] for linear advection
     - [x] linear stability analysis
-- [ ] vortex test
+- [x] vortex test
+  - works now when using arctan2 correctly
 - [ ] reference solutions?
 - [ ] review CFL for diagonal motion
-- [ ] neumann stability analysis
+- [x] neumann stability analysis
+  - done in 1D
 - [x] check triangles in accuracy plotter for correctness
 - [x] plotter dimensions correct order
 - [x] submit short description
 - [ ] dirichlet bd
+- [x] does implicit really represent two-step?
+  - yes
 
 
 # To Discuss
