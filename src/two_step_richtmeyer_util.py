@@ -66,4 +66,32 @@ def log(msg):
     print("=" * 10, f"{msg:^30s}", "=" * 10)
 
 
+# TODO implement these two
+def zero_bd(grid: np.ndarray, dim: Dimension):
+    if dim >= Dimension.oneD:
+        # x dimension
+        grid[0, ...] = 0
+        grid[-1, ...] = 0
+    if dim >= Dimension.twoD:
+        # y dimension
+        grid[:, 0, ...] = 0
+        grid[:, -1, ...] = 0
+    if dim >= Dimension.threeD:
+        # z dimension
+        grid[:, :, 0, ...] = 0
+        grid[:, :, -1, ...] = 0
+
+
+def dirichlet_bd(grid: np.ndarray, dim: Dimension, XYZ: np.ndarray, f):
+    if dim >= Dimension.oneD:
+        grid[0, ...] = f(XYZ[0, ...])
+        grid[-1, ...] = f(XYZ[-1, ...])
+    if dim >= Dimension.twoD:
+        grid[:, 0, ...] = f(XYZ[:, 0, ...])
+        grid[:, -1, ...] = f(XYZ[:, -1, ...])
+    if dim >= Dimension.threeD:
+        grid[:, :, 0, ...] = f(XYZ[:, :, 0, ...])
+        grid[:, :, -1, ...] = f(XYZ[:, :, -1, ...])
+
+
 

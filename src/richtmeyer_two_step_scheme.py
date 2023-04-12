@@ -2,13 +2,13 @@ from two_step_richtmeyer_util import *
 from PDE_Types import PDE
 import numpy as np
 from copy import deepcopy
-import itertools as it
 import sys
-from scipy.optimize import fsolve, newton, root
+from scipy.optimize import root
+from typing import Callable, Union
 
 
 class Solver:
-    def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc=None):
+    def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic"):
         self.pde = pde
         self.dim = pde.dim
         self.domain = domain
@@ -17,7 +17,18 @@ class Solver:
         self.dxyz = self.domain / self.ncellsxyz
         self.grid = np.empty((*(self.ncellsxyz + 2), self.pde.ncomp))
         self.no_ghost = tuple(slice(1, -1) for _ in range(self.dim.value))
-        self.bdc = bdc if bdc is not None else lambda grid: pbc(grid, self.dim)
+
+        if isinstance(bdc, str):
+            if bdc == "periodic":
+                self.bdc = lambda grid: pbc(grid, self.dim)
+            elif bdc == "zero":
+                self.bdc = lambda grid: zero_bd(grid, self.dim)
+            else:
+                raise ValueError(f"{bdc} boundary condition type not known")
+        elif callable(bdc):
+            self.bdc = bdc
+        else:
+            raise RuntimeError(f"Expected string or Callable, got {type(bdc)} instead")
 
     @property
     def grid_no_ghost(self):
@@ -43,7 +54,7 @@ class Solver:
 
 
 class Richtmeyer2step(Solver):
-    def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc=None):
+    def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic"):
         super().__init__(pde, domain, resolutions, bdc)
 
     def step(self, dt):
@@ -73,7 +84,8 @@ class Richtmeyer2step(Solver):
 
 
 class Richtmeyer2stepImplicit(Solver):
-    def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc=None, eps=sys.float_info.epsilon, method="root"):
+    def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic", eps=sys.float_info.epsilon,
+                 method="root"):
         super().__init__(pde, domain, resolutions, bdc)
         self.eps = eps
         assert method in ["root"]
@@ -110,7 +122,6 @@ class Richtmeyer2stepImplicit(Solver):
                 J = np.eye(self.pde.ncomp, self.pde.ncomp) + c[0] / 2 * self.del_x(jacobians[0])
                 return F, J
 
-
             def F(v: np.ndarray) -> np.ndarray:
                 self.grid_no_ghost = v.reshape(self.grid_no_ghost.shape)
                 self.bdc(self.grid)
@@ -135,10 +146,10 @@ class Richtmeyer2stepImplicit(Solver):
                 avg_t = 0.5 * (self.grid + grid_old)
                 fluxes = self.pde(avg_t)
                 F = self.grid_no_ghost - grid_old[self.no_ghost] + c[0] * self.del_x(self.avg_y(fluxes[0])) \
-                                                                 + c[1] * self.del_y(self.avg_x(fluxes[1]))
+                    + c[1] * self.del_y(self.avg_x(fluxes[1]))
                 jacobians = self.pde.jacobian(avg_t)
                 J = np.eye(self.pde.ncomp, self.pde.ncomp) + c[0] / 2 * self.del_x(self.avg_y(jacobians[0])) \
-                                                           + c[1] / 2 * self.del_y(self.avg_x(jacobians[1]))
+                    + c[1] / 2 * self.del_y(self.avg_x(jacobians[1]))
                 return F, J
 
             def F(v: np.ndarray) -> np.ndarray:
@@ -147,7 +158,7 @@ class Richtmeyer2stepImplicit(Solver):
                 avg_t = 0.5 * (self.grid + grid_old)
                 fluxes = self.pde(avg_t)
                 return (self.grid_no_ghost - grid_old[self.no_ghost] + c[0] * self.del_x(self.avg_y(fluxes[0]))
-                                                                     + c[1] * self.del_y(self.avg_x(fluxes[1]))).ravel()
+                        + c[1] * self.del_y(self.avg_x(fluxes[1]))).ravel()
 
         else:
             raise NotImplementedError("Jacobians not implemented for 3D")
@@ -162,9 +173,9 @@ class Richtmeyer2stepImplicit(Solver):
             J_value = J(self.grid_no_ghost)
             F_norm = np.linalg.norm(F_value)
             while self.eps * np.product(self.ncellsxyz) < F_norm:
-            # for _ in range(2):
-            #     for index in it.product(*[range(n) for n in self.ncellsxyz]):
-            #         self.grid_no_ghost[index] -= np.linalg.solve(J_value[index], F_value[index])
+                # for _ in range(2):
+                #     for index in it.product(*[range(n) for n in self.ncellsxyz]):
+                #         self.grid_no_ghost[index] -= np.linalg.solve(J_value[index], F_value[index])
                 self.grid_no_ghost -= np.linalg.solve(J_value, F_value)
                 self.bdc(self.grid)
                 F_value, J_value = FJ()
