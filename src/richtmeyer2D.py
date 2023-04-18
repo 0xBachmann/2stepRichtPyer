@@ -19,24 +19,13 @@ else:
 
 log("calculate initial conditions")
 
-resolution = np.array([10] * DIM.value)
-alpha = 1 * np.pi / 4
-
-
-def rot_pbc(grid):
-    grid[0, 1:-1, ...] = np.roll(grid[-2, 1:-1, ...], 0, axis=0)
-    grid[-1, 1:-1, ...] = np.roll(grid[1, 1:-1, ...], 0, axis=0)
-    grid[:, 0, ...] = np.roll(grid[:, -2, ...], 40, axis=0)
-    grid[:, -1, ...] = np.roll(grid[:, 1, ...], -40, axis=0)
-    # grid[0, 1:-1, ...] = grid[1, 1:-1, ...]
-    # grid[-1, 1:-1, ...] = grid[-2, 1:-1, ...]
-    # grid[:, 0, ...] = grid[:, 1, ...]
-    # grid[:, -1, ...] = grid[:, -2, ...]
+resolution = np.array([10, 10])
+alpha = 0 * np.pi / 4
 
 
 Lx = 1
 Ly = 1
-stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution)
+stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-10, method="krylov")
 
 
 # TODO: initial values
@@ -80,7 +69,7 @@ plotter = Plotter(F, action="show", writeout=1, dim=stepper.dim,
 T = 10
 time = 0.
 while time < T:
-    dt = stepper.cfl()
+    dt = stepper.cfl() * 10
     stepper.step(dt)
 
     plotter.write(stepper.grid_no_ghost, dt)
@@ -88,4 +77,5 @@ while time < T:
     print(f"dt = {dt}, time = {time:.3f}/{T}")
     time += dt
 
+print(stepper.nfevs)
 plotter.finalize()

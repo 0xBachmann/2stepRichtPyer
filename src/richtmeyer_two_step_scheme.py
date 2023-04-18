@@ -4,7 +4,11 @@ import numpy as np
 from copy import deepcopy
 import sys
 from scipy.optimize import root
+from scipy.linalg import block_diag
 from typing import Callable, Union
+
+
+from jax import jacfwd, jacrev, jacobian, vmap
 
 
 class Solver:
@@ -18,8 +22,10 @@ class Solver:
         self.grid = np.empty((*(self.ncellsxyz + 2), self.pde.ncomp))
         self.no_ghost = tuple(slice(1, -1) for _ in range(self.dim.value))
 
+        self.is_periodic = False
         if isinstance(bdc, str):
             if bdc == "periodic":
+                self.is_periodic = True
                 self.bdc = lambda grid: pbc(grid, self.dim)
             elif bdc == "zero":
                 self.bdc = lambda grid: zero_bd(grid, self.dim)
@@ -85,12 +91,16 @@ class Richtmeyer2step(Solver):
 
 class Richtmeyer2stepImplicit(Solver):
     def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic", eps=sys.float_info.epsilon,
-                 method="root"):
+                 method="root", manual_jacobian=False):
         super().__init__(pde, domain, resolutions, bdc)
         self.eps = eps
-        assert method in ["root"]
-        self.use_root = method == "root"
+        root_methods = ["hybr", "lm", "broyden1", "broyden2", "anderson", "linearmixing", "diagbroyden",
+                        "excitingmixing", "krylov", "df-sane"]
+        assert method in root_methods + []
+        self.use_root = method in root_methods
+        self.method = method
         self.nfevs = []
+        self.manual_jacobian = manual_jacobian
 
     # TODO correct?
     def del_x(self, grid_vals: np.ndarray) -> np.ndarray:
@@ -142,14 +152,51 @@ class Richtmeyer2stepImplicit(Solver):
                 return (np.eye(v.shape[0], v.shape[0]) + c[0] / 2 * (jacobian))
 
         elif self.dim == Dimension.twoD:
-            def FJ() -> tuple[np.ndarray, np.ndarray]:
+            def FJ(v: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+                self.grid_no_ghost = v.reshape(self.grid_no_ghost.shape)
+                self.bdc(self.grid)
                 avg_t = 0.5 * (self.grid + grid_old)
                 fluxes = self.pde(avg_t)
-                F = self.grid_no_ghost - grid_old[self.no_ghost] + c[0] * self.del_x(self.avg_y(fluxes[0])) \
-                    + c[1] * self.del_y(self.avg_x(fluxes[1]))
-                jacobians = self.pde.jacobian(avg_t)
-                J = np.eye(self.pde.ncomp, self.pde.ncomp) + c[0] / 2 * self.del_x(self.avg_y(jacobians[0])) \
-                    + c[1] / 2 * self.del_y(self.avg_x(jacobians[1]))
+                F = (self.grid_no_ghost - grid_old[self.no_ghost]
+                        + c[0] * self.del_x(self.avg_y(fluxes[0]))
+                        + c[1] * self.del_y(self.avg_x(fluxes[1]))).ravel()
+
+                JF, JG = self.pde.jacobian(avg_t[self.no_ghost])
+
+                ncells = np.product(self.ncellsxyz)
+                ncomp = self.pde.ncomp
+
+                JF = block_diag(*JF.reshape((ncells, ncomp, ncomp)))
+                JG = block_diag(*JG.reshape((ncells, ncomp, ncomp)))
+                # JF = block_diag(*[np.full((4, 4), i+1) for i in range(ncells)])
+                # JG = block_diag(*[np.full((4, 4), i+101) for i in range(ncells)])
+
+                J = np.eye(ncells * ncomp, ncells * ncomp)
+                # dy JG
+                J[:-ncomp, ...] += JG[ncomp:, ...] * c[0] / 2
+                J[ncomp:, ...] -= JG[:-ncomp, ...] * c[0] / 2
+
+                nx = self.ncellsxyz[0]
+                ny = self.ncellsxyz[1]
+
+                # dx JF
+                J += np.roll(JF, shift=-nx * ncomp, axis=0) * c[1] / 2
+                J -= np.roll(JF, shift=nx * ncomp, axis=0) * c[1] / 2
+
+                for i in range(1, ny):
+                    J[i * nx * ncomp:(i * nx + 1) * ncomp, (i * nx - 1) * ncomp:i * nx * ncomp, ...] = 0
+                    J[(i * nx - 1) * ncomp:i * nx * ncomp, i * nx * ncomp:(i * nx + 1) * ncomp, ...] = 0
+                if self.is_periodic:
+                    for i in range(ny):
+                        J[((i + 1) * nx - 1) * ncomp:(i + 1) * nx * ncomp, i * nx * ncomp:(i * nx + 1) * ncomp, ...] = \
+                            JF[i * nx * ncomp:(i * nx + 1) * ncomp, i * nx * ncomp:(i * nx + 1) * ncomp, ...]
+                        J[i * nx * ncomp:(i * nx + 1) * ncomp, ((i + 1) * nx - 1) * ncomp:(i + 1) * nx * ncomp, ...] = \
+                            -JF[((i + 1) * nx - 1) * ncomp:(i + 1) * nx * ncomp, ((i + 1) * nx - 1) * ncomp:(i + 1) * nx * ncomp, ...]
+                if not self.is_periodic:
+                    shift = (ny - 1) * nx * ncomp
+                    for i in range(nx):
+                        J[shift + i * ncomp:shift + (i + 1) * ncomp, i * ncomp:(i + 1) * ncomp, ...] = 0
+                        J[i * ncomp:(i + 1) * ncomp, shift + i * ncomp:shift + (i + 1) * ncomp, ...] = 0
                 return F, J
 
             def F(v: np.ndarray) -> np.ndarray:
@@ -160,24 +207,65 @@ class Richtmeyer2stepImplicit(Solver):
                 return (self.grid_no_ghost - grid_old[self.no_ghost] + c[0] * self.del_x(self.avg_y(fluxes[0]))
                         + c[1] * self.del_y(self.avg_x(fluxes[1]))).ravel()
 
+            def J(v: np.ndarray) -> np.ndarray:
+                grid = np.empty(self.grid.shape)
+                grid[self.no_ghost] = v.reshape(self.grid_no_ghost.shape)
+                self.bdc(grid)
+                avg_t = 0.5 * (grid + grid_old)
+
+                JF, JG = self.pde.jacobian(avg_t[self.no_ghost])
+
+                ncells = np.product(self.ncellsxyz)
+                ncomp = self.pde.ncomp
+
+                JF = block_diag(*JF.reshape((ncells, ncomp, ncomp)))
+                JG = block_diag(*JG.reshape((ncells, ncomp, ncomp)))
+
+                J = np.eye(ncells * ncomp, ncells * ncomp)
+                # dy JG
+                J[:-ncomp, ...] += JG[ncomp:, ...] * c[0] / 2
+                J[ncomp:, ...] -= JG[:-ncomp, ...] * c[0] / 2
+
+                nx = self.ncellsxyz[0]
+                ny = self.ncellsxyz[1]
+
+                # dx JF
+                J += np.roll(JF, shift=-nx * ncomp, axis=0) * c[1] / 2
+                J -= np.roll(JF, shift=nx * ncomp, axis=0) * c[1] / 2
+                for i in range(1, ny):
+                    J[i * nx * ncomp:(i * nx + 1) * ncomp, (i * nx - 1) * ncomp:i * nx * ncomp, ...] = 0
+                    J[(i * nx - 1) * ncomp:i * nx * ncomp, i * nx * ncomp:(i * nx + 1) * ncomp, ...] = 0
+                if self.is_periodic:
+                    for i in range(ny):
+                        J[((i + 1) * nx - 1) * ncomp:(i + 1) * nx * ncomp, i * nx * ncomp:(i * nx + 1) * ncomp, ...] = \
+                            JF[i * nx * ncomp:(i * nx + 1) * ncomp, i * nx * ncomp:(i * nx + 1) * ncomp, ...]
+                        J[i * nx * ncomp:(i * nx + 1) * ncomp, ((i + 1) * nx - 1) * ncomp:(i + 1) * nx * ncomp, ...] = \
+                            -JF[((i + 1) * nx - 1) * ncomp:(i + 1) * nx * ncomp,
+                             ((i + 1) * nx - 1) * ncomp:(i + 1) * nx * ncomp, ...]
+                if not self.is_periodic:
+                    shift = (ny - 1) * nx * ncomp
+                    for i in range(nx):
+                        J[shift + i * ncomp:shift + (i + 1) * ncomp, i * ncomp:(i + 1) * ncomp, ...] = 0
+                        J[i * ncomp:(i + 1) * ncomp, shift + i * ncomp:shift + (i + 1) * ncomp, ...] = 0
+                return J
+
         else:
             raise NotImplementedError("Jacobians not implemented for 3D")
 
         if self.use_root:
-            sol = root(F, self.grid_no_ghost.ravel(), tol=self.eps * np.product(self.ncellsxyz))
-            self.nfevs.append(sol.nfev)
+            sol = root(F, self.grid_no_ghost.ravel(), tol=self.eps * np.product(self.ncellsxyz),
+                       jac=J if self.manual_jacobian else False, method=self.method)
+            # self.nfevs.append(sol.nfev)
             self.grid_no_ghost = sol.x.reshape(self.grid_no_ghost.shape)
             self.bdc(self.grid)
         else:
-            F_value, J_value = FJ()
-            J_value = J(self.grid_no_ghost)
+            F_value, J_value = FJ(self.grid_no_ghost.ravel())
             F_norm = np.linalg.norm(F_value)
             while self.eps * np.product(self.ncellsxyz) < F_norm:
                 # for _ in range(2):
                 #     for index in it.product(*[range(n) for n in self.ncellsxyz]):
                 #         self.grid_no_ghost[index] -= np.linalg.solve(J_value[index], F_value[index])
-                self.grid_no_ghost -= np.linalg.solve(J_value, F_value)
+                self.grid_no_ghost -= np.linalg.solve(J_value, F_value).reshape(self.grid_no_ghost.shape)
                 self.bdc(self.grid)
-                F_value, J_value = FJ()
-                J_value = J(self.grid_no_ghost)
+                F_value, J_value = FJ(self.grid_no_ghost.ravel())
                 F_norm = np.linalg.norm(F_value)

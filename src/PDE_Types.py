@@ -60,7 +60,8 @@ class LinearAdvection(PDE):
         raise NotImplementedError
 
     def jacobian(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
-        return tuple(np.full((*v.shape, v.shape[-1]), self.a[i]) for i in range(self.dim.value))
+        # TODO correct dims?
+        return tuple(np.full(np.product(*v.shape[:self.dim.value]), self.a[i]) for i in range(self.dim.value))
 
 
 
@@ -101,9 +102,6 @@ class Euler(PDE):
         return np.sqrt(self.gamma * p) / dens
 
     def __call__(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
-        if self.dim == Dimension.threeD:
-            raise NotImplementedError
-
         # define p and E
         p = self.pres(v)
         dens = v[..., 0]
@@ -147,51 +145,54 @@ class Euler(PDE):
 
             return J,
 
-        if self.dim == Dimension.twoD:
+        elif self.dim == Dimension.twoD:
             velx = v[..., 1] / dens
             vely = v[..., 2] / dens
             velx2 = velx ** 2
             vely2 = vely ** 2
 
-            J = np.empty((self.dim.value, *v.shape, v.shape[-1]))
+            JF = np.empty((*v.shape, v.shape[-1]))
+            JG = np.empty((*v.shape, v.shape[-1]))
 
             # Df
-            J[0, ..., 0, :] = np.array([0, 1, 0, 0])
+            JF[..., 0, :] = np.array([0, 1, 0, 0])
 
-            J[0, ..., 1, 0] = velx2 * ((self.gamma - 3) / 2) + vely2 * ((self.gamma - 1) / 2)
-            J[0, ..., 1, 1] = velx * (3 - self.gamma)
-            J[0, ..., 1, 2] = vely * (1 - self.gamma)
-            J[0, ..., 1, 3] = self.gamma - 1
+            JF[..., 1, 0] = velx2 * ((self.gamma - 3) / 2) + vely2 * ((self.gamma - 1) / 2)
+            JF[..., 1, 1] = velx * (3 - self.gamma)
+            JF[..., 1, 2] = vely * (1 - self.gamma)
+            JF[..., 1, 3] = self.gamma - 1
 
-            J[0, ..., 2, 0] = velx * vely
-            J[0, ..., 2, 1] = vely
-            J[0, ..., 2, 2] = velx
-            J[0, ..., 2, 3] = 0
+            JF[..., 2, 0] = velx * vely
+            JF[..., 2, 1] = vely
+            JF[..., 2, 2] = velx
+            JF[..., 2, 3] = 0
 
-            J[0, ..., 3, 0] = velx * ((velx2 + vely2) * ((self.gamma - 1) / 2) - self.gamma * Etot / dens)
-            J[0, ..., 3, 1] = (3 * velx2 + vely2) * ((self.gamma - 1) / 2) + self.gamma * Etot / dens
-            J[0, ..., 3, 2] = velx * vely * (1 - self.gamma)
-            J[0, ..., 3, 3] = self.gamma * velx
+            JF[..., 3, 0] = velx * ((velx2 + vely2) * ((self.gamma - 1) / 2) - self.gamma * Etot / dens)
+            JF[..., 3, 1] = (3 * velx2 + vely2) * ((self.gamma - 1) / 2) + self.gamma * Etot / dens
+            JF[..., 3, 2] = velx * vely * (1 - self.gamma)
+            JF[..., 3, 3] = self.gamma * velx
 
             # Dg
-            J[1, ..., 0, :] = np.array([0, 0, 1, 0])
+            JG[..., 0, :] = np.array([0, 0, 1, 0])
 
-            J[1, ..., 2, 0] = -velx * vely
-            J[1, ..., 2, 1] = vely
-            J[1, ..., 2, 2] = velx
-            J[1, ..., 2, 3] = 0
+            JG[..., 2, 0] = -velx * vely
+            JG[..., 2, 1] = vely
+            JG[..., 2, 2] = velx
+            JG[..., 2, 3] = 0
 
-            J[1, ..., 1, 0] = velx2 * ((self.gamma - 1) / 1) + vely2 * ((self.gamma - 3) / 2)
-            J[1, ..., 1, 1] = velx * (1 - self.gamma)
-            J[1, ..., 1, 2] = vely * (3 - self.gamma)
-            J[1, ..., 1, 3] = self.gamma - 1
+            JG[..., 1, 0] = velx2 * ((self.gamma - 1) / 1) + vely2 * ((self.gamma - 3) / 2)
+            JG[..., 1, 1] = velx * (1 - self.gamma)
+            JG[..., 1, 2] = vely * (3 - self.gamma)
+            JG[..., 1, 3] = self.gamma - 1
 
-            J[1, ..., 3, 0] = vely * ((velx2 + vely2) * ((self.gamma - 1) / 2) - self.gamma * Etot / dens)
-            J[1, ..., 3, 1] = velx * vely * (1 - self.gamma)
-            J[1, ..., 3, 2] = (velx2 + 3 * vely2) * ((self.gamma - 1) / 2) + self.gamma * Etot / dens
-            J[1, ..., 3, 3] = self.gamma * vely
+            JG[..., 3, 0] = vely * ((velx2 + vely2) * ((self.gamma - 1) / 2) - self.gamma * Etot / dens)
+            JG[..., 3, 1] = velx * vely * (1 - self.gamma)
+            JG[..., 3, 2] = (velx2 + 3 * vely2) * ((self.gamma - 1) / 2) + self.gamma * Etot / dens
+            JG[..., 3, 3] = self.gamma * vely
 
-            return J[0, ...], J[1, ...]
+            return JF, JG
+        else:
+            raise NotImplementedError
 
     def waves(self, k, w0, amp, alpha=None):
         if self.dim == Dimension.twoD:

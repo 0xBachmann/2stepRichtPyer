@@ -12,10 +12,13 @@
   - [x] speed not correct...
     - correct when using avg = id
   - [x] fails for dt too large
-    - [ ] check jacobian
+    - [x] check jacobian
+      - correct now
     - [x] works now without jacobian
     - works for root but not newton
-      - [ ] try giving J to root
+      - [x] try giving J to root
+        - now do also for 1d
+        - but not so fast
   - [x] for linear advection
     - [x] linear stability analysis
 - [x] vortex test
@@ -30,6 +33,7 @@
 - [ ] dirichlet bd
 - [x] does implicit really represent two-step?
   - yes
+- [ ] refactor `PDE.derivative`
 
 
 # To Discuss
