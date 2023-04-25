@@ -35,26 +35,25 @@ def u_phi(grid: np.ndarray) -> np.ndarray:
     return u
 
 
-M = 0.001
+M = 0.01
 t = 1
 stepper.initial_cond(lambda x: gresho_vortex(x, center, F, Mmax=M, qr=0.4 * np.pi * Lx / 1))
 
-plotter = Plotter(F, action="show", writeout=10, dim=stepper.dim)
+plotter = Plotter(1, action="show", writeout=10, dim=stepper.dim)
 
 
-def plot(plot_u_phi=True):
+def plot(dt, plot_mach=True):
     if plotter.ncomp == 1:
-        if plot_u_phi:
-            plotter.write(u_phi(stepper.grid_no_ghost)[..., np.newaxis], 0)
+        if plot_mach:
+            plotter.write(F.csnd(stepper.grid_no_ghost)[..., np.newaxis], dt)
         else:
-            plotter.write(
-                np.sqrt(stepper.grid_no_ghost[..., 1] ** 2 + stepper.grid_no_ghost[..., 2] ** 2)[..., np.newaxis], 0)
+            plotter.write(u_phi(stepper.grid_no_ghost)[..., np.newaxis], dt)
     else:
-        # plotter.write(F.conserved_to_primitive(stepper.grid_no_ghost), 0)
-        plotter.write(stepper.grid_no_ghost, 0)
+        # plotter.write(F.conserved_to_primitive(stepper.grid_no_ghost), dt)
+        plotter.write(stepper.grid_no_ghost, dt)
 
 
-plot()
+plot(0)
 
 fact = 1
 T = t * fact
@@ -63,7 +62,7 @@ while time < T:
     dt = stepper.cfl() * fact
     stepper.step(dt)
 
-    plot()
+    plot(dt)
 
     print(f"dt = {dt}, time = {time:.3f}/{T}")
     time += dt

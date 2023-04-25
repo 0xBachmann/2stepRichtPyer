@@ -64,7 +64,6 @@ class LinearAdvection(PDE):
         return tuple(np.full(np.product(*v.shape[:self.dim.value]), self.a[i]) for i in range(self.dim.value))
 
 
-
 class BurgersEq(PDE):
     def __init__(self, *, dim: Dimension):
         super().__init__(dim=dim, ncomp=dim.value, Type=PDE_Type.Burgers_equation)
@@ -78,8 +77,6 @@ class BurgersEq(PDE):
         if self.dim != Dimension.oneD:
             raise NotImplementedError
         return v
-
-
 
 
 class Euler(PDE):
@@ -111,7 +108,7 @@ class Euler(PDE):
 
         result[..., 0, :] = v[..., 1:self.dim.value + 1]
         result[..., 1:self.dim.value + 1, :] = np.einsum("...i,...j->...ij", v[..., 1:self.dim.value + 1], vels) \
-                                             + np.einsum("...i,jk->...ijk", p, np.identity(self.dim.value))
+                                               + np.einsum("...i,jk->...ijk", p, np.identity(self.dim.value))
         result[..., -1, :] = np.einsum("...,...i->...i", Etot + p, vels)
 
         return tuple(result[..., i] for i in range(self.dim.value))
@@ -121,6 +118,12 @@ class Euler(PDE):
         vels = v[..., 1:self.dim.value + 1] / v[..., 0][..., np.newaxis]
         csnd = self.csnd(v)
         return np.abs(vels) + csnd[..., np.newaxis]
+
+    def mach(self, v: np.ndarray) -> np.ndarray:
+        vels = v[..., 1:self.dim.value + 1] / v[..., 0][..., np.newaxis]
+        M = np.linalg.norm(vels, axis=-1) / self.csnd(v)
+        # M = np.sqrt(np.sum(vels ** 2, axis=-1)) / self.csnd(v)
+        return M
 
     def jacobian(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
         p = self.pres(v)

@@ -11,7 +11,7 @@ from two_step_richtmeyer_util import Dimension
 
 class Plotter:
     def __init__(self, F: PDE | int, action, writeout, dim: Dimension, coords=None,
-                 filename=None):
+                 filename=None, lims: dict = {}):
         self.ncomp = F.ncomp if isinstance(F, PDE) else F
         self.comp_names = F.comp_names if isinstance(F, PDE) else None
         self.dim = dim
@@ -24,7 +24,17 @@ class Plotter:
 
         if self.dim == Dimension.oneD:
             self.x_coords = coords[0]
+            self.lims = lims
+            for i in range(self.ncomp):
+                if i not in self.lims:
+                    self.lims[i] = []
         elif self.dim == Dimension.twoD:
+            self.lims = dict()
+            for i in range(self.ncomp):
+                if i in lims:
+                    self.lims[i] = {"vmin": lims[i][0], "vmax": lims[i][1]}
+                else:
+                    self.lims[i] = {}
             pass
         else:
             raise NotImplementedError
@@ -56,8 +66,10 @@ class Plotter:
 
         if self.dim == Dimension.oneD:
             self.ims = [self.axs[i].plot(self.x_coords, vals[..., i])[0] for i in range(self.ncomp)]
+            for i in range(self.ncomp):
+                self.axs[i].set_ylim(*self.lims[i])
         if self.dim == Dimension.twoD:
-            self.ims = [self.axs[i].imshow(vals[..., i].T, origin="lower") for i in range(self.ncomp)]
+            self.ims = [self.axs[i].imshow(vals[..., i].T, origin="lower", **self.lims[i]) for i in range(self.ncomp)]
             self.cbar = [self.fig.colorbar(self.ims[i]) for i in range(self.ncomp)]
 
         if self.comp_names is not None:

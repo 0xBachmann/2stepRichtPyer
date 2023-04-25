@@ -15,10 +15,14 @@ class Solver:
     def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic"):
         self.pde = pde
         self.dim = pde.dim
-        self.domain = domain
+        if len(domain.shape) == 2:
+            self.domain = domain
+        else:
+            self.domain = np.zeros((domain.shape[0], 2))
+            self.domain[:, 1] = domain
         self.ncellsxyz = resolutions
-        self.coords = [np.linspace(0, self.domain[i], self.ncellsxyz[i] + 1) for i in range(self.dim.value)]
-        self.dxyz = self.domain / self.ncellsxyz
+        self.coords = [np.linspace(self.domain[i, 0], self.domain[i, 1], self.ncellsxyz[i] + 1) for i in range(self.dim.value)]
+        self.dxyz = ((self.domain[:, 1] - self.domain[:, 0]) / self.ncellsxyz).ravel()
         self.grid = np.empty((*(self.ncellsxyz + 2), self.pde.ncomp))
         self.no_ghost = tuple(slice(1, -1) for _ in range(self.dim.value))
 

@@ -1,7 +1,8 @@
 import numpy as np
+from PDE_Types import Euler
 
 
-def gresho_vortex(x: np.ndarray, center, F, Mmax=None, qr=1) -> np.ndarray:
+def gresho_vortex(x: np.ndarray, center, F: Euler, Mmax=None, qr=1, primitives=False) -> np.ndarray:
     primitive = np.empty((*x.shape[:-1], 4))
 
     # offset domain
@@ -46,8 +47,36 @@ def gresho_vortex(x: np.ndarray, center, F, Mmax=None, qr=1) -> np.ndarray:
     primitive[r >= 0.4, 3] += -2. + 4. * np.log(2)
 
     # convert to conserved variables
-    return F.primitive_to_conserved(primitive)
+    if primitives:
+        return primitive
+    else:
+        return F.primitive_to_conserved(primitive)
 
 
+def sound_wave_packet(x: np.ndarray, F: Euler, x0, Mmax=None, alpha=100, primitives=False) -> np.ndarray:
+    X = x[..., 0] - x0
+    psi = np.exp(-alpha * X**2) * Mmax
 
+    rho0 = 1.
+    if Mmax is not None:
+        p0 = rho0 / (F.gamma * Mmax ** 2) - 0.5
+    else:
+        p0 = 5.
+        raise NotImplementedError
+    c = np.sqrt(F.gamma * p0 / rho0)
+
+    primitive = np.empty((*x.shape[:-1], 4))
+    u = - 2 * alpha * X * psi
+    p = - 2 * alpha * c / Mmax * X * psi
+    rho = p / c**2
+
+    primitive[..., 0] = rho
+    primitive[..., 1] = u
+    primitive[..., 2] = 0
+    primitive[..., 3] = p
+
+    if primitives:
+        return primitive
+    else:
+        return F.primitive_to_conserved(primitive)
 
