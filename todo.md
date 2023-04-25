@@ -23,6 +23,7 @@
     - [x] linear stability analysis
 - [x] vortex test
   - works now when using arctan2 correctly
+  - [ ] check energy conservation
 - [ ] reference solutions?
 - [ ] review CFL for diagonal motion
 - [x] neumann stability analysis
@@ -37,9 +38,12 @@
 - [ ] lsa 2d try in state space
 - [x] sound wave through vortex
   - works perfectly
+  - but $M_r$ ??
 - [ ] Kelvin Helmholtz
 - [ ] writeout only binary vals
-- [ ] `fig.tight_layout()`
+- [x] `fig.tight_layout()`
+  - maybe more occurrences needed?
+- [ ] add scalar advection euler
 
 
 # To Discuss
@@ -54,3 +58,5 @@
 - implicit not stable for dt > 2 * dt_crit
 ## 21.04.23
 - implicit works but not with newton
+## 28.04.23
+- reference Mach $M_r$
