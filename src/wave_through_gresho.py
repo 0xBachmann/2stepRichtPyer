@@ -28,7 +28,7 @@ stepper.initial_cond(lambda x: F.primitive_to_conserved(
     + sound_wave_packet(x, F, -0.5, Mmax=M, alpha=0.1**-2, primitives=True)))
 
 lims = {0: [-4, -2]}
-plotter = Plotter(1, action="show", writeout=10, dim=stepper.dim, lims=lims)
+plotter = Plotter(1, action="save", writeout=1, dim=stepper.dim, lims=lims, filename="wave_through_gresho.mp4")
 
 
 def plot(dt):

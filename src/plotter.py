@@ -96,6 +96,7 @@ class Plotter:
                 self.traj.append((deepcopy(vals), self.time))
             elif self.action == "save":
                 self.plot(vals, self.time)
+                plt.tight_layout()
                 plt.savefig(f"movie/{self.PDE_type}_{int(self.step / self.writeout)}.png")
 
         self.time += dt
