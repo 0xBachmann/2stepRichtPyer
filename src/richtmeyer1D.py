@@ -6,7 +6,7 @@ import numpy as np
 
 log("definition of variables")
 
-Type = PDE_Type.Linear_advection
+Type = PDE_Type.Euler
 DIM = Dimension.oneD
 
 if Type == PDE_Type.Linear_advection:
@@ -21,7 +21,7 @@ else:
 log("calculate initial conditions")
 
 L = 1
-stepper = Richtmeyer2stepImplicit(F, np.array([L]), np.array([10]), eps=1e-16, method="root")
+stepper = Richtmeyer2step(F, np.array([L]), np.array([100]))#, eps=1e-16, method="root")
 
 
 # TODO: initial values
@@ -38,7 +38,7 @@ def f(x):
         result[75:, 0] = 1
         result[..., 1] = 0
         result[:25, 2] = 1
-        result[25:75, 2] = 0.6
+        result[25:75, 2] = 0.3
         result[75:, 2] = 1
         return F.primitive_to_conserved(result)
     if isinstance(F, LinearAdvection):
@@ -49,13 +49,13 @@ def f(x):
 
 stepper.initial_cond(f)
 
-plotter = Plotter(F, action="show", writeout=1, dim=stepper.dim,
+plotter = Plotter(F, action="save", writeout=1, dim=stepper.dim,
                   coords=[stepper.coords[i][:-1] for i in range(stepper.dim.value)], filename="Euler_1D_impl.mp4")
 
 T = 5
 time = 0.
 while time < T:
-    dt = stepper.cfl() * 100
+    dt = stepper.cfl()
     stepper.step(dt)
 
     plotter.write(stepper.grid_no_ghost, dt)
@@ -63,5 +63,4 @@ while time < T:
     print(f"dt = {dt}, time = {time:.3f}/{T}")
     time += dt
 
-print(np.mean(stepper.nfevs))
 plotter.finalize()

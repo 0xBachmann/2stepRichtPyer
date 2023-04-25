@@ -34,6 +34,11 @@
 - [x] does implicit really represent two-step?
   - yes
 - [ ] refactor `PDE.derivative`
+- [ ] lsa 2d try in state space
+- [ ] sound wave through vortex
+- [ ] Kelvin Helmholtz
+- [ ] writeout only binary vals
+- [ ] `fig.tight_layout()`
 
 
 # To Discuss

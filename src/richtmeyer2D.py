@@ -19,7 +19,7 @@ else:
 
 log("calculate initial conditions")
 
-resolution = np.array([10, 10])
+resolution = np.array([100, 100])
 alpha = 0 * np.pi / 4
 
 
@@ -66,10 +66,11 @@ stepper.initial_cond(f)
 plotter = Plotter(F, action="show", writeout=1, dim=stepper.dim,
                   coords=[stepper.coords[i][:-1] for i in range(stepper.dim.value)])
 
-T = 10
+fact = 1000
+T = 10 * fact
 time = 0.
 while time < T:
-    dt = stepper.cfl() * 10
+    dt = stepper.cfl() * fact
     stepper.step(dt)
 
     plotter.write(stepper.grid_no_ghost, dt)
