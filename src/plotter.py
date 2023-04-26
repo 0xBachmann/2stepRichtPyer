@@ -62,6 +62,8 @@ class Plotter:
             5: (2, 3),
         }
         self.fig, self.ax = plt.subplots(*layout[self.ncomp])
+        self.fig.tight_layout()
+
         self.axs = [self.ax] if self.ncomp == 1 else self.ax.flatten()
 
         if self.dim == Dimension.oneD:
@@ -96,7 +98,6 @@ class Plotter:
                 self.traj.append((deepcopy(vals), self.time))
             elif self.action == "save":
                 self.plot(vals, self.time)
-                plt.tight_layout()
                 plt.savefig(f"movie/{self.PDE_type}_{int(self.step / self.writeout)}.png")
 
         self.time += dt
