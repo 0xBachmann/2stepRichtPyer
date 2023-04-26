@@ -8,7 +8,6 @@ from scipy.linalg import block_diag
 from typing import Callable, Union
 
 
-
 class Solver:
     def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic"):
         self.pde = pde

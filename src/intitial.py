@@ -81,7 +81,7 @@ def sound_wave_packet(x: np.ndarray, F: Euler, x0, Mmax=None, alpha=100, primiti
         return F.primitive_to_conserved(primitive)
 
 
-def kelvin_helmholtz(x: np.ndarray, F, Mr, pr=2.5, rhor=1, primitives=False) -> np.ndarray:
+def kelvin_helmholtz(x: np.ndarray, F, Mr, pr=2.5, rhor=1., primitives=False, amp=1e-2) -> np.ndarray:
     primitive = np.empty((*x.shape[:-1], 4))
     X = x[..., 0]
     Y = x[..., 1]
@@ -112,10 +112,11 @@ def kelvin_helmholtz(x: np.ndarray, F, Mr, pr=2.5, rhor=1, primitives=False) -> 
     primitive[(0.5 <= Y) & (Y < 0.75), 1] = u2 + um * np.exp((Y[(0.5 <= Y) & (Y < 0.75)] - 0.75) / L)
     primitive[0.75 <= Y, 1] = u1 - um * np.exp((-Y[0.75 <= Y] + 0.75) / L)
 
-    primitive[..., 2] = 1e-2 * np.sin(2 * np.pi * X)
+    primitive[..., 2] = amp * np.sin(2 * np.pi * X)
     # primitive[..., 1:3] *= ur
 
     primitive[..., 3] = p
+    # primitive[..., 3] *= pr
 
     if primitives:
         return primitive

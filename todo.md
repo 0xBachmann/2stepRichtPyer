@@ -43,6 +43,7 @@
 - [ ] writeout only binary vals
 - [x] `fig.tight_layout()`
   - maybe more occurrences needed?
+  - works
 - [ ] add scalar advection euler
 
 

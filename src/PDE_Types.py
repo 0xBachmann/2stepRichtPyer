@@ -8,6 +8,7 @@ class PDE_Type(Enum):
     Linear_advection = 1
     Burgers_equation = 2
     Euler = 3
+    EulerScalarAdvect = 4
 
 
 class PDE(object):
@@ -80,8 +81,8 @@ class BurgersEq(PDE):
 
 
 class Euler(PDE):
-    def __init__(self, gamma, dim: Dimension):
-        super().__init__(dim=dim, ncomp=dim.value + 2,
+    def __init__(self, gamma, dim: Dimension, extra_comp=0):
+        super().__init__(dim=dim, ncomp=dim.value + 2 + extra_comp,
                          Type=PDE_Type.Euler)  # nr of dims velocities + density plus energy
         self.gamma = gamma
         self.comp_names = ["density", *[f"momenta_{dim}" for dim in "xyz"[:self.dim.value]], "Energy"]
@@ -269,4 +270,61 @@ class Euler(PDE):
         for i in range(self.dim.value):
             conserved_w[..., i + 1] = dens * v[..., i]
         conserved_w[..., -1] = p / (self.gamma - 1) + 0.5 * dens * np.sum(v ** 2, axis=-1)
+        return conserved_w
+
+
+class EulerScalarAdvect(Euler):
+    def __init__(self, gamma, dim: Dimension):
+        super().__init__(gamma, dim, extra_comp=1)  # nr of dims velocities + density plus energy
+        self.comp_names = ["density", *[f"momenta_{dim}" for dim in "xyz"[:dim.value]], "Energy", "X"]
+
+    def pres(self, v):
+        dens = v[..., 0]
+        Etot = v[..., -2]
+        Ekin = 0.5 * np.sum(v[..., 1:self.dim.value + 1] ** 2, axis=-1) / dens
+        eint = Etot - Ekin
+        return eint * (self.gamma - 1.)
+
+    def __call__(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
+        # define p and E
+        p = self.pres(v)
+        dens = v[..., 0]
+        vels = v[..., 1:self.dim.value + 1] / dens[..., np.newaxis]
+        Etot = v[..., -2]
+        X = v[..., -1]
+        result = np.empty((*v.shape, self.dim.value))
+
+        result[..., 0, :] = v[..., 1:self.dim.value + 1]
+        result[..., 1:self.dim.value + 1, :] = np.einsum("...i,...j->...ij", v[..., 1:self.dim.value + 1], vels) \
+                                               + np.einsum("...i,jk->...ijk", p, np.identity(self.dim.value))
+        result[..., -2, :] = np.einsum("...,...i->...i", Etot + p, vels)
+        result[..., -1, :] = np.einsum("...,...i->...i", X, v[..., 1:self.dim.value + 1])
+
+        return tuple(result[..., i] for i in range(self.dim.value))
+
+    def jacobian(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
+        raise NotImplementedError
+
+    def conserved_to_primitive(self, v):
+        dens = v[..., 0]
+        mom = v[..., 1:self.dim.value + 1]
+        E = v[..., -2]
+        primitives = np.empty(v.shape)
+        primitives[..., 0] = dens
+        for i in range(self.dim.value):
+            primitives[..., i + 1] = mom[..., i] / dens
+        primitives[..., -2] = (self.gamma - 1) * (E - 0.5 * np.sum(mom ** 2, axis=-1)) / dens
+        primitives[..., -1] = v[..., -1] / dens
+        return primitives
+
+    def primitive_to_conserved(self, w):
+        dens = w[..., 0]
+        v = w[..., 1:self.dim.value + 1]
+        p = w[..., -2]
+        conserved_w = np.empty(w.shape)
+        conserved_w[..., 0] = dens
+        for i in range(self.dim.value):
+            conserved_w[..., i + 1] = dens * v[..., i]
+        conserved_w[..., -2] = p / (self.gamma - 1) + 0.5 * dens * np.sum(v ** 2, axis=-1)
+        conserved_w[..., -1] = w[..., -1] * dens
         return conserved_w
