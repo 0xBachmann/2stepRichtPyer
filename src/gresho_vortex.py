@@ -45,7 +45,7 @@ plotter = Plotter(1, action="show", writeout=10, dim=stepper.dim)
 def plot(dt, plot_mach=True):
     if plotter.ncomp == 1:
         if plot_mach:
-            plotter.write(F.csnd(stepper.grid_no_ghost)[..., np.newaxis], dt)
+            plotter.write(F.mach(stepper.grid_no_ghost)[..., np.newaxis], dt)
         else:
             plotter.write(u_phi(stepper.grid_no_ghost)[..., np.newaxis], dt)
     else:

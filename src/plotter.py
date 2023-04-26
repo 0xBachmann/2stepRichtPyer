@@ -55,9 +55,9 @@ class Plotter:
 
         self.init = True
         layout = {
-            1: [{"shape": (1,)}],
-            2: [{"shape": (2,), "loc": (i,)} for i in range(2)],
-            3: [{"shape": (3,), "loc": (i,)} for i in range(3)],
+            1: [{"shape": (1, 1), "loc": (i, 0)} for i in range(1)],
+            2: [{"shape": (2, 1), "loc": (i, 0)} for i in range(2)],
+            3: [{"shape": (3, 1), "loc": (i, 0)} for i in range(3)],
             4: [{"shape": (2, 2), "loc": (i, j)} for i in range(2) for j in range(2)],
             5: [{"shape": (2, 6), "loc": loc, "colspan": 2} for loc in [(0, 0), (0, 2), (0, 4), (1, 1), (1, 3)]],
         }

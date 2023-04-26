@@ -8,7 +8,7 @@
     - [x] check correctness of rotating and a sound depending on w0 ofc wrong
 - [ ] derivative maybe not correct and add for burgers
 - [ ] TODO's in src
-- [ ] implicit scheme
+- [x] implicit scheme
   - [x] speed not correct...
     - correct when using avg = id
   - [x] fails for dt too large
@@ -44,7 +44,7 @@
 - [x] `fig.tight_layout()`
   - maybe more occurrences needed?
   - works
-- [ ] add scalar advection euler
+- [x] add scalar advection euler
 
 
 # To Discuss
