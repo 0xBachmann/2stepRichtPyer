@@ -45,7 +45,7 @@
   - maybe more occurrences needed?
   - works
 - [x] add scalar advection euler
-- [ ] replace paths with `os.path`
+- [ ] replace paths with `pathlib.Path`
 
 
 # To Discuss

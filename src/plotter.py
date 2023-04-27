@@ -4,6 +4,7 @@ from tqdm import tqdm
 
 import numpy as np
 import os
+from pathlib import Path
 
 from PDE_Types import PDE
 from copy import deepcopy
@@ -12,7 +13,7 @@ from two_step_richtmeyer_util import Dimension
 
 class Plotter:
     def __init__(self, F: PDE | int, action, writeout, dim: Dimension, coords=None,
-                 filename=None, lims: dict = {}):
+                 filename=None, lims=None):
         self.ncomp = F.ncomp if isinstance(F, PDE) else F
         self.comp_names = F.comp_names if isinstance(F, PDE) else None
         self.dim = dim
@@ -23,6 +24,9 @@ class Plotter:
         self.axs = None
         self.ims = None
 
+        if lims is None:
+            lims = {}
+
         if self.dim == Dimension.oneD:
             self.x_coords = coords[0]
             self.lims = lims
@@ -30,7 +34,7 @@ class Plotter:
                 if i not in self.lims:
                     self.lims[i] = []
         elif self.dim == Dimension.twoD:
-            self.lims = dict()
+            self.lims = {}
             for i in range(self.ncomp):
                 if i in lims:
                     self.lims[i] = {"vmin": lims[i][0], "vmax": lims[i][1]}
@@ -102,9 +106,9 @@ class Plotter:
                 self.traj.append((deepcopy(vals), self.time))
             elif self.action == "save":
                 self.plot(vals, self.time)
-                plt.savefig(f"movie/{self.PDE_type}_{int(self.step / self.writeout)}.png")
+                plt.savefig(Path("movie", f"{self.PDE_type}_{int(self.step / self.writeout)}.png"))
             elif self.action == "saveb":
-                np.save(f"movie/{self.PDE_type}_{int(self.step / self.writeout)}.npy", vals)
+                np.save(str(Path("movie", f"{self.PDE_type}_{int(self.step / self.writeout)}.npy")), vals)
                 self.traj.append(self.time)
 
         self.time += dt
@@ -119,12 +123,18 @@ class Plotter:
 
         elif self.action == "saveb":
             for i, t in tqdm(enumerate(self.traj), desc="Generating Movie", total=len(self.traj)):
-                vals = np.load(f"movie/{self.PDE_type}_{i}.npy")
-                os.system(f"rm movie/{self.PDE_type}_{i}.npy")
+                vals = np.load(str(Path("movie", f"{self.PDE_type}_{i}.npy")))
+                os.remove(Path("movie", f"{self.PDE_type}_{i}.npy"))
                 self.plot(vals, t)
-                plt.savefig(f"movie/{self.PDE_type}_{i}.png")
+                plt.savefig(Path("movie", "{self.PDE_type}_{i}.png"))
 
         if self.action == "save" or self.action == "saveb":
-            os.system(f"ffmpeg -framerate 30 -i 'movie/{self.PDE_type}_%d.png' movie/{self.filename}")
-            os.system(f"rm movie/{self.PDE_type}_*.png")
+            frames = Path("movie", f"{self.PDE_type}_%d.png")
+            output = Path("movie", self.filename)
+            os.system(f"ffmpeg -framerate 30 -i '{frames}' {output}")
+
+            movie_dir = "movie"
+            for item in os.listdir(movie_dir):
+                if item.endswith(".png"):
+                    os.remove(os.path.join(movie_dir, item))
 
