@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+from tqdm import tqdm
 
 import numpy as np
 import os
@@ -39,9 +40,9 @@ class Plotter:
         else:
             raise NotImplementedError
 
-        self.traj: list[tuple[np.ndarray, float], ...] = []
+        self.traj: list[tuple[np.ndarray, float] | float, ...] = []
 
-        assert action in ["show", "save"]
+        assert action in ["show", "save", "saveb"]
         self.action = action
         self.step = 0
         self.writeout = writeout
@@ -102,6 +103,9 @@ class Plotter:
             elif self.action == "save":
                 self.plot(vals, self.time)
                 plt.savefig(f"movie/{self.PDE_type}_{int(self.step / self.writeout)}.png")
+            elif self.action == "saveb":
+                np.save(f"movie/{self.PDE_type}_{int(self.step / self.writeout)}.npy", vals)
+                self.traj.append(self.time)
 
         self.time += dt
         self.step += 1
@@ -112,6 +116,15 @@ class Plotter:
             ani = FuncAnimation(self.fig, lambda s: self.plot(*self.traj[s]), frames=int(self.step / self.writeout),
                                 blit=False)
             plt.show()
-        elif self.action == "save":
+
+        elif self.action == "saveb":
+            for i, t in tqdm(enumerate(self.traj), desc="Generating Movie", total=len(self.traj)):
+                vals = np.load(f"movie/{self.PDE_type}_{i}.npy")
+                os.system(f"rm movie/{self.PDE_type}_{i}.npy")
+                self.plot(vals, t)
+                plt.savefig(f"movie/{self.PDE_type}_{i}.png")
+
+        if self.action == "save" or self.action == "saveb":
             os.system(f"ffmpeg -framerate 30 -i 'movie/{self.PDE_type}_%d.png' movie/{self.filename}")
             os.system(f"rm movie/{self.PDE_type}_*.png")
+

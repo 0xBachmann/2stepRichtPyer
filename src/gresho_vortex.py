@@ -39,7 +39,7 @@ M = 0.01
 t = 1
 stepper.initial_cond(lambda x: gresho_vortex(x, center, F, Mmax=M, qr=0.4 * np.pi * Lx / 1))
 
-plotter = Plotter(1, action="show", writeout=10, dim=stepper.dim)
+plotter = Plotter(1, action="saveb", writeout=10, dim=stepper.dim, filename="gresho_vortex.mp4")
 
 
 def plot(dt, plot_mach=True):

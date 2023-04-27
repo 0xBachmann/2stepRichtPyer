@@ -45,6 +45,7 @@
   - maybe more occurrences needed?
   - works
 - [x] add scalar advection euler
+- [ ] replace paths with `os.path`
 
 
 # To Discuss
@@ -61,3 +62,4 @@
 - implicit works but not with newton
 ## 28.04.23
 - reference Mach $M_r$
+- lsa in explicit scheme?
