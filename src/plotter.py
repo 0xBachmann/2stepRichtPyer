@@ -117,8 +117,8 @@ class Plotter:
     def finalize(self):
         if self.action == "show":
             self.init_plots(*self.traj[0])
-            ani = FuncAnimation(self.fig, lambda s: self.plot(*self.traj[s]), frames=int(self.step / self.writeout),
-                                blit=False)
+            anim = FuncAnimation(self.fig, lambda s: self.plot(*self.traj[s]), frames=int(self.step / self.writeout),
+                                 blit=False)
             plt.show()
 
         elif self.action == "saveb":
@@ -137,4 +137,3 @@ class Plotter:
             for item in os.listdir(movie_dir):
                 if item.endswith(".png"):
                     os.remove(os.path.join(movie_dir, item))
-

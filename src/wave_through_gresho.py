@@ -1,4 +1,4 @@
-from PDE_Types import Euler
+from PDE_Types import Euler, EulerNondimensional
 from plotter import Plotter
 from richtmeyer_two_step_scheme import Richtmeyer2step, Richtmeyer2stepImplicit
 from two_step_richtmeyer_util import Dimension, log
@@ -28,7 +28,7 @@ stepper.initial_cond(lambda x: F.primitive_to_conserved(
     + sound_wave_packet(x, F, -0.5, Mmax=M, alpha=0.1**-2, primitives=True)))
 
 lims = {0: [-4, -2]}
-plotter = Plotter(1, action="save", writeout=1, dim=stepper.dim, lims=lims, filename="wave_through_gresho.mp4")
+plotter = Plotter(1, action="show", writeout=1, dim=stepper.dim, lims=lims, filename="wave_through_gresho.mp4")
 
 
 def plot(dt):
@@ -45,7 +45,7 @@ def plot(dt):
 plot(0)
 
 fact = 1
-T = 7.5 * 1e-4
+# T = 7.5 * 1e-4
 T = 3.2 * 1e-3
 time = 0.
 while time < T:

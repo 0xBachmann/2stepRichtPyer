@@ -36,16 +36,19 @@
   - yes
 - [ ] refactor `PDE.derivative`
 - [ ] lsa 2d try in state space
+  - did it analytiacally
 - [x] sound wave through vortex
   - works perfectly
   - but $M_r$ ??
 - [ ] Kelvin Helmholtz
-- [ ] writeout only binary vals
+  - crashes
+- [x] writeout only binary vals
 - [x] `fig.tight_layout()`
   - maybe more occurrences needed?
   - works
 - [x] add scalar advection euler
-- [ ] replace paths with `pathlib.Path`
+- [x] replace paths with `pathlib.Path`
+- [ ] jacobian for scalar advect Euler
 
 
 # To Discuss
@@ -63,3 +66,6 @@
 ## 28.04.23
 - reference Mach $M_r$
 - lsa in explicit scheme?
+- Kelvin Helmholz
+- cfl for non implicit?
+- implicit fails fo rtoo many timesteps
