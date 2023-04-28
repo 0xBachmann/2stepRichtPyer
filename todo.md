@@ -49,6 +49,8 @@
 - [x] add scalar advection euler
 - [x] replace paths with `pathlib.Path`
 - [ ] jacobian for scalar advect Euler
+- [ ] ekin conservation
+- [ ] look ad godunov
 
 
 # To Discuss
@@ -68,4 +70,4 @@
 - lsa in explicit scheme?
 - Kelvin Helmholz
 - cfl for non implicit?
-- implicit fails fo rtoo many timesteps
+- implicit fails for too many timesteps

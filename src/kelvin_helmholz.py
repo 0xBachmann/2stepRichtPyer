@@ -40,7 +40,7 @@ M = 0.001
 t = 1
 stepper.initial_cond(lambda x: kh_with_scalar(x, F, Mr=0.01))
 
-plotter = Plotter(F, action="show", writeout=10, dim=stepper.dim, filename="kelvin_helmholz.mp4")
+plotter = Plotter(F, action="save", writeout=1, dim=stepper.dim, filename="kelvin_helmholz.mp4")
 
 
 def plot(dt):

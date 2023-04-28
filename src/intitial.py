@@ -91,11 +91,11 @@ def kelvin_helmholtz(x: np.ndarray, F, Mr, pr=2.5, rhor=1., primitives=False, am
 
     rho1 = 1.
     rho2 = 2.
-    rhom = (rho2 - rho1) / 2
+    rhom = (rho1 - rho2) / 2
 
     u1 = 0.5
     u2 = -0.5
-    um = (u2 - u1) / 2
+    um = (u1 - u2) / 2
 
     L = 0.025
 

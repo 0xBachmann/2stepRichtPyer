@@ -41,7 +41,7 @@ times.append(0)
 T = t
 time = 0.
 while time < T:
-    dt = stepper.cfl() * 1
+    dt = stepper.cfl()
     stepper.step(dt)
 
     print(f"dt = {dt}, time = {time:.3f}/{T}")
