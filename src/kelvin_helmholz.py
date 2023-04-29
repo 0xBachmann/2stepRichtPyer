@@ -15,8 +15,8 @@ F = EulerScalarAdvect(5. / 3, dim=DIM)
 log("calculate initial conditions")
 
 domain = np.array([[0, 1], [0, 1]])
-resolution = np.array([128] * DIM.value)
-stepper = Richtmeyer2step(F, domain, resolution)
+resolution = np.array([32] * DIM.value)
+stepper = Richtmeyer2stepImplicit(F, domain, resolution, method="hybr")
 
 center = np.array([0.5, 0.5])
 
@@ -36,11 +36,11 @@ def kh_with_scalar(x: np.ndarray, F, Mr, pr=2.5, rhor=1., primitives=False):
         return F.primitive_to_conserved(primitive)
 
 
-M = 0.001
+M = 0.1
 t = 1
 stepper.initial_cond(lambda x: kh_with_scalar(x, F, Mr=0.01))
 
-plotter = Plotter(F, action="save", writeout=1, dim=stepper.dim, filename="kelvin_helmholz.mp4")
+plotter = Plotter(F, action="show", writeout=1, dim=stepper.dim, filename="kelvin_helmholz.mp4")
 
 
 def plot(dt):
@@ -55,7 +55,7 @@ def plot(dt):
 
 plot(0)
 
-fact = 1
+fact = 100
 T = 3
 time = 0.
 while time < T:

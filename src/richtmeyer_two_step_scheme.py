@@ -5,6 +5,8 @@ from copy import deepcopy
 import sys
 from scipy.optimize import root
 from scipy.linalg import block_diag
+from scipy import sparse
+
 from typing import Callable, Union
 
 
@@ -99,9 +101,9 @@ class Richtmeyer2stepImplicit(Solver):
                         "excitingmixing", "krylov", "df-sane"]
         assert method in root_methods + ["newton"]
         self.use_root = method in root_methods
+        self.manual_jacobian = True if method in root_methods else manual_jacobian
         self.method = method
         self.nfevs = []
-        self.manual_jacobian = manual_jacobian
 
     # TODO correct?
     def del_x(self, grid_vals: np.ndarray) -> np.ndarray:
@@ -261,12 +263,19 @@ class Richtmeyer2stepImplicit(Solver):
             self.bdc(self.grid)
         else:
             F_value, J_value = FJ(self.grid_no_ghost.ravel())
+            use_spare = False
+
             F_norm = np.linalg.norm(F_value)
             while self.eps * np.product(self.ncellsxyz) < F_norm:
                 # for _ in range(2):
                 #     for index in it.product(*[range(n) for n in self.ncellsxyz]):
                 #         self.grid_no_ghost[index] -= np.linalg.solve(J_value[index], F_value[index])
-                self.grid_no_ghost -= np.linalg.solve(J_value, F_value).reshape(self.grid_no_ghost.shape)
+                if use_spare:
+                    J_value = sparse.csr_matrix(J_value)  # , blocksize=(self.pde.ncomp, self.pde.ncomp))
+                    self.grid_no_ghost -= sparse.linalg.spsolve(J_value, F_value).reshape(self.grid_no_ghost.shape)
+                else:
+                    self.grid_no_ghost -= np.linalg.solve(J_value, F_value).reshape(self.grid_no_ghost.shape)
+
                 self.bdc(self.grid)
                 F_value, J_value = FJ(self.grid_no_ghost.ravel())
                 F_norm = np.linalg.norm(F_value)
