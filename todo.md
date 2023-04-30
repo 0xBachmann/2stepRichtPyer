@@ -49,7 +49,7 @@
 - [x] add scalar advection euler
 - [x] replace paths with `pathlib.Path`
 - [ ] jacobian for scalar advect Euler
-  - try sparse matrix
+  - [ ] try sparse matrix
 - [ ] ekin conservation
   - kyrlov not working
   - now hybr with own J
