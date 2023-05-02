@@ -23,8 +23,8 @@ Ly = Lx
 center = np.array([Lx / 2, Ly / 2])
 stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution)
 
-M = 0.01
-t = 1.
+M = 0.001
+t = 1
 stepper.initial_cond(lambda x: gresho_vortex(x, center, F, Mmax=M, qr=0.4 * np.pi * Lx / 1))
 
 
@@ -99,6 +99,7 @@ for i in [1, 2, 4, 8, 10, 15, 20, 30, 50, 100]:
     ax1.plot(times, energies[:, 0], label=f"implicit, {i}*cfl")
     ax2.plot(times, energies[:, 1], label=f"implicit, {i}*cfl")
 
+print()
 plt.xlabel("time")
 plt.ylabel("Energy")
 ax1.set_title("Total Energy")

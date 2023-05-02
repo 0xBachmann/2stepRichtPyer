@@ -49,8 +49,12 @@
 - [x] add scalar advection euler
 - [x] replace paths with `pathlib.Path`
 - [ ] jacobian for scalar advect Euler
+  - [ ] try sparse matrix
 - [ ] ekin conservation
-- [ ] look ad godunov
+  - kyrlov not working
+  - now hybr with own J
+  - maybe because M is not small enough
+- [ ] look at godunov
 
 
 # To Discuss

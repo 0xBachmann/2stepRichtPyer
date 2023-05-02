@@ -5,6 +5,8 @@ from copy import deepcopy
 import sys
 from scipy.optimize import root
 from scipy.linalg import block_diag
+from scipy import sparse
+
 from typing import Callable, Union
 
 
@@ -99,9 +101,9 @@ class Richtmeyer2stepImplicit(Solver):
                         "excitingmixing", "krylov", "df-sane"]
         assert method in root_methods + ["newton"]
         self.use_root = method in root_methods
+        self.manual_jacobian = True if method not in root_methods else manual_jacobian
         self.method = method
         self.nfevs = []
-        self.manual_jacobian = manual_jacobian
 
     # TODO correct?
     def del_x(self, grid_vals: np.ndarray) -> np.ndarray:
@@ -124,13 +126,36 @@ class Richtmeyer2stepImplicit(Solver):
         grid_old = deepcopy(self.grid)
 
         if self.dim == Dimension.oneD:
-            def FJ() -> tuple[np.ndarray, np.ndarray]:
+            def FJ(v: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+                self.grid_no_ghost = v.reshape(self.grid_no_ghost.shape)
+                self.bdc(self.grid)
                 avg_t = 0.5 * (self.grid + grid_old)
                 fluxes = self.pde(avg_t)
-                F = self.grid_no_ghost - grid_old[self.no_ghost] + c[0] * self.del_x(fluxes[0])
-                jacobians = self.pde.jacobian(avg_t)
-                # TODO: grad(del_x(...)) != del_x(grad(...))?
-                J = np.eye(self.pde.ncomp, self.pde.ncomp) + c[0] / 2 * self.del_x(jacobians[0])
+                F = (self.grid_no_ghost - grid_old[self.no_ghost]
+                        + c[0] * self.del_x(fluxes[0])).ravel()
+
+                JF, = self.pde.jacobian(avg_t[self.no_ghost])
+
+                nx = self.ncellsxyz[0]
+                ncomp = self.pde.ncomp
+
+                JF = block_diag(*JF.reshape((nx, ncomp, ncomp)))
+                # JF = block_diag(*[np.full((4, 4), i+1) for i in range(ncells)])
+                # JG = block_diag(*[np.full((4, 4), i+101) for i in range(ncells)])
+
+                J = np.eye(nx * ncomp, nx * ncomp)
+
+                # dx JF
+                J += np.roll(JF, shift=-nx * ncomp, axis=0) * c[0] / 2
+                J -= np.roll(JF, shift=nx * ncomp, axis=0) * c[0] / 2
+
+                # J[nx * ncomp:(nx + 1) * ncomp, (nx - 1) * ncomp:nx * ncomp, ...] = 0
+                # J[(nx - 1) * ncomp:nx * ncomp, nx * ncomp:(nx + 1) * ncomp, ...] = 0
+                if self.is_periodic:
+                    J[(nx - 1) * ncomp:nx * ncomp, :ncomp, ...] = \
+                        JF[:ncomp, :ncomp, ...]
+                    J[:ncomp, (nx - 1) * ncomp:nx * ncomp, ...] = \
+                        -JF[(nx - 1) * ncomp:nx * ncomp, (nx - 1) * ncomp:nx * ncomp, ...]
                 return F, J
 
             def F(v: np.ndarray) -> np.ndarray:
@@ -150,7 +175,7 @@ class Richtmeyer2stepImplicit(Solver):
                 jacobian[0, -1] = jacobians[0][0] / 2
                 jacobian[-1, 0] = -jacobians[0][-1] / 2
 
-                return (np.eye(v.shape[0], v.shape[0]) + c[0] / 2 * (jacobian))
+                raise NotImplementedError
 
         elif self.dim == Dimension.twoD:
             def FJ(v: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -174,15 +199,15 @@ class Richtmeyer2stepImplicit(Solver):
 
                 J = np.eye(ncells * ncomp, ncells * ncomp)
                 # dy JG
-                J[:-ncomp, ...] += JG[ncomp:, ...] * c[0] / 2
-                J[ncomp:, ...] -= JG[:-ncomp, ...] * c[0] / 2
+                J[:-ncomp, ...] += JG[ncomp:, ...] * c[1] / 2
+                J[ncomp:, ...] -= JG[:-ncomp, ...] * c[1] / 2
 
                 nx = self.ncellsxyz[0]
                 ny = self.ncellsxyz[1]
 
                 # dx JF
-                J += np.roll(JF, shift=-nx * ncomp, axis=0) * c[1] / 2
-                J -= np.roll(JF, shift=nx * ncomp, axis=0) * c[1] / 2
+                J += np.roll(JF, shift=-nx * ncomp, axis=0) * c[0] / 2
+                J -= np.roll(JF, shift=nx * ncomp, axis=0) * c[0] / 2
 
                 for i in range(1, ny):
                     J[i * nx * ncomp:(i * nx + 1) * ncomp, (i * nx - 1) * ncomp:i * nx * ncomp, ...] = 0
@@ -261,12 +286,19 @@ class Richtmeyer2stepImplicit(Solver):
             self.bdc(self.grid)
         else:
             F_value, J_value = FJ(self.grid_no_ghost.ravel())
+            use_spare = False
+
             F_norm = np.linalg.norm(F_value)
             while self.eps * np.product(self.ncellsxyz) < F_norm:
                 # for _ in range(2):
                 #     for index in it.product(*[range(n) for n in self.ncellsxyz]):
                 #         self.grid_no_ghost[index] -= np.linalg.solve(J_value[index], F_value[index])
-                self.grid_no_ghost -= np.linalg.solve(J_value, F_value).reshape(self.grid_no_ghost.shape)
+                if use_spare:
+                    J_value = sparse.csr_matrix(J_value)  # , blocksize=(self.pde.ncomp, self.pde.ncomp))
+                    self.grid_no_ghost -= sparse.linalg.spsolve(J_value, F_value).reshape(self.grid_no_ghost.shape)
+                else:
+                    self.grid_no_ghost -= np.linalg.solve(J_value, F_value).reshape(self.grid_no_ghost.shape)
+
                 self.bdc(self.grid)
                 F_value, J_value = FJ(self.grid_no_ghost.ravel())
                 F_norm = np.linalg.norm(F_value)

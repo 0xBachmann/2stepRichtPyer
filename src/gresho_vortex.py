@@ -17,7 +17,7 @@ log("calculate initial conditions")
 resolution = np.array([40] * DIM.value)
 Lx = 1
 Ly = Lx
-stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, method="krylov", eps=1e-8)
+stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, method="newton", eps=1e-8)
 
 center = np.array([Lx / 2, Ly / 2])
 avg_coords = [avg_x(coord) for coord in stepper.coords]
@@ -55,7 +55,7 @@ def plot(dt, plot_mach=True):
 
 plot(0)
 
-fact = 100
+fact = 1
 T = t
 time = 0.
 while time < T:

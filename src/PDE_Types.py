@@ -302,7 +302,50 @@ class EulerScalarAdvect(Euler):
         return tuple(result[..., i] for i in range(self.dim.value))
 
     def jacobian(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
-        raise NotImplementedError
+        dens = v[..., 0]
+        X = v[..., -1] / dens
+
+        if self.dim == Dimension.oneD:
+            vel = v[..., 1] / dens
+            J = np.empty((*v.shape, v.shape[-1]))
+
+            J[..., :-1, :-1] = super().jacobian(v[..., :-1])
+            J[..., :-1, -1] = 0
+
+            J[..., -1, 0] = -vel * X
+            J[..., -1, 1] = X
+            J[..., -1, 2] = 0
+            J[..., -1, 3] = vel
+
+            return J,
+
+        elif self.dim == Dimension.twoD:
+            velx = v[..., 1] / dens
+            vely = v[..., 2] / dens
+
+            JF = np.empty((*v.shape, v.shape[-1]))
+            JG = np.empty((*v.shape, v.shape[-1]))
+
+            JF[..., :-1, :-1], JG[..., :-1, :-1] = super().jacobian(v[..., :-1])
+            JF[..., :-1, -1] = 0
+            JG[..., :-1, -1] = 0
+
+            # Df
+            JF[..., -1, 0] = -velx * X
+            JF[..., -1, 1] = X
+            JF[..., -1, 2:4] = 0
+            JF[..., -1, 4] = velx
+
+            # Dg
+            JG[..., -1, 0] = -vely * X
+            JG[..., -1, 1] = 0
+            JG[..., -1, 2] = X
+            JG[..., -1, 3] = 0
+            JG[..., -1, 4] = vely            
+
+            return JF, JG
+        else:
+            raise NotImplementedError
 
     def conserved_to_primitive(self, v):
         dens = v[..., 0]

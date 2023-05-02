@@ -67,12 +67,11 @@ class Plotter:
             5: [{"shape": (2, 6), "loc": loc, "colspan": 2} for loc in [(0, 0), (0, 2), (0, 4), (1, 1), (1, 3)]],
         }
         # self.fig, self.ax = plt.subplots(*layout[self.ncomp])
-        plt.tight_layout()
-
         # self.axs = [self.ax] if self.ncomp == 1 else self.ax.flatten()
         self.axs = [plt.subplot2grid(**(layout[self.ncomp][i])) for i in range(self.ncomp)]
 
         self.fig = plt.gcf()
+        self.fig.tight_layout()
 
         if self.dim == Dimension.oneD:
             self.ims = [self.axs[i].plot(self.x_coords, vals[..., i])[0] for i in range(self.ncomp)]
