@@ -37,7 +37,7 @@ def kh_with_scalar(x: np.ndarray, F, Mr, pr=2.5, rhor=1., primitives=False):
 
 M = 0.001
 t = 1
-stepper.initial_cond(lambda x: kh_with_scalar(x, F, Mr=M/10))
+stepper.initial_cond(lambda x: kh_with_scalar(x, F, Mr=M))
 
 plotter = Plotter(F, action="save", writeout=1, dim=stepper.dim, filename="kelvin_helmholz.mp4")
 
