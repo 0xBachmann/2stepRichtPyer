@@ -17,7 +17,7 @@ log("calculate initial conditions")
 resolution = np.array([40] * DIM.value)
 Lx = 1
 Ly = Lx
-stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, method="newton", eps=1e-8)
+stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution)
 
 center = np.array([Lx / 2, Ly / 2])
 avg_coords = [avg_x(coord) for coord in stepper.coords]
@@ -39,7 +39,7 @@ M = 0.01
 t = 1.
 stepper.initial_cond(lambda x: gresho_vortex(x, center, F, Mmax=M, qr=0.4 * np.pi * Lx / 1))
 
-plotter = Plotter(1, action="show", writeout=1, dim=stepper.dim, filename="gresho_vortex.mp4")
+plotter = Plotter(1, action="show", writeout=100, dim=stepper.dim, filename="gresho_vortex.mp4")
 
 
 def plot(dt, plot_mach=True):

@@ -40,21 +40,24 @@
 - [x] sound wave through vortex
   - works perfectly
   - but $M_r$ ??
-- [ ] Kelvin Helmholtz
+- [x] Kelvin Helmholtz
   - crashes
+    - with krylov ekin increases exponentially\
+      -> eint drops exp -> pressure negative
 - [x] writeout only binary vals
 - [x] `fig.tight_layout()`
   - maybe more occurrences needed?
   - works
 - [x] add scalar advection euler
 - [x] replace paths with `pathlib.Path`
-- [ ] jacobian for scalar advect Euler
+- [x] jacobian for scalar advect Euler
   - [ ] try sparse matrix
+    - only manual newton -> not working somehow
 - [ ] ekin conservation
   - kyrlov not working
   - now hybr with own J
   - maybe because M is not small enough
-- [ ] look at godunov
+- [x] look at godunov
 
 
 # To Discuss
@@ -75,3 +78,8 @@
 - Kelvin Helmholz
 - cfl for non implicit?
 - implicit fails for too many timesteps
+## 05.05.23
+- $c = \sqrt(\gamma * p / \rho)$ or $= \sqrt(\gamma * p) / \rho$ + derivation ?
+- krylov exp
+- ekin increases slightly ok ? bc mach not low/different enough ?
+- 

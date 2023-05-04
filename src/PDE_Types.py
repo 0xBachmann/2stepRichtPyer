@@ -96,7 +96,7 @@ class Euler(PDE):
     def csnd(self, v):
         p = self.pres(v)
         dens = v[..., 0]
-        return np.sqrt(self.gamma * p) / dens
+        return np.sqrt(self.gamma * p / dens)
 
     def __call__(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
         # define p and E

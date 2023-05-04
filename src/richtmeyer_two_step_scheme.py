@@ -94,7 +94,7 @@ class Richtmeyer2step(Solver):
 
 class Richtmeyer2stepImplicit(Solver):
     def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic", eps=sys.float_info.epsilon,
-                 method="krylov", manual_jacobian=False):
+                 method="krylov", manual_jacobian=False, use_sparse=False):
         super().__init__(pde, domain, resolutions, bdc)
         self.eps = eps
         root_methods = ["hybr", "lm", "broyden1", "broyden2", "anderson", "linearmixing", "diagbroyden",
@@ -103,6 +103,7 @@ class Richtmeyer2stepImplicit(Solver):
         self.use_root = method in root_methods
         self.manual_jacobian = True if method not in root_methods else manual_jacobian
         self.method = method
+        self.use_sparse = use_sparse
         self.nfevs = []
 
     # TODO correct?
@@ -286,14 +287,12 @@ class Richtmeyer2stepImplicit(Solver):
             self.bdc(self.grid)
         else:
             F_value, J_value = FJ(self.grid_no_ghost.ravel())
-            use_spare = False
-
             F_norm = np.linalg.norm(F_value)
             while self.eps * np.product(self.ncellsxyz) < F_norm:
                 # for _ in range(2):
                 #     for index in it.product(*[range(n) for n in self.ncellsxyz]):
                 #         self.grid_no_ghost[index] -= np.linalg.solve(J_value[index], F_value[index])
-                if use_spare:
+                if self.use_sparse:
                     J_value = sparse.csr_matrix(J_value)  # , blocksize=(self.pde.ncomp, self.pde.ncomp))
                     self.grid_no_ghost -= sparse.linalg.spsolve(J_value, F_value).reshape(self.grid_no_ghost.shape)
                 else:
