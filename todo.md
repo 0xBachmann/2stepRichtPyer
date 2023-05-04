@@ -31,7 +31,7 @@
 - [x] check triangles in accuracy plotter for correctness
 - [x] plotter dimensions correct order
 - [x] submit short description
-- [ ] dirichlet bd
+- [x] dirichlet bd
 - [x] does implicit really represent two-step?
   - yes
 - [x] refactor `PDE.derivative`

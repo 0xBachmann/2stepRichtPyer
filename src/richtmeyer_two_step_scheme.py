@@ -37,7 +37,7 @@ class Solver:
         elif callable(bdc):
             self.bdc = bdc
         else:
-            raise RuntimeError(f"Expected string or Callable, got {type(bdc)} instead")
+            raise TypeError(f"Expected string or Callable, got {type(bdc)} instead")
 
     @property
     def grid_no_ghost(self):
@@ -60,6 +60,13 @@ class Solver:
         dts = self.dxyz / (2 * a)  # TODO (2 bc half step)
         # TODO correct for diagonal?
         return np.min(dts)
+
+    def get_coords(self, stacked=False):
+        avg_coords = [avg_x(coord) for coord in self.coords]
+        XYZ = np.meshgrid(*avg_coords, indexing='ij')
+        if stacked:
+            XYZ = np.stack(XYZ, axis=-1)
+        return XYZ
 
 
 class Richtmeyer2step(Solver):
