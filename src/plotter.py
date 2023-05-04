@@ -13,10 +13,11 @@ from two_step_richtmeyer_util import Dimension
 
 class Plotter:
     def __init__(self, F: PDE | int, action, writeout, dim: Dimension, coords=None,
-                 filename=None, lims=None):
+                 filename=None, lims=None, savedir="movie"):
         self.ncomp = F.ncomp if isinstance(F, PDE) else F
         self.comp_names = F.comp_names if isinstance(F, PDE) else None
         self.dim = dim
+        self.savedir = savedir
         self.init = False
         # Will be set the first time plotting happens
         self.fig = None
@@ -105,9 +106,9 @@ class Plotter:
                 self.traj.append((deepcopy(vals), self.time))
             elif self.action == "save":
                 self.plot(vals, self.time)
-                plt.savefig(Path("movie", f"{self.PDE_type}_{int(self.step / self.writeout)}.png"))
+                plt.savefig(Path(self.savedir, f"{self.PDE_type}_{int(self.step / self.writeout)}.png"))
             elif self.action == "saveb":
-                np.save(str(Path("movie", f"{self.PDE_type}_{int(self.step / self.writeout)}.npy")), vals)
+                np.save(str(Path(self.savedir, f"{self.PDE_type}_{int(self.step / self.writeout)}.npy")), vals)
                 self.traj.append(self.time)
 
         self.time += dt
@@ -122,17 +123,16 @@ class Plotter:
 
         elif self.action == "saveb":
             for i, t in tqdm(enumerate(self.traj), desc="Generating Movie", total=len(self.traj)):
-                vals = np.load(str(Path("movie", f"{self.PDE_type}_{i}.npy")))
-                os.remove(Path("movie", f"{self.PDE_type}_{i}.npy"))
+                vals = np.load(str(Path(self.savedir, f"{self.PDE_type}_{i}.npy")))
+                os.remove(Path(self.savedir, f"{self.PDE_type}_{i}.npy"))
                 self.plot(vals, t)
-                plt.savefig(Path("movie", "{self.PDE_type}_{i}.png"))
+                plt.savefig(Path(self.savedir, "{self.PDE_type}_{i}.png"))
 
         if self.action == "save" or self.action == "saveb":
-            frames = Path("movie", f"{self.PDE_type}_%d.png")
-            output = Path("movie", self.filename)
+            frames = Path(self.savedir, f"{self.PDE_type}_%d.png")
+            output = Path(self.savedir, self.filename)
             os.system(f"ffmpeg -framerate 30 -i '{frames}' {output}")
 
-            movie_dir = "movie"
-            for item in os.listdir(movie_dir):
+            for item in os.listdir(self.savedir):
                 if item.endswith(".png"):
-                    os.remove(os.path.join(movie_dir, item))
+                    os.remove(os.path.join(self.savedir, item))
