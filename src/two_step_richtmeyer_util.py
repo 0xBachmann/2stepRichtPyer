@@ -20,18 +20,10 @@ def pbc(grid: np.ndarray, dim: Dimension):
         # x dimension
         grid[0, ...] = grid[-2, ...]
         grid[-1, ...] = grid[1, ...]
-    # TODO correct ?
     if dim >= Dimension.twoD:
         # y dimension
         grid[:, 0, ...] = grid[:, -2, ...]
         grid[:, -1, ...] = grid[:, 1, ...]
-        # TODO necessary?
-        # if dim == Dimension.twoD:
-        #     grid[0, 0, ...] = grid[-2, -2, ...]
-        #     grid[0, -1, ...] = grid[-2, 1, ...]
-        #     grid[-1, 0, ...] = grid[1, -2, ...]
-        #     grid[-1, -1, ...] = grid[1, 1, ...]
-        #     # TODO same for 3D
     if dim >= Dimension.threeD:
         # z dimension
         grid[:, :, 0, ...] = grid[:, :, -2, ...]
@@ -66,7 +58,6 @@ def log(msg):
     print("=" * 10, f"{msg:^30s}", "=" * 10)
 
 
-# TODO implement these two
 def zero_bd(grid: np.ndarray, dim: Dimension):
     if dim >= Dimension.oneD:
         # x dimension

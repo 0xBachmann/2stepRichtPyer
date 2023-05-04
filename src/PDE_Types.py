@@ -40,27 +40,7 @@ class LinearAdvection(PDE):
     def max_speed(self, v: np.ndarray) -> np.ndarray:
         return np.full((*v.shape[0:self.dim.value], *self.a.shape), self.a)
 
-    def initial_cond(self, type):  # TODO
-        def gaussian(x):
-            pass
-
-        def sin(x):
-            pass
-
-        def cos(x):
-            pass
-
-        if type == "gaussian":
-            return gaussian
-        if type == "cos":
-            return cos
-        if type == "sin":
-            return sin
-
-        raise NotImplementedError
-
     def jacobian(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
-        # TODO correct dims?
         return tuple(np.full(np.product(*v.shape[:self.dim.value]), self.a[i]) for i in range(self.dim.value))
 
 
@@ -77,6 +57,9 @@ class BurgersEq(PDE):
         if self.dim != Dimension.oneD:
             raise NotImplementedError
         return v
+
+    def jacobian(self, v: np.ndarray):
+        raise NotImplementedError
 
 
 class Euler(PDE):
@@ -113,7 +96,6 @@ class Euler(PDE):
 
         return tuple(result[..., i] for i in range(self.dim.value))
 
-    # TODO
     def max_speed(self, v: np.ndarray) -> np.ndarray:
         vels = v[..., 1:self.dim.value + 1] / v[..., 0][..., np.newaxis]
         csnd = self.csnd(v)
@@ -231,10 +213,10 @@ class Euler(PDE):
                 """x needs to be normalized to [0, 1]"""
                 rotx = x @ R
                 # NOTE: whole input * 2 * cos_alpha in case of pi/4
+                # TODO need * 2 if rotated by 45°
                 w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k],
                                          np.sin(2 * np.pi * (rotx[..., 0] - eigen_vals[k] * t)))
                 # first rotate then transform
-                # TODO correct??
                 vxy = np.zeros((*w.shape[:-1], self.dim.value))
                 vxy[..., 0] = w[..., 1]
                 rotv = vxy @ Rinv
@@ -341,7 +323,7 @@ class EulerScalarAdvect(Euler):
             JG[..., -1, 1] = 0
             JG[..., -1, 2] = X
             JG[..., -1, 3] = 0
-            JG[..., -1, 4] = vely            
+            JG[..., -1, 4] = vely
 
             return JF, JG
         else:

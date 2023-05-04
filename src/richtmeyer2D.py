@@ -28,12 +28,10 @@ Ly = 1
 stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-10, method="krylov")
 
 
-# TODO: initial values
 def f(x):
     if Type == PDE_Type.Euler:
         if True:
             func = F.waves(0, np.array([1, 1, 1]), amp=1e-3, alpha=alpha)
-            # TODO not normalized in case of Lx/Ly != 1
             return func(x)
 
         if False:

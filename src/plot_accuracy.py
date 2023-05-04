@@ -25,9 +25,8 @@ def elerp(a, b, gamma):
     return np.exp(np.log(a) * (1 - gamma) + np.log(b) * gamma)
 
 
-#assert slopes.size <= 2
+assert slopes.size <= 2
 
-# TODO correct?
 for i, slope in enumerate(slopes):
     if i == 0:
         offset = 0.7

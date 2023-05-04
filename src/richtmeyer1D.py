@@ -24,7 +24,6 @@ L = 1
 stepper = Richtmeyer2stepImplicit(F, np.array([L]), np.array([100]), eps=1e-16, method="hybr")
 
 
-# TODO: initial values
 def f(x):
     # return np.cos(2 * np.pi / L * x)
     # return np.exp(-(x - 3)**2)
