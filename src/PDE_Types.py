@@ -20,7 +20,7 @@ class PDE(object):
     def __call__(self, v: np.ndarray):
         raise NotImplementedError
 
-    def derivative(self, v: np.ndarray):
+    def max_speed(self, v: np.ndarray):
         raise NotImplementedError
 
     def jacobian(self, v: np.ndarray):
@@ -37,7 +37,7 @@ class LinearAdvection(PDE):
     def __call__(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
         return tuple(self.a[i] * v for i in range(self.dim.value))
 
-    def derivative(self, v: np.ndarray) -> np.ndarray:
+    def max_speed(self, v: np.ndarray) -> np.ndarray:
         return np.full((*v.shape[0:self.dim.value], *self.a.shape), self.a)
 
     def initial_cond(self, type):  # TODO
@@ -73,7 +73,7 @@ class BurgersEq(PDE):
         result = np.einsum("...i,...j->...ij", v, v) / 2
         return tuple(result[..., i] for i in range(self.dim.value))
 
-    def derivative(self, v: np.ndarray) -> np.ndarray:
+    def max_speed(self, v: np.ndarray) -> np.ndarray:
         if self.dim != Dimension.oneD:
             raise NotImplementedError
         return v
@@ -114,7 +114,7 @@ class Euler(PDE):
         return tuple(result[..., i] for i in range(self.dim.value))
 
     # TODO
-    def derivative(self, v: np.ndarray) -> np.ndarray:
+    def max_speed(self, v: np.ndarray) -> np.ndarray:
         vels = v[..., 1:self.dim.value + 1] / v[..., 0][..., np.newaxis]
         csnd = self.csnd(v)
         return np.abs(vels) + csnd[..., np.newaxis]

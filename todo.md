@@ -34,7 +34,7 @@
 - [ ] dirichlet bd
 - [x] does implicit really represent two-step?
   - yes
-- [ ] refactor `PDE.derivative`
+- [x] refactor `PDE.derivative`
 - [ ] lsa 2d try in state space
   - did it analytiacally
 - [x] sound wave through vortex

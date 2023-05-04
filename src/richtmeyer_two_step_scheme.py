@@ -55,7 +55,7 @@ class Solver:
         self.bdc(self.grid)
 
     def cfl(self):
-        prime = self.pde.derivative(self.grid[self.no_ghost])
+        prime = self.pde.max_speed(self.grid[self.no_ghost])
         a = np.max(np.reshape(np.abs(prime), (np.product(self.ncellsxyz), self.dim.value)), axis=0)
         dts = self.dxyz / (2 * a)  # TODO (2 bc half step)
         # TODO correct for diagonal?
