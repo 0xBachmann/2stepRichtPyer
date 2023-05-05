@@ -98,13 +98,15 @@ class Richtmeyer2step(Solver):
 
 
 class Richtmeyer2stepImplicit(Solver):
-    def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic", eps=sys.float_info.epsilon,
-                 method="krylov", manual_jacobian=False, use_sparse=False):
+    def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic",
+                 eps=sys.float_info.epsilon, method="krylov", manual_jacobian=False, use_sparse=False):
         super().__init__(pde, domain, resolutions, bdc)
         self.eps = eps
         root_methods = ["hybr", "lm", "broyden1", "broyden2", "anderson", "linearmixing", "diagbroyden",
                         "excitingmixing", "krylov", "df-sane"]
         assert method in root_methods + ["newton"]
+        if manual_jacobian:
+            raise NotImplementedError("Jacobian for new implicit scheme not implemented yet")
         self.use_root = method in root_methods
         self.manual_jacobian = True if method not in root_methods else manual_jacobian
         self.method = method
@@ -153,8 +155,8 @@ class Richtmeyer2stepImplicit(Solver):
                 self.grid_no_ghost = v.reshape(self.grid_no_ghost.shape)
                 self.bdc(self.grid)
                 avg_t = 0.5 * (self.grid + grid_old)
-                fluxes = self.pde(avg_t)
-                return (self.grid_no_ghost - grid_old[self.no_ghost] + c[0] * self.del_x(fluxes[0])).ravel()
+                fluxes = self.pde(avg_x(avg_t))
+                return (self.grid_no_ghost - grid_old[self.no_ghost] + c[0] * del_x(fluxes[0])).ravel()
 
             def J(v: np.ndarray) -> np.ndarray:
                 self.grid_no_ghost = v.reshape(self.grid_no_ghost.shape)
