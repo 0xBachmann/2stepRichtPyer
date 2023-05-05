@@ -116,7 +116,7 @@ class Plotter:
                 self.traj.append((deepcopy(vals), self.time))
             elif self.action == "save":
                 self.plot(vals, self.time)
-                plt.savefig(Path(self.savedir, f"{self.PDE_type}_{int(self.step / self.writeout)}_{self.uuid}"))
+                plt.savefig(Path(self.savedir, f"{self.PDE_type}_{int(self.step / self.writeout)}_{self.uuid}.png"))
             elif self.action == "saveb":
                 np.save(str(Path(self.savedir, f"{self.PDE_type}_{int(self.step / self.writeout)}_{self.uuid}.npy")), vals)
                 self.traj.append(self.time)

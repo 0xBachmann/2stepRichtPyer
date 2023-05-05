@@ -16,7 +16,7 @@ log("calculate initial conditions")
 
 domain = np.array([[0, 1], [0, 1]])
 resolution = np.array([128] * DIM.value)
-stepper = Richtmeyer2stepImplicit(F, domain, resolution, eps=1e-9, method="hybr")
+stepper = Richtmeyer2stepImplicit(F, domain, resolution, eps=1e-9)
 
 center = np.array([0.5, 0.5])
 
@@ -39,7 +39,7 @@ M = 0.001
 t = 1
 stepper.initial_cond(lambda x: kh_with_scalar(x, F, Mr=M))
 
-plotter = Plotter(F, action="save", writeout=1, dim=stepper.dim, filename="kelvin_helmholz.mp4")
+plotter = Plotter(F, action="show", writeout=1, dim=stepper.dim, filename="kelvin_helmholz.mp4")
 
 
 def plot(dt):
@@ -54,7 +54,7 @@ def plot(dt):
 
 plot(0)
 
-fact = 1
+fact = 100
 T = 3
 time = 0.
 while time < T:

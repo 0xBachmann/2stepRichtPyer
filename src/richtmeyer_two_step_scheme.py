@@ -99,7 +99,7 @@ class Richtmeyer2step(Solver):
 
 class Richtmeyer2stepImplicit(Solver):
     def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic", eps=sys.float_info.epsilon,
-                 method="hybr", manual_jacobian=False, use_sparse=False):
+                 method="krylov", manual_jacobian=False, use_sparse=False):
         super().__init__(pde, domain, resolutions, bdc)
         self.eps = eps
         root_methods = ["hybr", "lm", "broyden1", "broyden2", "anderson", "linearmixing", "diagbroyden",
@@ -110,20 +110,6 @@ class Richtmeyer2stepImplicit(Solver):
         self.method = method
         self.use_sparse = use_sparse
         self.nfevs = []
-
-    def del_x(self, grid_vals: np.ndarray) -> np.ndarray:
-        return (grid_vals[2:, ...] - grid_vals[:-2, ...]) / 2
-
-    def del_y(self, grid_vals: np.ndarray) -> np.ndarray:
-        return (grid_vals[:, 2:, ...] - grid_vals[:, :-2, ...]) / 2
-
-    def avg_x(self, grid_vals: np.ndarray) -> np.ndarray:
-        return grid_vals[1:-1, ...]
-        # return (grid_vals[2:, ...] + grid_vals[1:-1, ...] + grid_vals[:-2, ...]) / 4
-
-    def avg_y(self, grid_vals: np.ndarray) -> np.ndarray:
-        return grid_vals[:, 1:-1, ...]
-        # return (grid_vals[:, 2:, ...] + grid_vals[:, 1:-1, ...] + grid_vals[:, :-2, ...]) / 4
 
     def step(self, dt):
         c = dt / self.dxyz
@@ -233,9 +219,9 @@ class Richtmeyer2stepImplicit(Solver):
                 self.grid_no_ghost = v.reshape(self.grid_no_ghost.shape)
                 self.bdc(self.grid)
                 avg_t = 0.5 * (self.grid + grid_old)
-                fluxes = self.pde(avg_t)
-                return (self.grid_no_ghost - grid_old[self.no_ghost] + c[0] * self.del_x(self.avg_y(fluxes[0]))
-                        + c[1] * self.del_y(self.avg_x(fluxes[1]))).ravel()
+                fluxes = self.pde(avg_x(avg_y(avg_t)))
+                return (self.grid_no_ghost - grid_old[self.no_ghost] + c[0] * del_x(avg_y(fluxes[0]))
+                        + c[1] * del_y(avg_x(fluxes[1]))).ravel()
 
             def J(v: np.ndarray) -> np.ndarray:
                 grid = np.empty(self.grid.shape)
