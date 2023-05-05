@@ -213,7 +213,7 @@ class Euler(PDE):
                 """x needs to be normalized to [0, 1]"""
                 rotx = x @ R
                 # NOTE: whole input * 2 * cos_alpha in case of pi/4
-                # TODO need * 2 if rotated by 45°
+                # TODO need * 2 * cos_alpha if rotated by 45°
                 w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k],
                                          np.sin(2 * np.pi * (rotx[..., 0] - eigen_vals[k] * t)))
                 # first rotate then transform

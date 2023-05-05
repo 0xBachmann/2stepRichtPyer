@@ -63,6 +63,7 @@
 - [ ] implement `Stepper.step_for(t)`
 - [ ] add delete flag for plotter
 - [ ] derivation for c
+- [ ] rewrite lsa
 
 
 # To Discuss
