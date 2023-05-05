@@ -6,8 +6,9 @@
   - [x] rotate 1d waves
     - [x] now check accuracy
     - [x] check correctness of rotating and a sound depending on w0 ofc wrong
-- [ ] derivative maybe not correct and add for burgers
+- [x] derivative maybe not correct and add for burgers
 - [ ] TODO's in src
+  - almost all done
 - [x] implicit scheme
   - [x] speed not correct...
     - correct when using avg = id
@@ -58,6 +59,10 @@
   - now hybr with own J
   - maybe because M is not small enough
 - [x] look at godunov
+- [ ] jacobain for burgers
+- [ ] implement `Stepper.step_for(t)`
+- [ ] add delete flag for plotter
+- [ ] derivation for c
 
 
 # To Discuss
@@ -82,4 +87,4 @@
 - $c = \sqrt(\gamma * p / \rho)$ or $= \sqrt(\gamma * p) / \rho$ + derivation ?
 - krylov exp
 - ekin increases slightly ok ? bc mach not low/different enough ?
-- 
+- F wrong in implicit?

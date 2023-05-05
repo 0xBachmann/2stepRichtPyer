@@ -65,7 +65,7 @@ class BurgersEq(PDE):
 class Euler(PDE):
     def __init__(self, gamma, dim: Dimension, extra_comp=0):
         super().__init__(dim=dim, ncomp=dim.value + 2 + extra_comp,
-                         Type=PDE_Type.Euler)  # nr of dims velocities + density plus energy
+                         Type=PDE_Type.Euler)  # nr of dims velocities + density plus energy_new
         self.gamma = gamma
         self.comp_names = ["density", *[f"momenta_{dim}" for dim in "xyz"[:self.dim.value]], "Energy"]
 
@@ -256,7 +256,7 @@ class Euler(PDE):
 
 class EulerScalarAdvect(Euler):
     def __init__(self, gamma, dim: Dimension):
-        super().__init__(gamma, dim, extra_comp=1)  # nr of dims velocities + density plus energy
+        super().__init__(gamma, dim, extra_comp=1)  # nr of dims velocities + density plus energy_new
         self.comp_names = ["density", *[f"momenta_{dim}" for dim in "xyz"[:dim.value]], "Energy", "X"]
 
     def pres(self, v):

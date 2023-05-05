@@ -99,7 +99,7 @@ class Richtmeyer2step(Solver):
 
 class Richtmeyer2stepImplicit(Solver):
     def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic", eps=sys.float_info.epsilon,
-                 method="krylov", manual_jacobian=False, use_sparse=False):
+                 method="hybr", manual_jacobian=False, use_sparse=False):
         super().__init__(pde, domain, resolutions, bdc)
         self.eps = eps
         root_methods = ["hybr", "lm", "broyden1", "broyden2", "anderson", "linearmixing", "diagbroyden",
