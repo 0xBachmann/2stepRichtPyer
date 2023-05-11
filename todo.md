@@ -61,7 +61,7 @@
 - [x] look at godunov
 - [ ] jacobain for burgers
 - [ ] implement `Stepper.step_for(t)`
-- [ ] add cleanup flag for plotter
+- [x] add cleanup flag for plotter
 - [ ] derivation for c
 - [x] rewrite lsa
 - [x] revisit order of operators in explicit scheme

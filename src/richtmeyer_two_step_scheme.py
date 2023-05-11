@@ -68,6 +68,20 @@ class Solver:
             XYZ = np.stack(XYZ, axis=-1)
         return XYZ
 
+    def step(self, dt):
+        raise RuntimeError(f"{self.__class__} is only an abstract base class")
+
+    def step_for(self, T, fact=1., callback=None):
+        time = 0.
+        while time < T:
+            dt = self.cfl() * fact
+            self.step(dt)
+
+            if callable(callback):
+                callback(self, dt)
+
+            time += min(dt, T - time)
+
 
 class Richtmeyer2step(Solver):
     def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic"):
