@@ -61,9 +61,12 @@
 - [x] look at godunov
 - [ ] jacobain for burgers
 - [ ] implement `Stepper.step_for(t)`
-- [ ] add delete flag for plotter
+- [ ] add cleanup flag for plotter
 - [ ] derivation for c
-- [ ] rewrite lsa
+- [x] rewrite lsa
+- [x] revisit order of operators in explicit scheme
+- [ ] better guess for big time step? (just big explicit?)
+- [ ] add numba
 
 
 # To Discuss

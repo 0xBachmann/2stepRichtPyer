@@ -15,11 +15,12 @@ import uuid
 
 class Plotter:
     def __init__(self, F: PDE | int, action, writeout, dim: Dimension, coords=None,
-                 filename=None, lims=None, savedir="movie"):
+                 filename=None, lims=None, savedir="movie", cleanup=True):
         self.ncomp = F.ncomp if isinstance(F, PDE) else F
         self.comp_names = F.comp_names if isinstance(F, PDE) else None
         self.dim = dim
         self.savedir = savedir
+        self.cleanup = cleanup
 
         self.uuid = uuid.uuid4()
 
@@ -143,6 +144,7 @@ class Plotter:
             output = Path(self.savedir, self.filename)
             os.system(f"ffmpeg -framerate 30 -i '{frames}' {output}")
 
-            for item in os.listdir(self.savedir):
-                if item.endswith(f"{self.uuid}.png"):
-                    os.remove(os.path.join(self.savedir, item))
+            if self.cleanup:
+                for item in os.listdir(self.savedir):
+                    if item.endswith(f"{self.uuid}.png"):
+                        os.remove(os.path.join(self.savedir, item))
