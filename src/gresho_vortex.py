@@ -42,7 +42,7 @@ stepper.initial_cond(lambda x: gresho_vortex(x, center, F, Mmax=M, qr=0.4 * np.p
 plotter = Plotter(1, action="show", writeout=1, dim=stepper.dim, filename="gresho_vortex_iml_100_hybr_eps1e-9.mp4")
 
 
-def plot(dt, plot_mach=True):
+def plot(stepper, dt, plot_mach=True):
     if plotter.ncomp == 1:
         if plot_mach:
             plotter.write(F.mach(stepper.grid_no_ghost)[..., np.newaxis], dt)
@@ -53,18 +53,6 @@ def plot(dt, plot_mach=True):
         plotter.write(stepper.grid_no_ghost, dt)
 
 
-plot(0)
-
-fact = 100
-T = t
-time = 0.
-while time < T:
-    dt = stepper.cfl() * fact
-    stepper.step(dt)
-
-    plot(dt)
-
-    print(f"dt = {dt}, time = {time:.3f}/{T}")
-    time += dt
+stepper.step_for(t, fact=100, callback=plot)
 
 plotter.finalize()

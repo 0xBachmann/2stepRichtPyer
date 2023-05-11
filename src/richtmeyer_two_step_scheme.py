@@ -71,7 +71,7 @@ class Solver:
     def step(self, dt):
         raise RuntimeError(f"{self.__class__} is only an abstract base class")
 
-    def step_for(self, T, fact=1., callback=None):
+    def step_for(self, T, fact=1., callback=None, log_step=True):
         time = 0.
         while time < T:
             dt = self.cfl() * fact
@@ -81,6 +81,10 @@ class Solver:
                 callback(self, dt)
 
             time += min(dt, T - time)
+            if log_step:
+                print(f"dt = {dt}, time = {time:.3f}/{T}")
+
+
 
 
 class Richtmeyer2step(Solver):

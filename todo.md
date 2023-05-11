@@ -92,3 +92,6 @@
 - krylov exp
 - ekin increases slightly ok ? bc mach not low/different enough ?
 - F wrong in implicit?
+## 12.05.23
+- implicit correct now -> krylov works
+- 
