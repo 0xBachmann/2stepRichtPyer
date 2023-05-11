@@ -2,6 +2,8 @@ import numpy as np
 from enum import Enum
 from functools import total_ordering
 
+from numba.experimental import jitclass
+
 
 @total_ordering
 class Dimension(Enum):
@@ -83,6 +85,3 @@ def dirichlet_bd(grid: np.ndarray, dim: Dimension, XYZ: np.ndarray, f):
     if dim >= Dimension.threeD:
         grid[:, :, 0, ...] = f(XYZ[:, :, 0, ...])
         grid[:, :, -1, ...] = f(XYZ[:, :, -1, ...])
-
-
-

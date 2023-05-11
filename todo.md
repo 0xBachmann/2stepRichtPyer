@@ -60,7 +60,7 @@
   - maybe because M is not small enough
 - [x] look at godunov
 - [ ] jacobain for burgers
-- [ ] implement `Stepper.step_for(t)`
+- [x] implement `Stepper.step_for(t)`
 - [x] add cleanup flag for plotter
 - [ ] derivation for c
 - [x] rewrite lsa

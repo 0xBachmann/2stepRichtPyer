@@ -2,6 +2,13 @@ from enum import Enum
 from two_step_richtmeyer_util import Dimension
 import numpy as np
 
+from numba.experimental import jitclass
+
+
+from numba import int64, float64
+from numba.core.types import string
+
+
 
 class PDE_Type(Enum):
     BaseClass = 0
@@ -11,7 +18,7 @@ class PDE_Type(Enum):
 
 
 class PDE(object):
-    def __init__(self, dim: Dimension, ncomp, Type: PDE_Type):
+    def __init__(self, dim, ncomp, Type: PDE_Type):
         self.dim = dim
         self.ncomp = ncomp
         self.comp_names = None
@@ -28,30 +35,30 @@ class PDE(object):
 
 
 class LinearAdvection(PDE):
-    def __init__(self, a: np.ndarray, dim: Dimension):
+    def __init__(self, a: np.ndarray, dim):
         super().__init__(dim=dim, ncomp=1, Type=PDE_Type.Linear_advection)
-        assert a.shape == (self.dim.value,)
+        assert a.shape == (self.dim,)
         self.a = a
         self.comp_names = ["u"]
 
     def __call__(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
-        return tuple(self.a[i] * v for i in range(self.dim.value))
+        return tuple(self.a[i] * v for i in range(self.dim))
 
     def max_speed(self, v: np.ndarray) -> np.ndarray:
-        return np.full((*v.shape[0:self.dim.value], *self.a.shape), self.a)
+        return np.full((*v.shape[0:self.dim], *self.a.shape), self.a)
 
     def jacobian(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
-        return tuple(np.full(np.product(*v.shape[:self.dim.value]), self.a[i]) for i in range(self.dim.value))
+        return tuple(np.full(np.product(*v.shape[:self.dim]), self.a[i]) for i in range(self.dim))
 
 
 class BurgersEq(PDE):
-    def __init__(self, *, dim: Dimension):
-        super().__init__(dim=dim, ncomp=dim.value, Type=PDE_Type.Burgers_equation)
+    def __init__(self, *, dim):
+        super().__init__(dim=dim, ncomp=dim, Type=PDE_Type.Burgers_equation)
         self.comp_names = [f"{vel}" for vel in "uvw"]
 
     def __call__(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
         result = np.einsum("...i,...j->...ij", v, v) / 2
-        return tuple(result[..., i] for i in range(self.dim.value))
+        return tuple(result[..., i] for i in range(self.dim))
 
     def max_speed(self, v: np.ndarray) -> np.ndarray:
         if self.dim != Dimension.oneD:
@@ -62,17 +69,27 @@ class BurgersEq(PDE):
         raise NotImplementedError
 
 
-class Euler(PDE):
-    def __init__(self, gamma, dim: Dimension, extra_comp=0):
-        super().__init__(dim=dim, ncomp=dim.value + 2 + extra_comp,
-                         Type=PDE_Type.Euler)  # nr of dims velocities + density plus energy_new
+spec = [
+    ("dim", int64),
+    ("ncomp", int64),
+    ("Type", string),
+    ("gamma", float64),
+]
+
+
+@jitclass(spec)
+class Euler:
+    def __init__(self, gamma, dim, extra_comp=0):
+        self.dim = dim
+        self.ncomp = dim + 2 + extra_comp
+        self.Type = "Euler"  # nr of dims velocities + density plus energy
         self.gamma = gamma
-        self.comp_names = ["density", *[f"momenta_{dim}" for dim in "xyz"[:self.dim.value]], "Energy"]
+        # self.comp_names = ["density", *[f"momenta_{dim}" for dim in "xyz"[:self.dim]], "Energy"]
 
     def pres(self, v):
         dens = v[..., 0]
         Etot = v[..., -1]
-        Ekin = 0.5 * np.sum(v[..., 1:self.dim.value + 1] ** 2, axis=-1) / dens
+        Ekin = 0.5 * np.sum(v[..., 1:self.dim + 1] ** 2, axis=-1) / dens
         eint = Etot - Ekin
         return eint * (self.gamma - 1.)
 
@@ -85,24 +102,24 @@ class Euler(PDE):
         # define p and E
         p = self.pres(v)
         dens = v[..., 0]
-        vels = v[..., 1:self.dim.value + 1] / dens[..., np.newaxis]
+        vels = v[..., 1:self.dim + 1] / dens[..., np.newaxis]
         Etot = v[..., -1]
-        result = np.empty((*v.shape, self.dim.value))
+        result = np.empty((*v.shape, self.dim))
 
-        result[..., 0, :] = v[..., 1:self.dim.value + 1]
-        result[..., 1:self.dim.value + 1, :] = np.einsum("...i,...j->...ij", v[..., 1:self.dim.value + 1], vels) \
-                                               + np.einsum("...i,jk->...ijk", p, np.identity(self.dim.value))
+        result[..., 0, :] = v[..., 1:self.dim + 1]
+        result[..., 1:self.dim + 1, :] = np.einsum("...i,...j->...ij", v[..., 1:self.dim + 1], vels) \
+                                         + np.einsum("...i,jk->...ijk", p, np.identity(self.dim))
         result[..., -1, :] = np.einsum("...,...i->...i", Etot + p, vels)
 
-        return tuple(result[..., i] for i in range(self.dim.value))
+        return tuple(result[..., i] for i in range(self.dim))
 
     def max_speed(self, v: np.ndarray) -> np.ndarray:
-        vels = v[..., 1:self.dim.value + 1] / v[..., 0][..., np.newaxis]
+        vels = v[..., 1:self.dim + 1] / v[..., 0][..., np.newaxis]
         csnd = self.csnd(v)
         return np.abs(vels) + csnd[..., np.newaxis]
 
     def mach(self, v: np.ndarray) -> np.ndarray:
-        vels = v[..., 1:self.dim.value + 1] / v[..., 0][..., np.newaxis]
+        vels = v[..., 1:self.dim + 1] / v[..., 0][..., np.newaxis]
         M = np.linalg.norm(vels, axis=-1) / self.csnd(v)
         # M = np.sqrt(np.sum(vels ** 2, axis=-1)) / self.csnd(v)
         return M
@@ -217,13 +234,13 @@ class Euler(PDE):
                 w = w0 + amp * np.einsum("i,...j->...ji", eigen_vectors[:, k],
                                          np.sin(2 * np.pi * (rotx[..., 0] - eigen_vals[k] * t)))
                 # first rotate then transform
-                vxy = np.zeros((*w.shape[:-1], self.dim.value))
+                vxy = np.zeros((*w.shape[:-1], self.dim))
                 vxy[..., 0] = w[..., 1]
                 rotv = vxy @ Rinv
 
                 w2d = np.empty((*w.shape[:-1], self.ncomp))
                 w2d[..., 0] = w[..., 0]
-                w2d[..., 1:self.dim.value + 1] = rotv
+                w2d[..., 1:self.dim + 1] = rotv
                 w2d[..., 3] = w[..., 2]
                 return self.primitive_to_conserved(w2d)
         else:
@@ -233,178 +250,177 @@ class Euler(PDE):
 
     def conserved_to_primitive(self, v):
         dens = v[..., 0]
-        mom = v[..., 1:self.dim.value + 1]
+        mom = v[..., 1:self.dim + 1]
         E = v[..., -1]
         primitives = np.empty(v.shape)
         primitives[..., 0] = dens
-        for i in range(self.dim.value):
+        for i in range(self.dim):
             primitives[..., i + 1] = mom[..., i] / dens
         primitives[..., -1] = (self.gamma - 1) * (E - 0.5 * np.sum(mom ** 2, axis=-1)) / dens
         return primitives
 
     def primitive_to_conserved(self, w):
         dens = w[..., 0]
-        v = w[..., 1:self.dim.value + 1]
+        v = w[..., 1:self.dim + 1]
         p = w[..., -1]
         conserved_w = np.empty(w.shape)
         conserved_w[..., 0] = dens
-        for i in range(self.dim.value):
+        for i in range(self.dim):
             conserved_w[..., i + 1] = dens * v[..., i]
         conserved_w[..., -1] = p / (self.gamma - 1) + 0.5 * dens * np.sum(v ** 2, axis=-1)
         return conserved_w
 
+# class EulerScalarAdvect(Euler):
+#     def __init__(self, gamma, dim):
+#         super().__init__(gamma, dim, extra_comp=1)  # nr of dims velocities + density plus energy_new
+#         self.comp_names = ["density", *[f"momenta_{dim}" for dim in "xyz"[:dim]], "Energy", "X"]
+#
+#     def pres(self, v):
+#         dens = v[..., 0]
+#         Etot = v[..., -2]
+#         Ekin = 0.5 * np.sum(v[..., 1:self.dim + 1] ** 2, axis=-1) / dens
+#         eint = Etot - Ekin
+#         return eint * (self.gamma - 1.)
+#
+#     def __call__(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
+#         # define p and E
+#         p = self.pres(v)
+#         dens = v[..., 0]
+#         vels = v[..., 1:self.dim + 1] / dens[..., np.newaxis]
+#         Etot = v[..., -2]
+#         X = v[..., -1]
+#         result = np.empty((*v.shape, self.dim))
+#
+#         result[..., 0, :] = v[..., 1:self.dim + 1]
+#         result[..., 1:self.dim + 1, :] = np.einsum("...i,...j->...ij", v[..., 1:self.dim + 1], vels) \
+#                                                + np.einsum("...i,jk->...ijk", p, np.identity(self.dim))
+#         result[..., -2, :] = np.einsum("...,...i->...i", Etot + p, vels)
+#         result[..., -1, :] = np.einsum("...,...i->...i", X, v[..., 1:self.dim + 1])
+#
+#         return tuple(result[..., i] for i in range(self.dim))
+#
+#     def jacobian(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
+#         dens = v[..., 0]
+#         X = v[..., -1] / dens
+#
+#         if self.dim == Dimension.oneD:
+#             vel = v[..., 1] / dens
+#             J = np.empty((*v.shape, v.shape[-1]))
+#
+#             J[..., :-1, :-1] = super().jacobian(v[..., :-1])
+#             J[..., :-1, -1] = 0
+#
+#             J[..., -1, 0] = -vel * X
+#             J[..., -1, 1] = X
+#             J[..., -1, 2] = 0
+#             J[..., -1, 3] = vel
+#
+#             return J,
+#
+#         elif self.dim == Dimension.twoD:
+#             velx = v[..., 1] / dens
+#             vely = v[..., 2] / dens
+#
+#             JF = np.empty((*v.shape, v.shape[-1]))
+#             JG = np.empty((*v.shape, v.shape[-1]))
+#
+#             JF[..., :-1, :-1], JG[..., :-1, :-1] = super().jacobian(v[..., :-1])
+#             JF[..., :-1, -1] = 0
+#             JG[..., :-1, -1] = 0
+#
+#             # Df
+#             JF[..., -1, 0] = -velx * X
+#             JF[..., -1, 1] = X
+#             JF[..., -1, 2:4] = 0
+#             JF[..., -1, 4] = velx
+#
+#             # Dg
+#             JG[..., -1, 0] = -vely * X
+#             JG[..., -1, 1] = 0
+#             JG[..., -1, 2] = X
+#             JG[..., -1, 3] = 0
+#             JG[..., -1, 4] = vely
+#
+#             return JF, JG
+#         else:
+#             raise NotImplementedError
+#
+#     def conserved_to_primitive(self, v):
+#         dens = v[..., 0]
+#         mom = v[..., 1:self.dim + 1]
+#         E = v[..., -2]
+#         primitives = np.empty(v.shape)
+#         primitives[..., 0] = dens
+#         for i in range(self.dim):
+#             primitives[..., i + 1] = mom[..., i] / dens
+#         primitives[..., -2] = (self.gamma - 1) * (E - 0.5 * np.sum(mom ** 2, axis=-1)) / dens
+#         primitives[..., -1] = v[..., -1] / dens
+#         return primitives
+#
+#     def primitive_to_conserved(self, w):
+#         dens = w[..., 0]
+#         v = w[..., 1:self.dim + 1]
+#         p = w[..., -2]
+#         conserved_w = np.empty(w.shape)
+#         conserved_w[..., 0] = dens
+#         for i in range(self.dim):
+#             conserved_w[..., i + 1] = dens * v[..., i]
+#         conserved_w[..., -2] = p / (self.gamma - 1) + 0.5 * dens * np.sum(v ** 2, axis=-1)
+#         conserved_w[..., -1] = w[..., -1] * dens
+#         return conserved_w
 
-class EulerScalarAdvect(Euler):
-    def __init__(self, gamma, dim: Dimension):
-        super().__init__(gamma, dim, extra_comp=1)  # nr of dims velocities + density plus energy_new
-        self.comp_names = ["density", *[f"momenta_{dim}" for dim in "xyz"[:dim.value]], "Energy", "X"]
 
-    def pres(self, v):
-        dens = v[..., 0]
-        Etot = v[..., -2]
-        Ekin = 0.5 * np.sum(v[..., 1:self.dim.value + 1] ** 2, axis=-1) / dens
-        eint = Etot - Ekin
-        return eint * (self.gamma - 1.)
-
-    def __call__(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
-        # define p and E
-        p = self.pres(v)
-        dens = v[..., 0]
-        vels = v[..., 1:self.dim.value + 1] / dens[..., np.newaxis]
-        Etot = v[..., -2]
-        X = v[..., -1]
-        result = np.empty((*v.shape, self.dim.value))
-
-        result[..., 0, :] = v[..., 1:self.dim.value + 1]
-        result[..., 1:self.dim.value + 1, :] = np.einsum("...i,...j->...ij", v[..., 1:self.dim.value + 1], vels) \
-                                               + np.einsum("...i,jk->...ijk", p, np.identity(self.dim.value))
-        result[..., -2, :] = np.einsum("...,...i->...i", Etot + p, vels)
-        result[..., -1, :] = np.einsum("...,...i->...i", X, v[..., 1:self.dim.value + 1])
-
-        return tuple(result[..., i] for i in range(self.dim.value))
-
-    def jacobian(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
-        dens = v[..., 0]
-        X = v[..., -1] / dens
-
-        if self.dim == Dimension.oneD:
-            vel = v[..., 1] / dens
-            J = np.empty((*v.shape, v.shape[-1]))
-
-            J[..., :-1, :-1] = super().jacobian(v[..., :-1])
-            J[..., :-1, -1] = 0
-
-            J[..., -1, 0] = -vel * X
-            J[..., -1, 1] = X
-            J[..., -1, 2] = 0
-            J[..., -1, 3] = vel
-
-            return J,
-
-        elif self.dim == Dimension.twoD:
-            velx = v[..., 1] / dens
-            vely = v[..., 2] / dens
-
-            JF = np.empty((*v.shape, v.shape[-1]))
-            JG = np.empty((*v.shape, v.shape[-1]))
-
-            JF[..., :-1, :-1], JG[..., :-1, :-1] = super().jacobian(v[..., :-1])
-            JF[..., :-1, -1] = 0
-            JG[..., :-1, -1] = 0
-
-            # Df
-            JF[..., -1, 0] = -velx * X
-            JF[..., -1, 1] = X
-            JF[..., -1, 2:4] = 0
-            JF[..., -1, 4] = velx
-
-            # Dg
-            JG[..., -1, 0] = -vely * X
-            JG[..., -1, 1] = 0
-            JG[..., -1, 2] = X
-            JG[..., -1, 3] = 0
-            JG[..., -1, 4] = vely
-
-            return JF, JG
-        else:
-            raise NotImplementedError
-
-    def conserved_to_primitive(self, v):
-        dens = v[..., 0]
-        mom = v[..., 1:self.dim.value + 1]
-        E = v[..., -2]
-        primitives = np.empty(v.shape)
-        primitives[..., 0] = dens
-        for i in range(self.dim.value):
-            primitives[..., i + 1] = mom[..., i] / dens
-        primitives[..., -2] = (self.gamma - 1) * (E - 0.5 * np.sum(mom ** 2, axis=-1)) / dens
-        primitives[..., -1] = v[..., -1] / dens
-        return primitives
-
-    def primitive_to_conserved(self, w):
-        dens = w[..., 0]
-        v = w[..., 1:self.dim.value + 1]
-        p = w[..., -2]
-        conserved_w = np.empty(w.shape)
-        conserved_w[..., 0] = dens
-        for i in range(self.dim.value):
-            conserved_w[..., i + 1] = dens * v[..., i]
-        conserved_w[..., -2] = p / (self.gamma - 1) + 0.5 * dens * np.sum(v ** 2, axis=-1)
-        conserved_w[..., -1] = w[..., -1] * dens
-        return conserved_w
-
-
-class EulerNondimensional(Euler):
-    def __init__(self, gamma, dim: Dimension, Mr):
-        super().__init__(gamma, dim)
-        self.mr = Mr
-
-    def pres(self, v):
-        dens = v[..., 0]
-        Etot = v[..., -2]
-        Ekin = 0.5 * np.sum(v[..., 1:self.dim.value + 1] ** 2, axis=-1) / dens
-        eint = Etot - self.mr * Ekin
-        return eint * (self.gamma - 1.)
-
-    def __call__(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
-        # define p and E
-        p = self.pres(v)
-        dens = v[..., 0]
-        vels = v[..., 1:self.dim.value + 1] / dens[..., np.newaxis]
-        Etot = v[..., -2]
-        X = v[..., -1]
-        result = np.empty((*v.shape, self.dim.value))
-
-        result[..., 0, :] = v[..., 1:self.dim.value + 1]
-        result[..., 1:self.dim.value + 1, :] = np.einsum("...i,...j->...ij", v[..., 1:self.dim.value + 1], vels) \
-                                               + np.einsum("...i,jk->...ijk", p / self.mr ** 2,
-                                                           np.identity(self.dim.value))
-        result[..., -2, :] = np.einsum("...,...i->...i", Etot + p, vels)
-        result[..., -1, :] = np.einsum("...,...i->...i", X, v[..., 1:self.dim.value + 1])
-
-        return tuple(result[..., i] for i in range(self.dim.value))
-
-    def jacobian(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
-        raise NotImplementedError
-
-    def conserved_to_primitive(self, v):
-        dens = v[..., 0]
-        mom = v[..., 1:self.dim.value + 1]
-        E = v[..., -1]
-        primitives = np.empty(v.shape)
-        primitives[..., 0] = dens
-        for i in range(self.dim.value):
-            primitives[..., i + 1] = mom[..., i] / dens
-        primitives[..., -1] = (self.gamma - 1) * (E - self.mr * 0.5 * np.sum(mom ** 2, axis=-1)) / dens
-        return primitives
-
-    def primitive_to_conserved(self, w):
-        dens = w[..., 0]
-        v = w[..., 1:self.dim.value + 1]
-        p = w[..., -1]
-        conserved_w = np.empty(w.shape)
-        conserved_w[..., 0] = dens
-        for i in range(self.dim.value):
-            conserved_w[..., i + 1] = dens * v[..., i]
-        conserved_w[..., -1] = p / (self.gamma - 1) + self.mr * 0.5 * dens * np.sum(v ** 2, axis=-1)
-        return conserved_w
+# class EulerNondimensional(Euler):
+#     def __init__(self, gamma, dim, Mr):
+#         super().__init__(gamma, dim)
+#         self.mr = Mr
+#
+#     def pres(self, v):
+#         dens = v[..., 0]
+#         Etot = v[..., -2]
+#         Ekin = 0.5 * np.sum(v[..., 1:self.dim + 1] ** 2, axis=-1) / dens
+#         eint = Etot - self.mr * Ekin
+#         return eint * (self.gamma - 1.)
+#
+#     def __call__(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
+#         # define p and E
+#         p = self.pres(v)
+#         dens = v[..., 0]
+#         vels = v[..., 1:self.dim + 1] / dens[..., np.newaxis]
+#         Etot = v[..., -2]
+#         X = v[..., -1]
+#         result = np.empty((*v.shape, self.dim))
+#
+#         result[..., 0, :] = v[..., 1:self.dim + 1]
+#         result[..., 1:self.dim + 1, :] = np.einsum("...i,...j->...ij", v[..., 1:self.dim + 1], vels) \
+#                                                + np.einsum("...i,jk->...ijk", p / self.mr ** 2,
+#                                                            np.identity(self.dim))
+#         result[..., -2, :] = np.einsum("...,...i->...i", Etot + p, vels)
+#         result[..., -1, :] = np.einsum("...,...i->...i", X, v[..., 1:self.dim + 1])
+#
+#         return tuple(result[..., i] for i in range(self.dim))
+#
+#     def jacobian(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
+#         raise NotImplementedError
+#
+#     def conserved_to_primitive(self, v):
+#         dens = v[..., 0]
+#         mom = v[..., 1:self.dim + 1]
+#         E = v[..., -1]
+#         primitives = np.empty(v.shape)
+#         primitives[..., 0] = dens
+#         for i in range(self.dim):
+#             primitives[..., i + 1] = mom[..., i] / dens
+#         primitives[..., -1] = (self.gamma - 1) * (E - self.mr * 0.5 * np.sum(mom ** 2, axis=-1)) / dens
+#         return primitives
+#
+#     def primitive_to_conserved(self, w):
+#         dens = w[..., 0]
+#         v = w[..., 1:self.dim + 1]
+#         p = w[..., -1]
+#         conserved_w = np.empty(w.shape)
+#         conserved_w[..., 0] = dens
+#         for i in range(self.dim):
+#             conserved_w[..., i + 1] = dens * v[..., i]
+#         conserved_w[..., -1] = p / (self.gamma - 1) + self.mr * 0.5 * dens * np.sum(v ** 2, axis=-1)
+#         return conserved_w

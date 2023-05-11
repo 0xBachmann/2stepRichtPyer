@@ -9,7 +9,7 @@ import numpy as np
 
 log("definition of variables")
 
-DIM = Dimension.twoD
+DIM = 2
 F = Euler(5. / 3, dim=DIM)
 
 log("calculate initial conditions")
@@ -17,7 +17,8 @@ log("calculate initial conditions")
 resolution = np.array([40] * DIM.value)
 Lx = 1
 Ly = Lx
-stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-8)
+stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution)
+# stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-8)
 
 center = np.array([Lx / 2, Ly / 2])
 avg_coords = [avg_x(coord) for coord in stepper.coords]

@@ -9,6 +9,9 @@ from scipy import sparse
 
 from typing import Callable, Union
 
+from numba import jit
+from numba.experimental import jitclass
+
 
 class Solver:
     def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic"):
@@ -83,9 +86,78 @@ class Solver:
             time += min(dt, T - time)
 
 
-class Richtmeyer2step(Solver):
+@jitclass()
+class Richtmeyer2step:
     def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic"):
-        super().__init__(pde, domain, resolutions, bdc)
+        self.pde = pde
+        self.dim = pde.dim
+        if len(domain.shape) == 2:
+            self.domain = domain
+        else:
+            self.domain = np.zeros((domain.shape[0], 2))
+            self.domain[:, 1] = domain
+        self.ncellsxyz = resolutions
+        self.coords = [np.linspace(self.domain[i, 0], self.domain[i, 1], self.ncellsxyz[i] + 1) for i in range(self.dim.value)]
+        self.dxyz = ((self.domain[:, 1] - self.domain[:, 0]) / self.ncellsxyz).ravel()
+        self.grid = np.empty((*(self.ncellsxyz + 2), self.pde.ncomp))
+        self.no_ghost = tuple(slice(1, -1) for _ in range(self.dim.value))
+
+        self.is_periodic = False
+        if isinstance(bdc, str):
+            if bdc == "periodic":
+                self.is_periodic = True
+                self.bdc = lambda grid: pbc(grid, self.dim)
+            elif bdc == "zero":
+                self.bdc = lambda grid: zero_bd(grid, self.dim)
+            else:
+                raise ValueError(f"{bdc} boundary condition type not known")
+        elif callable(bdc):
+            self.bdc = bdc
+        else:
+            raise TypeError(f"Expected string or Callable, got {type(bdc)} instead")
+
+    @property
+    def grid_no_ghost(self):
+        return self.grid[self.no_ghost]
+
+    @grid_no_ghost.setter
+    def grid_no_ghost(self, v: np.ndarray):
+        self.grid[self.no_ghost] = v
+
+    def initial_cond(self, f):
+        avg_coords = [avg_x(coord) for coord in self.coords]
+        XYZ = np.stack(np.meshgrid(*avg_coords, indexing='ij'), axis=-1)
+
+        self.grid_no_ghost = f(XYZ)
+        self.bdc(self.grid)
+
+    def cfl(self):
+        prime = self.pde.max_speed(self.grid[self.no_ghost])
+        a = np.max(np.reshape(np.abs(prime), (np.product(self.ncellsxyz), self.dim.value)), axis=0)
+        dts = self.dxyz / (2 * a)  # TODO (2 bc half step)
+        # TODO correct for diagonal?
+        return np.min(dts)
+
+    def get_coords(self, stacked=False):
+        avg_coords = [avg_x(coord) for coord in self.coords]
+        XYZ = np.meshgrid(*avg_coords, indexing='ij')
+        if stacked:
+            XYZ = np.stack(XYZ, axis=-1)
+        return XYZ
+
+    def step(self, dt):
+        raise RuntimeError(f"{self.__class__} is only an abstract base class")
+
+    def step_for(self, T, fact=1., callback=None):
+        time = 0.
+        while time < T:
+            dt = self.cfl() * fact
+            self.step(dt)
+
+            if callable(callback):
+                callback(self, dt)
+
+            time += min(dt, T - time)
 
     def step(self, dt):
         def div_fluxes(source: np.ndarray) -> np.ndarray:
