@@ -1,5 +1,5 @@
 from two_step_richtmeyer_util import *
-from PDE_Types import PDE
+from PDE_Types import PDE, Euler
 import numpy as np
 from copy import deepcopy
 import sys
@@ -91,26 +91,38 @@ class Richtmeyer2step(Solver):
         super().__init__(pde, domain, resolutions, bdc)
 
     def step(self, dt):
+        assert self.dim == Dimension.twoD and isinstance(self.pde, Euler)
+
         def div_fluxes(source: np.ndarray) -> np.ndarray:
             source_fluxes = self.pde(source)
-            if self.dim == Dimension.oneD:
-                return c[0] * del_x(source_fluxes[0])
-            if self.dim == Dimension.twoD:
-                return c[0] * del_x(avg_y(source_fluxes[0])) + c[1] * del_y(avg_x(source_fluxes[1]))
-            if self.dim == Dimension.threeD:
-                return c[0] * del_x(avg_y(avg_z(source_fluxes[0]))) + c[1] * del_y(avg_x(avg_z(source_fluxes[1]))) \
-                    + c[2] * del_z(avg_x(avg_y(source_fluxes[2])))
+            return c[0] * del_x(avg_y(source_fluxes[0])) + c[1] * del_y(avg_x(source_fluxes[1]))
+
+        def viscosity(v: np.ndarray, c1=1, c2=0, lz=self.dxyz[0]) -> np.ndarray:
+            csnd = self.pde.csnd(v)
+            velocity_diff = 0
+            q = v[..., 0] * (c1 * csnd + c2 * velocity_diff) * lz
+            vx = v[..., 1] / v[..., 0]
+            vy = v[..., 2] / v[..., 0]
+            eps = 0.5 * (avg_x(del_y(vx)) + avg_y(del_x(vy)))  # TODO wrong, needs to be 2x2 matrices at each point
+            Q = eps - 1. / 3 * np.einsum("...i,jk->...ijk", avg_x(del_y(vy)) + avg_y(del_x(vx)), np.identity(2))
+
+            return q * Q
 
         c = dt / self.dxyz
         self.bdc(self.grid)
 
-        staggered = avg_x(self.grid)
-        if self.dim == Dimension.twoD:
-            staggered = avg_y(staggered)
-        if self.dim == Dimension.threeD:
-            staggered = avg_z(staggered)
+        staggered = avg_x(avg_y(self.grid))
 
-        staggered -= 0.5 * div_fluxes(self.grid)
+        fluxes = self.pde(self.grid)
+        visc = viscosity(self.grid)
+        fluxes[0][..., 1:3] -= visc[..., 0]
+        fluxes[1][..., 1:3] -= visc[..., 1]
+        staggered -= 0.5 * c[0] * del_x(avg_y(fluxes[0])) + c[1] * del_y(avg_x(fluxes[1]))
+
+        fluxes = self.pde(staggered)
+        fluxes[0][..., 1:3] -= visc[..., 0]
+        fluxes[1][..., 1:3] -= visc[..., 1]
+        staggered -= 0.5 * c[0] * del_x(avg_y(fluxes[0])) + c[1] * del_y(avg_x(fluxes[1]))
         self.grid_no_ghost -= div_fluxes(staggered)
 
 

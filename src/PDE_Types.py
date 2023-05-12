@@ -63,11 +63,15 @@ class BurgersEq(PDE):
 
 
 class Euler(PDE):
-    def __init__(self, gamma, dim: Dimension, extra_comp=0):
+    def __init__(self, gamma, dim: Dimension, extra_comp=0, add_viscosity=False, c1=None, c2=None, lz=None):
         super().__init__(dim=dim, ncomp=dim.value + 2 + extra_comp,
                          Type=PDE_Type.Euler)  # nr of dims velocities + density plus energy_new
         self.gamma = gamma
         self.comp_names = ["density", *[f"momenta_{dim}" for dim in "xyz"[:self.dim.value]], "Energy"]
+        self.add_viscosity = add_viscosity
+        self.c1 = c1
+        self.c2 = c2
+        self.lz = lz
 
     def pres(self, v):
         dens = v[..., 0]
@@ -93,6 +97,8 @@ class Euler(PDE):
         result[..., 1:self.dim.value + 1, :] = np.einsum("...i,...j->...ij", v[..., 1:self.dim.value + 1], vels) \
                                                + np.einsum("...i,jk->...ijk", p, np.identity(self.dim.value))
         result[..., -1, :] = np.einsum("...,...i->...i", Etot + p, vels)
+
+        # TODO: add viscosity
 
         return tuple(result[..., i] for i in range(self.dim.value))
 
@@ -408,3 +414,6 @@ class EulerNondimensional(Euler):
             conserved_w[..., i + 1] = dens * v[..., i]
         conserved_w[..., -1] = p / (self.gamma - 1) + self.mr * 0.5 * dens * np.sum(v ** 2, axis=-1)
         return conserved_w
+
+
+
