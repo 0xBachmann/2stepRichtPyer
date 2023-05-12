@@ -14,10 +14,12 @@ F = Euler(5. / 3, dim=DIM)
 
 log("calculate initial conditions")
 
-resolution = np.array([40] * DIM.value)
+resolution = np.array([80] * DIM.value)
 Lx = 1
 Ly = Lx
 stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-8)
+# stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution)
+
 
 center = np.array([Lx / 2, Ly / 2])
 avg_coords = [avg_x(coord) for coord in stepper.coords]
@@ -35,7 +37,7 @@ def u_phi(grid: np.ndarray) -> np.ndarray:
     return u
 
 
-M = 0.01
+M = 0.1
 t = 1.
 stepper.initial_cond(lambda x: gresho_vortex(x, center, F, Mmax=M, qr=0.4 * np.pi * Lx / 1))
 

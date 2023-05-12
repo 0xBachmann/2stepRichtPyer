@@ -20,7 +20,8 @@ class Solver:
             self.domain = np.zeros((domain.shape[0], 2))
             self.domain[:, 1] = domain
         self.ncellsxyz = resolutions
-        self.coords = [np.linspace(self.domain[i, 0], self.domain[i, 1], self.ncellsxyz[i] + 1) for i in range(self.dim.value)]
+        self.coords = [np.linspace(self.domain[i, 0], self.domain[i, 1], self.ncellsxyz[i] + 1) for i in
+                       range(self.dim.value)]
         self.dxyz = ((self.domain[:, 1] - self.domain[:, 0]) / self.ncellsxyz).ravel()
         self.grid = np.empty((*(self.ncellsxyz + 2), self.pde.ncomp))
         self.no_ghost = tuple(slice(1, -1) for _ in range(self.dim.value))
@@ -85,8 +86,6 @@ class Solver:
                 print(f"dt = {dt}, time = {time:.3f}/{T}")
 
 
-
-
 class Richtmeyer2step(Solver):
     def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic"):
         super().__init__(pde, domain, resolutions, bdc)
@@ -143,7 +142,7 @@ class Richtmeyer2stepImplicit(Solver):
                 avg_t = 0.5 * (self.grid + grid_old)
                 fluxes = self.pde(avg_t)
                 F = (self.grid_no_ghost - grid_old[self.no_ghost]
-                        + c[0] * self.del_x(fluxes[0])).ravel()
+                     + c[0] * self.del_x(fluxes[0])).ravel()
 
                 JF, = self.pde.jacobian(avg_t[self.no_ghost])
 
@@ -194,8 +193,8 @@ class Richtmeyer2stepImplicit(Solver):
                 avg_t = 0.5 * (self.grid + grid_old)
                 fluxes = self.pde(avg_t)
                 F = (self.grid_no_ghost - grid_old[self.no_ghost]
-                        + c[0] * self.del_x(self.avg_y(fluxes[0]))
-                        + c[1] * self.del_y(self.avg_x(fluxes[1]))).ravel()
+                     + c[0] * self.del_x(self.avg_y(fluxes[0]))
+                     + c[1] * self.del_y(self.avg_x(fluxes[1]))).ravel()
 
                 JF, JG = self.pde.jacobian(avg_t[self.no_ghost])
 
@@ -227,7 +226,8 @@ class Richtmeyer2stepImplicit(Solver):
                         J[((i + 1) * nx - 1) * ncomp:(i + 1) * nx * ncomp, i * nx * ncomp:(i * nx + 1) * ncomp, ...] = \
                             JF[i * nx * ncomp:(i * nx + 1) * ncomp, i * nx * ncomp:(i * nx + 1) * ncomp, ...]
                         J[i * nx * ncomp:(i * nx + 1) * ncomp, ((i + 1) * nx - 1) * ncomp:(i + 1) * nx * ncomp, ...] = \
-                            -JF[((i + 1) * nx - 1) * ncomp:(i + 1) * nx * ncomp, ((i + 1) * nx - 1) * ncomp:(i + 1) * nx * ncomp, ...]
+                            -JF[((i + 1) * nx - 1) * ncomp:(i + 1) * nx * ncomp,
+                             ((i + 1) * nx - 1) * ncomp:(i + 1) * nx * ncomp, ...]
                 if not self.is_periodic:
                     shift = (ny - 1) * nx * ncomp
                     for i in range(nx):

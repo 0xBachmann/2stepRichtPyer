@@ -66,7 +66,12 @@
 - [x] rewrite lsa
 - [x] revisit order of operators in explicit scheme
 - [ ] better guess for big time step? (just big explicit?)
+  - try it
 - [ ] add numba
+  - big pain with all the classes
+- [ ] angular momenta conservation
+- [ ] artificial viscosity
+- [ ] lerp between two fluxes
 
 
 # To Discuss
@@ -94,4 +99,5 @@
 - F wrong in implicit?
 ## 12.05.23
 - implicit correct now -> krylov works
-- 
+- summer school?
+- better guess for big time step?
