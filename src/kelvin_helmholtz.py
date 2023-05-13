@@ -16,7 +16,8 @@ log("calculate initial conditions")
 
 domain = np.array([[0, 1], [0, 1]])
 resolution = np.array([128] * DIM.value)
-stepper = Richtmeyer2stepImplicit(F, domain, resolution, eps=1e-9)
+# stepper = Richtmeyer2stepImplicit(F, domain, resolution, eps=1e-9)
+stepper = Richtmeyer2step(F, domain, resolution)
 
 center = np.array([0.5, 0.5])
 
@@ -54,7 +55,7 @@ def plot(dt):
 
 plot(0)
 
-fact = 100
+fact = 1
 T = 3
 time = 0.
 while time < T:
