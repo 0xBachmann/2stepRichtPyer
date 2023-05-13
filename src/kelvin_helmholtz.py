@@ -10,12 +10,15 @@ import numpy as np
 log("definition of variables")
 
 DIM = Dimension.twoD
-F = EulerScalarAdvect(5. / 3, dim=DIM)
-
-log("calculate initial conditions")
 
 domain = np.array([[0, 1], [0, 1]])
 resolution = np.array([128] * DIM.value)
+
+h = ((domain[:, 1] - domain[:, 0]) / resolution).ravel()
+F = EulerScalarAdvect(5. / 3, dim=DIM, c1=1., c2=1., hx=h[0], hy=h[1], add_viscosity=True)
+
+log("calculate initial conditions")
+
 # stepper = Richtmeyer2stepImplicit(F, domain, resolution, eps=1e-9)
 stepper = Richtmeyer2step(F, domain, resolution)
 

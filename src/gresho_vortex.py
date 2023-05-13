@@ -10,15 +10,15 @@ import numpy as np
 log("definition of variables")
 
 DIM = Dimension.twoD
-F = Euler(5. / 3, dim=DIM)
-
-log("calculate initial conditions")
-
 resolution = np.array([80] * DIM.value)
 Lx = 1
 Ly = Lx
-stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-8)
-# stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution)
+F = Euler(5. / 3, dim=DIM, c1=0.1, c2=0.1, hx=Lx / resolution[0], hy=Ly / resolution[1], add_viscosity=True)
+
+log("calculate initial conditions")
+
+# stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-8)
+stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution)
 
 
 center = np.array([Lx / 2, Ly / 2])
@@ -41,7 +41,7 @@ M = 0.1
 t = 1.
 stepper.initial_cond(lambda x: gresho_vortex(x, center, F, Mmax=M, qr=0.4 * np.pi * Lx / 1))
 
-plotter = Plotter(1, action="show", writeout=1, dim=stepper.dim, filename="gresho_vortex_iml_100_hybr_eps1e-9.mp4")
+plotter = Plotter(1, action="show", writeout=100, dim=stepper.dim, filename="gresho_vortex_iml_100_hybr_eps1e-9.mp4")
 
 
 def plot(stepper, dt, plot_mach=True):
@@ -55,6 +55,6 @@ def plot(stepper, dt, plot_mach=True):
         plotter.write(stepper.grid_no_ghost, dt)
 
 
-stepper.step_for(t, fact=100, callback=plot)
+stepper.step_for(t, fact=1, callback=plot)
 
 plotter.finalize()

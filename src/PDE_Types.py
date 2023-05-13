@@ -1,5 +1,5 @@
 from enum import Enum
-from two_step_richtmeyer_util import Dimension
+from two_step_richtmeyer_util import *
 import numpy as np
 
 
@@ -63,7 +63,7 @@ class BurgersEq(PDE):
 
 
 class Euler(PDE):
-    def __init__(self, gamma, dim: Dimension, extra_comp=0, add_viscosity=False, c1=None, c2=None, lz=None):
+    def __init__(self, gamma, dim: Dimension, extra_comp=0, add_viscosity=False, c1=0, c2=0, hx=None, hy=None):
         super().__init__(dim=dim, ncomp=dim.value + 2 + extra_comp,
                          Type=PDE_Type.Euler)  # nr of dims velocities + density plus energy_new
         self.gamma = gamma
@@ -71,7 +71,9 @@ class Euler(PDE):
         self.add_viscosity = add_viscosity
         self.c1 = c1
         self.c2 = c2
-        self.lz = lz
+        self.hx = hx
+        self.hy = hy
+        self.lz = np.minimum(hx, hy)
 
     def pres(self, v):
         dens = v[..., 0]
@@ -84,6 +86,86 @@ class Euler(PDE):
         p = self.pres(v)
         dens = v[..., 0]
         return np.sqrt(self.gamma * p / dens)
+
+    def viscosity2(self, v: np.ndarray, other: np.ndarray) -> np.ndarray:
+        csnd = self.csnd(v)
+
+        vels = np.empty(tuple([d + 2 for d in other.shape[:-1]] + [2]))
+        vels[1:-1, 1:-1, ...] = other[..., 1:3] / other[..., 0, np.newaxis]
+
+        vels[0, ...] = vels[-3, ...]
+        vels[-1, ...] = vels[2, ...]
+        vels[:, 0, ...] = vels[:, -3, ...]
+        vels[:, -1, ...] = vels[:, 2, ...]
+
+        vx = vels[..., 0]
+        vy = vels[..., 1]
+
+        velocity_diff = np.maximum.reduce([
+            np.linalg.norm(vels[1:, 1:, ...] - vels[1:, :-1, ...], axis=-1),
+            np.linalg.norm(vels[1:, 1:, ...] - vels[:-1, 1:, ...], axis=-1),
+            np.linalg.norm(vels[1:, 1:, ...] - vels[:-1, :-1, ...], axis=-1),
+            np.linalg.norm(vels[:-1, :-1, ...] - vels[1:, :-1, ...], axis=-1),
+            np.linalg.norm(vels[:-1, :-1, ...] - vels[1:, :-1, ...], axis=-1),
+            np.linalg.norm(vels[:-1, 1:, ...] - vels[1:, :-1, ...], axis=-1),
+        ])
+
+        q = v[..., 0] * (self.c1 * csnd + self.c2 * velocity_diff) * self.lz
+
+        def dx(v: np.ndarray) -> np.ndarray:
+            return avg_y(del_x(v)) / self.hx
+
+        def dy(v: np.ndarray) -> np.ndarray:
+            return avg_x(del_y(v)) / self.hy
+
+        eps = np.empty(tuple([d for d in v.shape[:-1]] + [2, 2]))
+        eps[..., 0, 0] = dx(vx)
+        eps[..., 0, 1] = 0.5 * (dx(vy) + dy(vx))
+        eps[..., 1, 0] = 0.5 * (dx(vy) + dy(vx))
+        eps[..., 1, 1] = dy(vy)
+
+        Q = eps - 1. / 3 * np.einsum("...i,jk->...ijk", dx(vx) + dy(vy), np.eye(2, 2))
+
+        return q[..., np.newaxis, np.newaxis] * Q
+
+    def viscosity(self, v: np.ndarray) -> np.ndarray:
+        csnd = self.csnd(v)
+
+        vels = np.empty(tuple([d + 2 for d in v.shape[:-1]] + [2]))
+        vels[1:-1, 1:-1, ...] = v[..., 1:3] / v[..., 0, np.newaxis]
+
+        vels[0, ...] = vels[-3, ...]
+        vels[-1, ...] = vels[2, ...]
+        vels[:, 0, ...] = vels[:, -3, ...]
+        vels[:, -1, ...] = vels[:, 2, ...]
+
+        vx = vels[..., 0]
+        vy = vels[..., 1]
+
+        velocity_diff = np.maximum.reduce([
+            np.linalg.norm(vels[2:, 1:-1, ...] - vels[:-2, 1:-1, ...], axis=-1),
+            np.linalg.norm(vels[1:-1, 2:, ...] - vels[1:-1, :-2, ...], axis=-1),
+            np.linalg.norm(vels[2:, 2:, ...] - vels[:-2, :-2, ...], axis=-1),
+            np.linalg.norm(vels[:-2, 2:, ...] - vels[2:, :-2, ...], axis=-1),
+        ])
+
+        q = v[..., 0] * (self.c1 * csnd + self.c2 * velocity_diff) * self.lz
+
+        def dx(v: np.ndarray) -> np.ndarray:
+            return (v[2:, ...] - v[:-2, ...])[:, 1:-1, ...] / self.hx
+
+        def dy(v: np.ndarray) -> np.ndarray:
+            return (v[:, 2:, ...] - v[:, :-2, ...])[1:-1, ...] / self.hy
+
+        eps = np.empty(tuple([d for d in v.shape[:-1]] + [2, 2]))
+        eps[..., 0, 0] = dx(vx)
+        eps[..., 0, 1] = 0.5 * (dx(vy) + dy(vx))
+        eps[..., 1, 0] = 0.5 * (dx(vy) + dy(vx))
+        eps[..., 1, 1] = dy(vy)
+
+        Q = eps - 1. / 3 * np.einsum("...i,jk->...ijk", dx(vx) + dy(vy), np.eye(2, 2))
+
+        return q[..., np.newaxis, np.newaxis] * Q
 
     def __call__(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
         # define p and E
@@ -98,7 +180,13 @@ class Euler(PDE):
                                                + np.einsum("...i,jk->...ijk", p, np.identity(self.dim.value))
         result[..., -1, :] = np.einsum("...,...i->...i", Etot + p, vels)
 
-        # TODO: add viscosity
+        if self.add_viscosity:
+            # version 1: dx = mux delx
+            if False:
+                result[..., 1:3, :] -= self.viscosity(v)
+            # version 2: dx = muy delx
+            else:
+                result[..., 1:3, :] -= self.viscosity2(v, avg_x(avg_y(v)))
 
         return tuple(result[..., i] for i in range(self.dim.value))
 
@@ -261,8 +349,8 @@ class Euler(PDE):
 
 
 class EulerScalarAdvect(Euler):
-    def __init__(self, gamma, dim: Dimension):
-        super().__init__(gamma, dim, extra_comp=1)  # nr of dims velocities + density plus energy_new
+    def __init__(self, gamma, dim: Dimension, add_viscosity=False, c1=0, c2=0, hx=None, hy=None):
+        super().__init__(gamma, dim, extra_comp=1, add_viscosity=add_viscosity, c1=c1, c2=c2, hx=hx, hy=hy)  # nr of dims velocities + density plus energy_new
         self.comp_names = ["density", *[f"momenta_{dim}" for dim in "xyz"[:dim.value]], "Energy", "X"]
 
     def pres(self, v):
@@ -286,6 +374,14 @@ class EulerScalarAdvect(Euler):
                                                + np.einsum("...i,jk->...ijk", p, np.identity(self.dim.value))
         result[..., -2, :] = np.einsum("...,...i->...i", Etot + p, vels)
         result[..., -1, :] = np.einsum("...,...i->...i", X, v[..., 1:self.dim.value + 1])
+
+        if self.add_viscosity:
+            # version 1: dx = mux delx
+            if False:
+                result[..., 1:3, :] -= self.viscosity(v)
+            # version 2: dx = muy delx
+            else:
+                result[..., 1:3, :] -= self.viscosity2(v, avg_x(avg_y(v)))
 
         return tuple(result[..., i] for i in range(self.dim.value))
 
