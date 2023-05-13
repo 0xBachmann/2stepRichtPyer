@@ -253,6 +253,9 @@ class Euler(PDE):
         conserved_w[..., -1] = p / (self.gamma - 1) + 0.5 * dens * np.sum(v ** 2, axis=-1)
         return conserved_w
 
+    def angular_momenta(self, v: np.ndarray, XYZ) -> np.ndarray:
+        return np.cross(XYZ, v[..., 1:self.dim.value + 1])
+
 
 class EulerScalarAdvect(Euler):
     def __init__(self, gamma, dim: Dimension):

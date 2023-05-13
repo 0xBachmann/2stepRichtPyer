@@ -69,7 +69,8 @@
   - try it
 - [ ] add numba
   - big pain with all the classes
-- [ ] angular momenta conservation
+- [x] angular momenta conservation
+  - almost conserved
 - [ ] artificial viscosity
 - [ ] lerp between two fluxes
 
