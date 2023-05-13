@@ -97,16 +97,43 @@ class Richtmeyer2step(Solver):
             source_fluxes = self.pde(source)
             return c[0] * del_x(avg_y(source_fluxes[0])) + c[1] * del_y(avg_x(source_fluxes[1]))
 
-        def viscosity(v: np.ndarray, c1=1, c2=0, lz=self.dxyz[0]) -> np.ndarray:
+        def viscosity(v: np.ndarray, other: np.ndarray, c1=1, c2=0.5, lz=self.dxyz[0]) -> np.ndarray:
             csnd = self.pde.csnd(v)
-            velocity_diff = 0
-            q = v[..., 0] * (c1 * csnd + c2 * velocity_diff) * lz
-            vx = v[..., 1] / v[..., 0]
-            vy = v[..., 2] / v[..., 0]
-            eps = 0.5 * (avg_x(del_y(vx)) + avg_y(del_x(vy)))  # TODO wrong, needs to be 2x2 matrices at each point
-            Q = eps - 1. / 3 * np.einsum("...i,jk->...ijk", avg_x(del_y(vy)) + avg_y(del_x(vx)), np.identity(2))
 
-            return q * Q
+            vels = np.empty(tuple([d + 2 for d in other.shape[:-1]] + [2]))
+            vels[1:-1, 1:-1, ...] = other[..., 1:3] / other[..., 0, np.newaxis]
+
+            vels[0, ...] = vels[-3, ...]
+            vels[-1, ...] = vels[2, ...]
+            vels[:, 0, ...] = vels[:, -3, ...]
+            vels[:, -1, ...] = vels[:, 2, ...]
+
+            vx = vels[..., 0]
+            vy = vels[..., 1]
+
+            velocity_diff = np.maximum.reduce([
+                np.linalg.norm(vels[1:, 1:, ...] - vels[1:, :-1, ...], axis=-1),
+                np.linalg.norm(vels[1:, 1:, ...] - vels[-1:, 1:, ...], axis=-1),
+                np.linalg.norm(vels[1:, 1:, ...] - vels[:-1, :-1, ...], axis=-1),
+                np.linalg.norm(vels[:-1, :-1, ...] - vels[1:, :-1, ...], axis=-1),
+                np.linalg.norm(vels[:-1, :-1, ...] - vels[1:, :-1, ...], axis=-1),
+                np.linalg.norm(vels[:-1, 1:, ...] - vels[1:, :-1, ...], axis=-1),
+            ])
+
+            q = v[..., 0] * (c1 * csnd + c2 * velocity_diff) * lz
+
+            hx = 1. / self.dxyz[0]
+            hy = 1. / self.dxyz[1]
+
+            eps = np.empty(tuple([d for d in v.shape[:-1]] + [2, 2]))
+            eps[..., 0, 0] = avg_y(del_x(vx)) * hx
+            eps[..., 0, 1] = 0.5 * (avg_x(del_y(vx)) * hy + avg_y(del_x(vy)) * hx)
+            eps[..., 1, 0] = 0.5 * (avg_x(del_y(vx)) * hy + avg_y(del_x(vy)) * hx)
+            eps[..., 1, 1] = avg_x(del_y(vy)) * hy
+
+            Q = eps - 1. / 3 * np.einsum("...i,jk->...ijk", avg_x(del_y(vy)) * hy + avg_y(del_x(vx)) * hx, np.eye(2, 2))
+
+            return q[..., np.newaxis, np.newaxis] * Q
 
         c = dt / self.dxyz
         self.bdc(self.grid)
@@ -114,16 +141,17 @@ class Richtmeyer2step(Solver):
         staggered = avg_x(avg_y(self.grid))
 
         fluxes = self.pde(self.grid)
-        visc = viscosity(self.grid)
+        visc = viscosity(self.grid, staggered)
         fluxes[0][..., 1:3] -= visc[..., 0]
         fluxes[1][..., 1:3] -= visc[..., 1]
         staggered -= 0.5 * c[0] * del_x(avg_y(fluxes[0])) + c[1] * del_y(avg_x(fluxes[1]))
 
         fluxes = self.pde(staggered)
+        visc = viscosity(staggered, self.grid_no_ghost)
         fluxes[0][..., 1:3] -= visc[..., 0]
         fluxes[1][..., 1:3] -= visc[..., 1]
-        staggered -= 0.5 * c[0] * del_x(avg_y(fluxes[0])) + c[1] * del_y(avg_x(fluxes[1]))
-        self.grid_no_ghost -= div_fluxes(staggered)
+        self.grid_no_ghost -= c[0] * del_x(avg_y(fluxes[0])) + c[1] * del_y(avg_x(fluxes[1]))
+
 
 
 class Richtmeyer2stepImplicit(Solver):
