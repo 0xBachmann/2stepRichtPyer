@@ -16,8 +16,8 @@ log("calculate initial conditions")
 
 domain = np.array([[0, 1], [0, 1]])
 resolution = np.array([128] * DIM.value)
-# stepper = Richtmeyer2stepImplicit(F, domain, resolution, eps=1e-9)
-stepper = Richtmeyer2step(F, domain, resolution)
+stepper = Richtmeyer2stepImplicit(F, domain, resolution, eps=1e-9)
+stepper_explicit = Richtmeyer2step(F, domain, resolution)
 
 center = np.array([0.5, 0.5])
 
@@ -55,16 +55,18 @@ def plot(dt):
 
 plot(0)
 
-fact = 1
+fact = 100
 T = 3
 time = 0.
 while time < T:
     dt = stepper.cfl() * fact
-    stepper.step(dt)
+    # stepper_explicit.grid_no_ghost = stepper.grid_no_ghost
+    # stepper_explicit.step(dt/10)
+    stepper.step(dt)#, guess=stepper_explicit.grid_no_ghost)
 
-    plot(dt)
+    #plot(dt)
 
     print(f"dt = {dt}, time = {time:.3f}/{T}")
     time += dt
 
-plotter.finalize()
+#plotter.finalize()

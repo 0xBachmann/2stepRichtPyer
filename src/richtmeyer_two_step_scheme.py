@@ -130,7 +130,7 @@ class Richtmeyer2stepImplicit(Solver):
         self.use_sparse = use_sparse
         self.nfevs = []
 
-    def step(self, dt):
+    def step(self, dt, guess=None):
         c = dt / self.dxyz
 
         grid_old = deepcopy(self.grid)
@@ -289,7 +289,9 @@ class Richtmeyer2stepImplicit(Solver):
             raise NotImplementedError("Jacobians not implemented for 3D")
 
         if self.use_root:
-            sol = root(F, self.grid_no_ghost.ravel(), tol=self.eps * np.product(self.ncellsxyz),
+            if guess is None:
+                guess = self.grid_no_ghost
+            sol = root(F, guess.ravel(), tol=self.eps * np.product(self.ncellsxyz),
                        jac=J if self.manual_jacobian else False, method=self.method)
             # self.nfevs.append(sol.nfev)
             self.grid_no_ghost = sol.x.reshape(self.grid_no_ghost.shape)
