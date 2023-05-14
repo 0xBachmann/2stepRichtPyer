@@ -81,7 +81,7 @@ class Euler(PDE):
         dens = v[..., 0]
         return np.sqrt(self.gamma * p / dens)
 
-    def eta(self, v: np.ndarray, dx) -> np.ndarray:
+    def eta(self, v: np.ndarray, dx, dy) -> np.ndarray:
         assert self.dim == Dimension.twoD
 
         csnd = self.csnd(v)
@@ -99,20 +99,21 @@ class Euler(PDE):
 
         k1 = 0.4
         vels = v[..., 1:3] / v[..., 0, np.newaxis]
-        div = 2 * (avg_x(del_x(vels[..., 0]))[..., 1:-1] + avg_y(del_y(vels[..., 1]))[1:-1, ...])
-        eta = np.minimum(1, np.maximum(0, -dx * div / (k1 * min_c) - 1))[..., np.newaxis]
+        div = 2 * (avg_x(del_x(vels[..., 0]))[..., 1:-1] / dx + avg_y(del_y(vels[..., 1]))[1:-1, ...] / dy)
+        eta = np.minimum(1, np.maximum(0, -dx * div / (k1 * min_c) - 1))[..., np.newaxis]  # TODO why * dx??
+
         p = self.pres(v)[1:-1, 1:-1, np.newaxis]
-        np.putmask(eta[1:, ...], (eta > 0)[:-1, ...] & (eta[1:, ...] == 0) & (p[:-1, ...] > p[1:, ...]), eta[:-1, ...])
-        np.putmask(eta[:-1, ...], (eta > 0)[1:, ...] & (eta[:-1, ...] == 0) & (p[:-1, ...] < p[1:, ...]), eta[1:, ...])
-        # eta[1:, ...][(eta > 0)[:-1, ...] & (eta[1:, ...] == 0) & (p[:-1, ...] > p[1:, ...])] = eta[:-1, ...]
-        # eta[:-1, ...][(eta > 0)[1:, ...] & (eta[:-1, ...] == 0) & (p[:-1, ...] < p[1:, ...])] = eta[1:, ...]
 
-        np.putmask(eta[:, 1:, ...], (eta > 0)[:, -1, ...] & (eta[:, 1:, ...] == 0) & (p[:, -1, ...] > p[:, 1:, ...]), eta[:, :-1, ...])
-        np.putmask(eta[:, -1, ...], (eta > 0)[:, 1:, ...] & (eta[:, :-1, ...] == 0) & (p[:, -1, ...] < p[:, 1:, ...]), eta[:, 1:, ...])
-        # eta[:, 1:, ...][(eta > 0)[:, -1, ...] & (eta[:, 1:, ...] == 0) & (p[:, -1, ...] > p[:, 1:, ...])] = eta[:, :-1, ...]
-        # eta[:, -1, ...][(eta > 0)[:, 1:, ...] & (eta[:, :-1, ...] == 0) & (p[:, -1, ...] < p[:, 1:, ...])] = eta[:, 1:, ...]
+        np.putmask(eta[1:], (eta > 0)[:-1] & (eta[1:] == 0) & (p[:-1] > p[1:]), eta[:-1])
+        np.putmask(eta[:-1], (eta > 0)[1:] & (eta[:-1] == 0) & (p[:-1] < p[1:]), eta[1:])
+        # eta[1:][(eta > 0)[:-1] & (eta[1:] == 0) & (p[:-1] > p[1:])] = eta[:-1]
+        # eta[:-1][(eta > 0)[1:] & (eta[:-1] == 0) & (p[:-1] < p[1:])] = eta[1:]
+
+        np.putmask(eta[:, 1:], (eta > 0)[:, :-1] & (eta[:, 1:] == 0) & (p[:, :-1] > p[:, 1:]), eta[:, :-1])
+        np.putmask(eta[:, :-1], (eta > 0)[:, 1:] & (eta[:, :-1] == 0) & (p[:, :-1] < p[:, 1:]), eta[:, 1:])
+        # eta[:, 1:][(eta > 0)[:, :-1] & (eta[:, 1:] == 0) & (p[:, :-1] > p[:, 1:])] = eta[:, :-1]
+        # eta[:, -1][(eta > 0)[:, 1:] & (eta[:, :-1] == 0) & (p[:, :-1] < p[:, 1:])] = eta[:, 1:]
         return eta
-
 
     def __call__(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
         # define p and E

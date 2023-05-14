@@ -347,7 +347,7 @@ class Richtmeyer2stepLerp(Solver):
 
         staggered -= 0.5 * div_fluxes(self.pde(self.grid))
 
-        eta = self.pde.eta(self.grid, self.dxyz[0])
+        eta = self.pde.eta(self.grid, self.dxyz[0], self.dxyz[1])
         print(np.max(eta))
         self.grid_no_ghost = (1. - eta) * (self.grid_no_ghost - div_fluxes(self.pde(staggered))) + eta * order1(self.grid)
 
