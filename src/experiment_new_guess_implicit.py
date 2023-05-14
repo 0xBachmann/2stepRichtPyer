@@ -38,18 +38,18 @@ def plot(stepper, dt):
         plotter.write(stepper.grid_no_ghost, dt)
 
 
-fact = 100
+fact = 10
 T = 1
 time = 0.
 while time < T:
     dt = stepper.cfl() * fact
-    stepper_explicit.grid_no_ghost = stepper.grid_no_ghost
-    stepper_explicit.step(dt)
-    stepper.step(dt, guess=stepper_explicit.grid_no_ghost)
+    # stepper_explicit.grid_no_ghost = stepper.grid_no_ghost
+    # stepper_explicit.step(dt)
+    stepper.step(dt)#, guess=stepper_explicit.grid_no_ghost)
 
-    plot(stepper, dt)
+    # plot(stepper, dt)
 
     time += min(dt, T - time)
     print(f"dt = {dt}, time = {time:.3f}/{T}")
 
-plotter.finalize()
+# plotter.finalize()

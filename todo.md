@@ -67,6 +67,7 @@
 - [x] revisit order of operators in explicit scheme
 - [ ] better guess for big time step? (just big explicit?)
   - try it
+    - not so good
 - [ ] add numba
   - big pain with all the classes
 - [x] angular momenta conservation

@@ -1,5 +1,7 @@
 test case, dt, explicit guess, no explicit guess
+gresho, 10, 19s, 19s
 gresho, 100, 14s, 6s
 kelvin, 10, 1m25(dt/2), 1m39s(dt), 1m52s
 kelvin, 30, 1m1s, 50s
 kelvin, 100, dnf(dt, dt/2), 52s(dt/10), 52s
+kelvin, expl, 12s
