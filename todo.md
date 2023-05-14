@@ -76,6 +76,7 @@
   - get whole number values not by averaging
 - [ ] lerp between two fluxes
   - eta seems to be 0
+  - maybe take artificial velocity as second flux?
 
 
 # To Discuss
