@@ -73,7 +73,9 @@
 - [x] angular momenta conservation
   - almost conserved
 - [ ] artificial viscosity
+  - get whole number values not by averaging
 - [ ] lerp between two fluxes
+  - eta seems to be 0
 
 
 # To Discuss

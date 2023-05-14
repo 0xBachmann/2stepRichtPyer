@@ -309,3 +309,45 @@ class Richtmeyer2stepImplicit(Solver):
                 self.bdc(self.grid)
                 F_value, J_value = FJ(self.grid_no_ghost.ravel())
                 F_norm = np.linalg.norm(F_value)
+
+
+class Richtmeyer2stepLerp(Solver):
+    def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic"):
+        super().__init__(pde, domain, resolutions, bdc)
+
+    def step(self, dt):
+        def div_fluxes(fluxes: tuple[np.ndarray, np.ndarray]) -> np.ndarray:
+            if self.dim == Dimension.oneD:
+                return c[0] * del_x(fluxes[0])
+            if self.dim == Dimension.twoD:
+                return c[0] * del_x(avg_y(fluxes[0])) + c[1] * del_y(avg_x(fluxes[1]))
+            if self.dim == Dimension.threeD:
+                return c[0] * del_x(avg_y(avg_z(fluxes[0]))) + c[1] * del_y(avg_x(avg_z(fluxes[1]))) \
+                    + c[2] * del_z(avg_x(avg_y(fluxes[2])))
+
+        c = dt / self.dxyz
+        self.bdc(self.grid)
+
+        staggered = avg_x(self.grid)
+        if self.dim == Dimension.twoD:
+            staggered = avg_y(staggered)
+        if self.dim == Dimension.threeD:
+            staggered = avg_z(staggered)
+
+        def order1(v: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+            # A = self.pde.jacobian(avg_x(avg_y(v)))  # (self.pde(avg_x(staggered)), self.pde(avg_y(staggered)))  # TODO
+            # flux_x = self.pde(avg_y(v))[0]
+            # flux_y = self.pde(avg_x(v))[1]
+            # return (avg_x(flux_x) - 0.5 * np.einsum("...ij,...j->...i", A[0], del_x(avg_y(v))),
+            #         avg_y(flux_y) - 0.5 * np.einsum("...ij,...j->...i", A[1], del_y(avg_x(v))))
+            fluxes = self.pde(self.grid)
+            staggered = avg_x(avg_y(self.grid)) + div_fluxes(fluxes)
+            fluxes = self.pde(staggered)
+            return avg_y(avg_x(staggered)) + div_fluxes(fluxes)
+
+        staggered -= 0.5 * div_fluxes(self.pde(self.grid))
+
+        eta = self.pde.eta(self.grid, self.dxyz[0])
+        print(np.max(eta))
+        self.grid_no_ghost = (1. - eta) * (self.grid_no_ghost - div_fluxes(self.pde(staggered))) + eta * order1(self.grid)
+

@@ -1,5 +1,5 @@
 from enum import Enum
-from two_step_richtmeyer_util import Dimension
+from two_step_richtmeyer_util import Dimension, avg_x, del_x, avg_y, del_y
 import numpy as np
 
 
@@ -80,6 +80,35 @@ class Euler(PDE):
         p = self.pres(v)
         dens = v[..., 0]
         return np.sqrt(self.gamma * p / dens)
+
+    def eta(self, v: np.ndarray, dx) -> np.ndarray:
+        assert self.dim == Dimension.twoD
+
+        csnd = self.csnd(v)
+        min_c = np.minimum.reduce([
+            csnd[1:-1, 1:-1],
+            csnd[1:-1, 2:],
+            csnd[1:-1, :-2],
+            csnd[2:, 1:-1],
+            csnd[2:, 2:],
+            csnd[2:, :-2],
+            csnd[:-2, 1:-1],
+            csnd[:-2, 2:],
+            csnd[:-2, :-2],
+        ])
+
+        k1 = 0.4
+        vels = v[..., 1:3] / v[..., 0, np.newaxis]
+        div = 2 * (avg_x(del_x(vels[..., 0]))[..., 1:-1] + avg_y(del_y(vels[..., 1]))[1:-1, ...])
+        eta = np.minimum(1, np.maximum(0, -dx * div / (k1 * min_c) - 1))[..., np.newaxis]
+        p = self.pres(v)
+        # eta[1:, ...][(eta > 0)[:-1, ...] & (eta[1:, ...] == 0) & (p[:-1, ...] > p[1:, ...])] = eta[:-1, ...]
+        # eta[:-1, ...][(eta > 0)[1:, ...] & (eta[:-1, ...] == 0) & (p[:-1, ...] < p[1:, ...])] = eta[1:, ...]
+        #
+        # eta[:, 1:, ...][(eta > 0)[:, -1, ...] & (eta[:, 1:, ...] == 0) & (p[:, -1, ...] > p[:, 1:, ...])] = eta[:, :-1, ...]
+        # eta[:, -1, ...][(eta > 0)[:, 1:, ...] & (eta[:, :-1, ...] == 0) & (p[:, -1, ...] < p[:, 1:, ...])] = eta[:, 1:, ...]
+        return eta
+
 
     def __call__(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
         # define p and E

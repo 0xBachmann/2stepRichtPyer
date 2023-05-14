@@ -1,6 +1,6 @@
 from PDE_Types import EulerScalarAdvect, Euler
 from plotter import Plotter
-from richtmeyer_two_step_scheme import Richtmeyer2step, Richtmeyer2stepImplicit
+from richtmeyer_two_step_scheme import Richtmeyer2step, Richtmeyer2stepImplicit, Richtmeyer2stepLerp
 from two_step_richtmeyer_util import Dimension, log
 from intitial import kelvin_helmholtz
 
@@ -16,8 +16,8 @@ log("calculate initial conditions")
 
 domain = np.array([[0, 1], [0, 1]])
 resolution = np.array([128] * DIM.value)
-stepper = Richtmeyer2stepImplicit(F, domain, resolution, eps=1e-9)
-stepper_explicit = Richtmeyer2step(F, domain, resolution)
+stepper = Richtmeyer2stepLerp(F, domain, resolution)
+# stepper_explicit = Richtmeyer2step(F, domain, resolution)
 
 center = np.array([0.5, 0.5])
 
@@ -40,7 +40,7 @@ M = 0.001
 t = 1
 stepper.initial_cond(lambda x: kh_with_scalar(x, F, Mr=M))
 
-plotter = Plotter(F, action="show", writeout=1, dim=stepper.dim, filename="kelvin_helmholz.mp4")
+plotter = Plotter(F, action="show", writeout=100, dim=stepper.dim, filename="kelvin_helmholz.mp4")
 
 
 def plot(dt):
@@ -55,7 +55,7 @@ def plot(dt):
 
 plot(0)
 
-fact = 100
+fact = 1
 T = 3
 time = 0.
 while time < T:
@@ -64,9 +64,9 @@ while time < T:
     # stepper_explicit.step(dt/10)
     stepper.step(dt)#, guess=stepper_explicit.grid_no_ghost)
 
-    #plot(dt)
+    plot(dt)
 
     print(f"dt = {dt}, time = {time:.3f}/{T}")
     time += dt
 
-#plotter.finalize()
+plotter.finalize()

@@ -1,6 +1,6 @@
 from PDE_Types import *
 from plotter import Plotter
-from richtmeyer_two_step_scheme import Richtmeyer2stepImplicit, Richtmeyer2step
+from richtmeyer_two_step_scheme import Richtmeyer2stepImplicit, Richtmeyer2step, Richtmeyer2stepLerp
 from two_step_richtmeyer_util import Dimension, log
 import numpy as np
 
@@ -21,7 +21,7 @@ else:
 log("calculate initial conditions")
 
 L = 1
-stepper = Richtmeyer2stepImplicit(F, np.array([L]), np.array([100]), eps=1e-16, method="hybr")
+stepper = Richtmeyer2stepLerp(F, np.array([L]), np.array([100]))
 
 
 def f(x):
@@ -31,7 +31,7 @@ def f(x):
     # func = F.waves(1, np.array([1, 1, 1]), amp=1e-3)
     # return func(x / L)
     if isinstance(F, Euler):
-        if False:
+        if True:
             result = np.empty((*x.shape[:-1], 3))
             result[:25, 0] = 1
             result[25:75, 0] = 1/8
@@ -60,7 +60,7 @@ plotter.write(stepper.grid_no_ghost, 0)
 T = 5
 time = 0.
 while time < T:
-    dt = stepper.cfl() * 10
+    dt = stepper.cfl() * 1
     stepper.step(dt)
 
     plotter.write(stepper.grid_no_ghost, dt)
