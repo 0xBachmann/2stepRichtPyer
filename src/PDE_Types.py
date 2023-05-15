@@ -167,7 +167,7 @@ class Euler(PDE):
 
         return q[..., np.newaxis, np.newaxis] * Q
 
-    def __call__(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
+    def __call__(self, v: np.ndarray, visc) -> tuple[np.ndarray, ...]:
         # define p and E
         p = self.pres(v)
         dens = v[..., 0]
@@ -180,7 +180,7 @@ class Euler(PDE):
                                                + np.einsum("...i,jk->...ijk", p, np.identity(self.dim.value))
         result[..., -1, :] = np.einsum("...,...i->...i", Etot + p, vels)
 
-        if self.add_viscosity:
+        if self.add_viscosity and visc:
             # version 1: dx = mux delx
             if False:
                 result[..., 1:3, :] -= self.viscosity(v)
@@ -360,7 +360,7 @@ class EulerScalarAdvect(Euler):
         eint = Etot - Ekin
         return eint * (self.gamma - 1.)
 
-    def __call__(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
+    def __call__(self, v: np.ndarray, visc) -> tuple[np.ndarray, ...]:
         # define p and E
         p = self.pres(v)
         dens = v[..., 0]
@@ -375,7 +375,7 @@ class EulerScalarAdvect(Euler):
         result[..., -2, :] = np.einsum("...,...i->...i", Etot + p, vels)
         result[..., -1, :] = np.einsum("...,...i->...i", X, v[..., 1:self.dim.value + 1])
 
-        if self.add_viscosity:
+        if self.add_viscosity and visc:
             # version 1: dx = mux delx
             if False:
                 result[..., 1:3, :] -= self.viscosity(v)

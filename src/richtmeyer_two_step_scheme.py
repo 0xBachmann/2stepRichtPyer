@@ -93,8 +93,8 @@ class Richtmeyer2step(Solver):
     def step(self, dt):
         assert self.dim == Dimension.twoD and isinstance(self.pde, Euler)
 
-        def div_fluxes(source: np.ndarray) -> np.ndarray:
-            source_fluxes = self.pde(source)
+        def div_fluxes(source: np.ndarray, viscosity) -> np.ndarray:
+            source_fluxes = self.pde(source, viscosity)
             return c[0] * del_x(avg_y(source_fluxes[0])) + c[1] * del_y(avg_x(source_fluxes[1]))
 
         c = dt / self.dxyz
@@ -102,8 +102,8 @@ class Richtmeyer2step(Solver):
 
         staggered = avg_x(avg_y(self.grid))
 
-        staggered -= div_fluxes(self.grid)
-        self.grid_no_ghost -= div_fluxes(staggered)
+        staggered -= div_fluxes(self.grid, False)
+        self.grid_no_ghost -= div_fluxes(staggered, True)
 
 
 

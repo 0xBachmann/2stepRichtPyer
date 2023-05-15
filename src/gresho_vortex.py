@@ -13,7 +13,7 @@ DIM = Dimension.twoD
 resolution = np.array([80] * DIM.value)
 Lx = 1
 Ly = Lx
-F = Euler(5. / 3, dim=DIM, c1=0.1, c2=0.1, hx=Lx / resolution[0], hy=Ly / resolution[1], add_viscosity=True)
+F = Euler(5. / 3, dim=DIM, c1=0.1, c2=0., hx=Lx / resolution[0], hy=Ly / resolution[1], add_viscosity=True)
 
 log("calculate initial conditions")
 
