@@ -97,7 +97,7 @@ class Euler(PDE):
             csnd[:-2, :-2],
         ])
 
-        k1 = 0.4
+        k1 = 0.004
         vels = v[..., 1:3] / v[..., 0, np.newaxis]
         div = 2 * (avg_x(del_x(vels[..., 0]))[..., 1:-1] / dx + avg_y(del_y(vels[..., 1]))[1:-1, ...] / dy)
         eta = np.minimum(1, np.maximum(0, -dx * div / (k1 * min_c) - 1))[..., np.newaxis]  # TODO why * dx??

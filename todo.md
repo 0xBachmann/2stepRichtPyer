@@ -77,6 +77,11 @@
 - [ ] lerp between two fluxes
   - eta seems to be 0
   - maybe take artificial velocity as second flux?
+  - check conservative of order1
+- [ ] combination of eta & viscosity
+- [ ] plot eta/visc
+- [x] scalaer advect X -> rho X
+  - it already was
 
 
 # To Discuss
@@ -106,3 +111,5 @@
 - implicit correct now -> krylov works
 - summer school?
 - better guess for big time step?
+## 19.05.23
+- big explicit did not benefit

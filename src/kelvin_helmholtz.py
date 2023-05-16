@@ -39,7 +39,7 @@ def kh_with_scalar(x: np.ndarray, F, Mr, pr=2.5, rhor=1., primitives=False):
 M = 0.001
 stepper.initial_cond(lambda x: kh_with_scalar(x, F, Mr=M))
 
-plotter = Plotter(F, action="show", writeout=40, dim=stepper.dim, filename="kelvin_helmholz.mp4")
+plotter = Plotter(6, action="show", writeout=40, dim=stepper.dim, filename="kelvin_helmholz.mp4")
 
 
 def plot(dt):
@@ -47,6 +47,11 @@ def plot(dt):
         # Mach = F.mach(stepper.grid_no_ghost)[..., np.newaxis]
         # plotter.write(Mach, dt)
         plotter.write(stepper.grid_no_ghost[..., -1][..., np.newaxis], dt)
+    elif plotter.ncomp == 6:
+        to_plot = np.empty((*stepper.grid_no_ghost.shape[:-1], 6))
+        to_plot[..., 0:5] = F.conserved_to_primitive(stepper.grid_no_ghost)
+        to_plot[..., 5] = F.eta(stepper.grid, stepper.dxyz[0], stepper.dxyz[1])[..., 0]
+        plotter.write(to_plot, dt)
     else:
         plotter.write(F.conserved_to_primitive(stepper.grid_no_ghost), dt)
         # plotter.write(stepper.grid_no_ghost, dt)
