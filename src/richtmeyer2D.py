@@ -20,12 +20,12 @@ else:
 log("calculate initial conditions")
 
 resolution = np.array([100, 100])
-alpha = 0 * np.pi / 4
+alpha = 0.8 * np.pi / 4
 
 
 Lx = 1
 Ly = 1
-stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-10, method="krylov")
+stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution)
 
 
 def f(x):

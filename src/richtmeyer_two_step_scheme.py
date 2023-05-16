@@ -1,5 +1,5 @@
 from two_step_richtmeyer_util import *
-from PDE_Types import PDE
+from PDE_Types import PDE, Euler
 import numpy as np
 from copy import deepcopy
 import sys
@@ -91,27 +91,20 @@ class Richtmeyer2step(Solver):
         super().__init__(pde, domain, resolutions, bdc)
 
     def step(self, dt):
-        def div_fluxes(source: np.ndarray) -> np.ndarray:
-            source_fluxes = self.pde(source)
-            if self.dim == Dimension.oneD:
-                return c[0] * del_x(source_fluxes[0])
-            if self.dim == Dimension.twoD:
-                return c[0] * del_x(avg_y(source_fluxes[0])) + c[1] * del_y(avg_x(source_fluxes[1]))
-            if self.dim == Dimension.threeD:
-                return c[0] * del_x(avg_y(avg_z(source_fluxes[0]))) + c[1] * del_y(avg_x(avg_z(source_fluxes[1]))) \
-                    + c[2] * del_z(avg_x(avg_y(source_fluxes[2])))
+        assert self.dim == Dimension.twoD and isinstance(self.pde, Euler)
+
+        def div_fluxes(source: np.ndarray, viscosity) -> np.ndarray:
+            source_fluxes = self.pde(source, viscosity)
+            return c[0] * del_x(avg_y(source_fluxes[0])) + c[1] * del_y(avg_x(source_fluxes[1]))
 
         c = dt / self.dxyz
         self.bdc(self.grid)
 
-        staggered = avg_x(self.grid)
-        if self.dim == Dimension.twoD:
-            staggered = avg_y(staggered)
-        if self.dim == Dimension.threeD:
-            staggered = avg_z(staggered)
+        staggered = avg_x(avg_y(self.grid))
 
-        staggered -= 0.5 * div_fluxes(self.grid)
-        self.grid_no_ghost -= div_fluxes(staggered)
+        staggered -= div_fluxes(self.grid, False)
+        self.grid_no_ghost -= div_fluxes(staggered, True)
+
 
 
 class Richtmeyer2stepImplicit(Solver):
