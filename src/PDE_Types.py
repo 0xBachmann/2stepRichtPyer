@@ -1,5 +1,5 @@
 from enum import Enum
-from two_step_richtmeyer_util import Dimension
+from two_step_richtmeyer_util import *
 import numpy as np
 
 
@@ -121,7 +121,6 @@ class Euler(PDE):
         # eta[:, -1][(eta > 0)[:, 1:] & (eta[:, :-1] == 0) & (p[:, :-1] < p[:, 1:])] = eta[:, 1:]
         return eta
 
-    def __call__(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
     def viscosity2(self, v: np.ndarray, other: np.ndarray) -> np.ndarray:
         csnd = self.csnd(v)
 
@@ -202,7 +201,7 @@ class Euler(PDE):
 
         return q[..., np.newaxis, np.newaxis] * Q
 
-    def __call__(self, v: np.ndarray, visc) -> tuple[np.ndarray, ...]:
+    def __call__(self, v: np.ndarray, visc=True) -> tuple[np.ndarray, ...]:
         # define p and E
         p = self.pres(v)
         dens = v[..., 0]

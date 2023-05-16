@@ -15,7 +15,7 @@ domain = np.array([[0, 1], [0, 1]])
 resolution = np.array([128] * DIM.value)
 
 h = ((domain[:, 1] - domain[:, 0]) / resolution).ravel()
-F = EulerScalarAdvect(5. / 3, dim=DIM, c1=1., c2=1., hx=h[0], hy=h[1], add_viscosity=True)
+F = EulerScalarAdvect(5. / 3, dim=DIM, c1=1., c2=1., hx=h[0], hy=h[1], add_viscosity=False)
 
 log("calculate initial conditions")
 
@@ -42,18 +42,22 @@ def kh_with_scalar(x: np.ndarray, F, Mr, pr=2.5, rhor=1., primitives=False):
 M = 0.001
 stepper.initial_cond(lambda x: kh_with_scalar(x, F, Mr=M))
 
-plotter = Plotter(F, action="show", writeout=100, dim=stepper.dim, filename="kelvin_helmholz.mp4")
+plotter = Plotter(5, action="show", writeout=100, dim=stepper.dim, filename="kelvin_helmholz.mp4")
 
-
+plot_visc = True
 def plot(dt):
     if plotter.ncomp == 1:
-        # Mach = F.mach(stepper.grid_no_ghost)[..., np.newaxis]
-        # plotter.write(Mach, dt)
-        plotter.write(stepper.grid_no_ghost[..., -1][..., np.newaxis], dt)
+        Mach = F.mach(stepper.grid_no_ghost)[..., np.newaxis]
+        plotter.write(Mach, dt)
     elif plotter.ncomp == 6:
         to_plot = np.empty((*stepper.grid_no_ghost.shape[:-1], 6))
         to_plot[..., 0:5] = F.conserved_to_primitive(stepper.grid_no_ghost)
         to_plot[..., 5] = F.eta(stepper.grid, stepper.dxyz[0], stepper.dxyz[1])[..., 0]
+        plotter.write(to_plot, dt)
+    elif plot_visc:
+        to_plot = np.empty((*stepper.grid_no_ghost.shape[:-1], 6))
+        to_plot[..., 0:4] = F.viscosity(stepper.grid_no_ghost).reshape((*stepper.grid_no_ghost.shape[:-1], 4))
+        to_plot[..., 4] = F.mach(stepper.grid_no_ghost)
         plotter.write(to_plot, dt)
     else:
         plotter.write(F.conserved_to_primitive(stepper.grid_no_ghost), dt)
