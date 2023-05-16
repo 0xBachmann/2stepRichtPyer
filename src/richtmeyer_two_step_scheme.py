@@ -106,7 +106,7 @@ class Richtmeyer2step(Solver):
                     + c[1] * del_y(avg_x(avg_z(fluxes[1]))) \
                     + c[2] * del_z(avg_x(avg_y(fluxes[2])))
 
-        def order1(v: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        def order1() -> tuple[np.ndarray, np.ndarray]:
             # A = self.pde.jacobian(avg_x(avg_y(v)))  # (self.pde(avg_x(staggered)), self.pde(avg_y(staggered)))  # TODO
             # flux_x = self.pde(avg_y(v))[0]
             # flux_y = self.pde(avg_x(v))[1]
@@ -126,8 +126,7 @@ class Richtmeyer2step(Solver):
         if self.lerp:
             eta = self.pde.eta(self.grid, self.dxyz[0], self.dxyz[1])
             # TODO or replace order1 by viscosity
-            self.grid_no_ghost = (1. - eta) * (self.grid_no_ghost - div_fluxes(self.pde(staggered))) + eta * order1(
-                self.grid)
+            self.grid_no_ghost = (1. - eta) * (self.grid_no_ghost - div_fluxes(self.pde(staggered))) + eta * order1()
         else:
             staggered -= 0.5 * div_fluxes(self.pde(self.grid))
             self.grid_no_ghost -= div_fluxes(self.pde(staggered, True))
