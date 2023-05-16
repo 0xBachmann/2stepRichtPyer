@@ -215,6 +215,8 @@ class Euler(PDE):
         result[..., -1, :] = np.einsum("...,...i->...i", Etot + p, vels)
 
         if self.add_viscosity and visc:
+            if self.dim != Dimension.twoD:
+                raise NotImplementedError("Viscosity only possible for 2D")
             # version 1: dx = mux delx
             if False:
                 result[..., 1:3, :] -= self.viscosity(v)
@@ -397,7 +399,7 @@ class EulerScalarAdvect(Euler):
         eint = Etot - Ekin
         return eint * (self.gamma - 1.)
 
-    def __call__(self, v: np.ndarray, visc) -> tuple[np.ndarray, ...]:
+    def __call__(self, v: np.ndarray, visc=True) -> tuple[np.ndarray, ...]:
         # define p and E
         p = self.pres(v)
         dens = v[..., 0]

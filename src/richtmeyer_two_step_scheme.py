@@ -93,7 +93,7 @@ class Richtmeyer2step(Solver):
         self.lerp = lerp
 
     def step(self, dt):
-        assert self.dim == Dimension.twoD and isinstance(self.pde, Euler)
+        assert isinstance(self.pde, Euler)
 
         def div_fluxes(fluxes: tuple[np.ndarray]) -> np.ndarray:
             if self.dim == Dimension.oneD:
