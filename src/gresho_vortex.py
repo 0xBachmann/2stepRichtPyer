@@ -13,13 +13,13 @@ DIM = Dimension.twoD
 resolution = np.array([80] * DIM.value)
 Lx = 1
 Ly = Lx
-F = Euler(5. / 3, dim=DIM, c1=0.1, c2=0., hx=Lx / resolution[0], hy=Ly / resolution[1], add_viscosity=False)
+h = [Lx / resolution[0], Ly / resolution[1]]
+F = Euler(5. / 3, dim=DIM, c1=0.1, c2=0., hx=h[0], hy=h[1], add_viscosity=False)
 
 log("calculate initial conditions")
 
 # stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-8)
 stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution)
-
 
 center = np.array([Lx / 2, Ly / 2])
 avg_coords = [avg_x(coord) for coord in stepper.coords]
@@ -41,13 +41,17 @@ M = 0.1
 t = 1.
 stepper.initial_cond(lambda x: gresho_vortex(x, center, F, Mmax=M, qr=0.4 * np.pi * Lx / 1))
 
-plotter = Plotter(5, action="show", writeout=100, dim=stepper.dim, filename="gresho_vortex_iml_100_hybr_eps1e-9.mp4")
+plotter = Plotter(1, action="show", writeout=100, dim=stepper.dim, filename="gresho_vortex_iml_100_hybr_eps1e-9.mp4")
 
 plot_visc = True
-def plot(stepper, dt, plot_mach=True):
+
+
+def plot(stepper, dt, plot_mach=False, plot_curl=True):
     if plotter.ncomp == 1:
         if plot_mach:
             plotter.write(F.mach(stepper.grid_no_ghost)[..., np.newaxis], dt)
+        elif plot_curl:
+            plotter.write(curl(stepper.grid[..., 1:3], DIM, h)[..., np.newaxis], dt)
         else:
             plotter.write(u_phi(stepper.grid_no_ghost)[..., np.newaxis], dt)
     elif plotter.ncomp == 2:

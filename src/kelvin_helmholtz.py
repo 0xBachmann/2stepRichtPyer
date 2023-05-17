@@ -1,7 +1,7 @@
 from PDE_Types import EulerScalarAdvect, Euler
 from plotter import Plotter
 from richtmeyer_two_step_scheme import Richtmeyer2step, Richtmeyer2stepImplicit
-from two_step_richtmeyer_util import Dimension, log
+from two_step_richtmeyer_util import *
 from intitial import kelvin_helmholtz
 
 import copy
@@ -42,21 +42,29 @@ def kh_with_scalar(x: np.ndarray, F, Mr, pr=2.5, rhor=1., primitives=False):
 M = 0.001
 stepper.initial_cond(lambda x: kh_with_scalar(x, F, Mr=M))
 
-plotter = Plotter(5, action="show", writeout=100, dim=stepper.dim, filename="kelvin_helmholz.mp4")
+plotter = Plotter(2, action="show", writeout=100, dim=stepper.dim, filename="kelvin_helmholz.mp4")
 
-plot_visc = True
+plot_visc = False
+plot_curl = True
+
+
 def plot(dt):
     if plotter.ncomp == 1:
         Mach = F.mach(stepper.grid_no_ghost)[..., np.newaxis]
         plotter.write(Mach, dt)
     elif plotter.ncomp == 6:
         to_plot = np.empty((*stepper.grid_no_ghost.shape[:-1], 6))
-        to_plot[..., 0:5] = F.conserved_to_primitive(stepper.grid_no_ghost)
+        to_plot[..., :5] = F.conserved_to_primitive(stepper.grid_no_ghost)
         to_plot[..., 5] = F.eta(stepper.grid, stepper.dxyz[0], stepper.dxyz[1])[..., 0]
         plotter.write(to_plot, dt)
+    elif plot_curl:
+        to_plot = np.empty((*stepper.grid_no_ghost.shape[:-1], 2))
+        to_plot[..., 0] = curl(stepper.grid[..., 1:3], DIM, h)
+        to_plot[..., 1] = stepper.grid_no_ghost[..., -1]
+        plotter.write(to_plot, dt)
     elif plot_visc:
-        to_plot = np.empty((*stepper.grid_no_ghost.shape[:-1], 6))
-        to_plot[..., 0:4] = F.viscosity(stepper.grid_no_ghost).reshape((*stepper.grid_no_ghost.shape[:-1], 4))
+        to_plot = np.empty((*stepper.grid_no_ghost.shape[:-1], 5))
+        to_plot[..., :4] = F.viscosity(stepper.grid_no_ghost).reshape((*stepper.grid_no_ghost.shape[:-1], 4))
         to_plot[..., 4] = F.mach(stepper.grid_no_ghost)
         plotter.write(to_plot, dt)
     else:

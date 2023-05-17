@@ -12,6 +12,9 @@ from two_step_richtmeyer_util import Dimension
 
 import uuid
 
+import matplotlib as mpl
+mpl.rc('image', cmap='coolwarm')  # 'magma', 'bwr', 'inferno', 'viridis'
+
 
 class Plotter:
     def __init__(self, F: PDE | int, action, writeout, dim: Dimension, coords=None,

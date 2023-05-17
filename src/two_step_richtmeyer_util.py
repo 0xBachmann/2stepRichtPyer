@@ -85,4 +85,21 @@ def dirichlet_bd(grid: np.ndarray, dim: Dimension, XYZ: np.ndarray, f):
         grid[:, :, -1, ...] = f(XYZ[:, :, -1, ...])
 
 
+def curl(vels: np.ndarray, dim: Dimension, h) -> np.ndarray:
+    if dim == dim.oneD:
+        raise RuntimeError("curl is not defined in 1D")
+
+    if dim == dim.twoD:
+        vels = avg_x(avg_y(vels))
+        return del_x(avg_y(vels[..., 1])) / h[0] - del_y(avg_x(vels[..., 0])) / h[1]
+
+    if dim == dim.threeD:
+        vels = avg_x(avg_y(avg_z(vels)))
+        res = np.empty_like(vels)
+        res[..., 0] = del_y(avg_x(avg_z(vels[..., 2]))) / h[1] - del_z(avg_x(avg_y(vels[..., 1]))) / h[2]
+        res[..., 1] = del_z(avg_x(avg_y(vels[..., 0]))) / h[2] - del_x(avg_y(avg_z(vels[..., 2]))) / h[0]
+        res[..., 2] = del_x(avg_y(avg_z(vels[..., 1]))) / h[0] - del_y(avg_x(avg_z(vels[..., 0]))) / h[1]
+        return res
+
+
 

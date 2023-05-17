@@ -63,7 +63,7 @@ class BurgersEq(PDE):
 
 
 class Euler(PDE):
-    def __init__(self, gamma, dim: Dimension, extra_comp=0, add_viscosity=False, c1=0, c2=0, hx=None, hy=None):
+    def __init__(self, gamma, dim: Dimension, extra_comp=0, add_viscosity=False, c1=0., c2=0., hx=0., hy=0.):
         super().__init__(dim=dim, ncomp=dim.value + 2 + extra_comp,
                          Type=PDE_Type.Euler)  # nr of dims velocities + density plus energy_new
         self.gamma = gamma

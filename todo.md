@@ -82,6 +82,8 @@
 - [ ] plot eta/visc
 - [x] scalaer advect X -> rho X
   - it already was
+- [x] curl
+- [ ] explosion gresho
 
 
 # To Discuss
