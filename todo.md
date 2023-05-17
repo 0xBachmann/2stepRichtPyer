@@ -78,12 +78,14 @@
   - eta seems to be 0
   - maybe take artificial velocity as second flux?
   - check conservative of order1
-- [ ] combination of eta & viscosity
-- [ ] plot eta/visc
+- [x] combination of eta & viscosity
+- [x] plot eta/visc
 - [x] scalaer advect X -> rho X
   - it already was
 - [x] curl
 - [ ] explosion gresho
+- [x] check conservation LF
+  - tot conserved, Ekin -> 0
 
 
 # To Discuss

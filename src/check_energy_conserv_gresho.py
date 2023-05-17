@@ -66,44 +66,43 @@ np.save(f"energy/times_expl.npy", np.array(times))
 ax1.plot(times, energies[:, 0], label="explicit")
 ax2.plot(times, energies[:, 1], label="explicit")
 
-stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-16, method="krylov")
+# stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-16, method="krylov")
+#
+# for i in [1, 2, 4, 8, 10, 15, 20, 30, 50, 100]:
+#     print(f"\n{i}")
+#     stepper.initial_cond(lambda x: gresho_vortex(x, center, F, Mmax=M, qr=0.4 * np.pi * Lx / 1))
+#
+#     energies = []
+#     times = []
+#
+#     energies.append([E(stepper.grid_no_ghost), E(stepper.grid_no_ghost, Ekin=True)])
+#     times.append(0)
+#
+#     time = 0.
+#     while time < T:
+#         dt = stepper.cfl() * i
+#         if T - time < dt:
+#             dt = T - time
+#         stepper.step(dt)
+#
+#         print(f"dt = {dt}, time = {time:.3f}/{T}")
+#         time += dt
+#
+#         energies.append([E(stepper.grid_no_ghost), E(stepper.grid_no_ghost, Ekin=True)])
+#         times.append(time)
+#
+#     energies = np.array(energies)
+#
+#     np.save(f"energy/en_impl_{i}.npy", energies)
+#     np.save(f"energy/times_impl_{i}.npy", np.array(times))
+#
+#     ax1.plot(times, energies[:, 0], label=f"implicit, {i}*cfl")
+#     ax2.plot(times, energies[:, 1], label=f"implicit, {i}*cfl")
 
-for i in [1, 2, 4, 8, 10, 15, 20, 30, 50, 100]:
-    print(f"\n{i}")
-    stepper.initial_cond(lambda x: gresho_vortex(x, center, F, Mmax=M, qr=0.4 * np.pi * Lx / 1))
-
-    energies = []
-    times = []
-
-    energies.append([E(stepper.grid_no_ghost), E(stepper.grid_no_ghost, Ekin=True)])
-    times.append(0)
-
-    time = 0.
-    while time < T:
-        dt = stepper.cfl() * i
-        if T - time < dt:
-            dt = T - time
-        stepper.step(dt)
-
-        print(f"dt = {dt}, time = {time:.3f}/{T}")
-        time += dt
-
-        energies.append([E(stepper.grid_no_ghost), E(stepper.grid_no_ghost, Ekin=True)])
-        times.append(time)
-
-    energies = np.array(energies)
-    
-    np.save(f"energy/en_impl_{i}.npy", energies)
-    np.save(f"energy/times_impl_{i}.npy", np.array(times))
-    
-    ax1.plot(times, energies[:, 0], label=f"implicit, {i}*cfl")
-    ax2.plot(times, energies[:, 1], label=f"implicit, {i}*cfl")
-
-print()
 plt.xlabel("time")
 plt.ylabel("Energy")
 ax1.set_title("Total Energy")
 ax2.set_title("Kinetic Energy")
 ax1.legend()
 plt.tight_layout()
-plt.savefig(Path("ims", "energy_gresho_krylov_M001_real_eps.png"), dpi=200)
+plt.savefig(Path("ims", "energy_gresho_LF.png"), dpi=200)
