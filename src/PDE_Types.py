@@ -91,6 +91,40 @@ class Euler(PDE):
         assert self.dim == Dimension.twoD
 
         csnd = self.csnd(v)
+        p = self.pres(v)
+
+        def div(v: np.ndarray) -> np.ndarray:
+            return del_x(avg_y(v[..., 0])) / dx + del_y(avg_x(v[..., 1])) / dy
+
+        grad_p = np.empty((*[i - 1 for i in v.shape[:-1]], 2))
+        grad_p[..., 0] = del_x(avg_y(p)) / dx
+        grad_p[..., 1] = del_y(avg_x(p)) / dy
+
+        mom = v[..., 1:3]
+        vels = mom / v[..., 0:1]
+        avg_vels = avg_x(avg_y(vels))
+
+        eta = (1. - self.gamma) * (div((v[..., -1] + p)[..., np.newaxis] * vels)
+                                   + 0.5 * np.sum(avg_vels**2, axis=-1) * div(mom)
+                                   + np.sum(avg_vels * div(np.einsum("...i,...j->...ij", mom, vels)
+                                                     + np.einsum("...i,jk->...ijk", p, np.identity(self.dim.value))), axis=-1)
+                                   + np.sum(avg_vels * grad_p, axis=-1))
+
+        norm_grad_p = np.linalg.norm(grad_p, axis=-1)
+        tol = 0.1
+        return (eta >= avg_x(avg_y(csnd)) * norm_grad_p) \
+            & (norm_grad_p >= tol * np.max(norm_grad_p))
+            #& (eta >= 0.5)
+        return np.minimum(1, np.maximum(0, eta / avg_x(avg_y(csnd)) * norm_grad_p))
+        eta[np.logical_not((eta >= avg_x(avg_y(csnd)) * norm_grad_p)
+            & (norm_grad_p >= tol * np.max(norm_grad_p))
+            & (eta >= 0.5))] = 0.
+        return np.minimum(1, eta)
+
+    def eta_(self, v: np.ndarray, dx, dy) -> np.ndarray:
+        assert self.dim == Dimension.twoD
+
+        csnd = self.csnd(v)
         min_c = np.minimum.reduce([
             csnd[1:-1, 1:-1],
             csnd[1:-1, 2:],
@@ -201,7 +235,7 @@ class Euler(PDE):
 
         return q[..., np.newaxis, np.newaxis] * Q
 
-    def __call__(self, v: np.ndarray, visc=True) -> tuple[np.ndarray, ...]:
+    def __call__(self, v: np.ndarray, visc=True, other=None) -> tuple[np.ndarray, ...]:
         # define p and E
         p = self.pres(v)
         dens = v[..., 0]
@@ -222,7 +256,7 @@ class Euler(PDE):
                 result[..., 1:3, :] -= self.viscosity(v)
             # version 2: dx = muy delx
             else:
-                result[..., 1:3, :] -= self.viscosity2(v, avg_x(avg_y(v)))
+                result[..., 1:3, :] -= self.viscosity2(v, avg_x(avg_y(v)) if other is None else other)
 
         return tuple(result[..., i] for i in range(self.dim.value))
 
@@ -399,7 +433,7 @@ class EulerScalarAdvect(Euler):
         eint = Etot - Ekin
         return eint * (self.gamma - 1.)
 
-    def __call__(self, v: np.ndarray, visc=True) -> tuple[np.ndarray, ...]:
+    def __call__(self, v: np.ndarray, visc=True, other=None) -> tuple[np.ndarray, ...]:
         # define p and E
         p = self.pres(v)
         dens = v[..., 0]
@@ -420,7 +454,7 @@ class EulerScalarAdvect(Euler):
                 result[..., 1:3, :] -= self.viscosity(v)
             # version 2: dx = muy delx
             else:
-                result[..., 1:3, :] -= self.viscosity2(v, avg_x(avg_y(v)))
+                result[..., 1:3, :] -= self.viscosity2(v, avg_x(avg_y(v)) if other is None else other)
 
         return tuple(result[..., i] for i in range(self.dim.value))
 

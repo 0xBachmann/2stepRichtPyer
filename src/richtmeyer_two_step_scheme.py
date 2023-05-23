@@ -74,6 +74,8 @@ class Solver:
 
     def step_for(self, T, fact=1., callback=None, log_step=True):
         time = 0.
+        if callable(callback):
+            callback(self, 0)
         while time < T:
             dt = self.cfl() * fact
             self.step(dt)
@@ -121,15 +123,17 @@ class Richtmeyer2step(Solver):
         self.bdc(self.grid)
 
         staggered = avg_x(avg_y(self.grid))
-        staggered -= 0.5 * div_fluxes(self.pde(self.grid))
+        staggered -= 0.5 * div_fluxes(self.pde(self.grid, False))  # no viscosity for predictor
 
         if self.lerp:
-            eta = self.pde.eta(self.grid, self.dxyz[0], self.dxyz[1])
+            # eta = self.pde.eta(staggered, self.dxyz[0], self.dxyz[1])[..., np.newaxis].astype(float)
+            eta = self.pde.eta_(self.grid, self.dxyz[0], self.dxyz[1])
+            # eta = np.minimum(eta, 1)
             # TODO or replace order1 by viscosity
-            self.grid_no_ghost = (1. - eta) * (self.grid_no_ghost - div_fluxes(self.pde(staggered))) + eta * order1()
+            # self.grid_no_ghost = (1. - eta) * (self.grid_no_ghost - div_fluxes(self.pde(staggered))) + eta * order1()
+            self.grid_no_ghost -= (1. - eta) * div_fluxes(self.pde(staggered, False)) + eta * div_fluxes(self.pde(staggered, True, other=self.grid_no_ghost))
         else:
-            staggered -= 0.5 * div_fluxes(self.pde(self.grid))
-            self.grid_no_ghost -= div_fluxes(self.pde(staggered, True))
+            self.grid_no_ghost -= div_fluxes(self.pde(staggered, other=self.grid_no_ghost))
 
 
 class Richtmeyer2stepImplicit(Solver):

@@ -18,12 +18,13 @@ mpl.rc('image', cmap='coolwarm')  # 'magma', 'bwr', 'inferno', 'viridis'
 
 class Plotter:
     def __init__(self, F: PDE | int, action, writeout, dim: Dimension, coords=None,
-                 filename=None, lims=None, savedir="movie", cleanup=True):
+                 filename=None, lims=None, savedir="movie", cleanup=True, per_plot=1):
         self.ncomp = F.ncomp if isinstance(F, PDE) else F
         self.comp_names = F.comp_names if isinstance(F, PDE) else None
         self.dim = dim
         self.savedir = savedir
         self.cleanup = cleanup
+        self.per_plot = per_plot
 
         self.uuid = uuid.uuid4()
 
@@ -38,7 +39,7 @@ class Plotter:
             lims = {}
 
         if self.dim == Dimension.oneD:
-            self.x_coords = coords[0]
+            self.x_coords = [coords[0]] if per_plot == 1 else coords[0]
             self.lims = lims
             for i in range(self.ncomp):
                 if i not in self.lims:
@@ -90,7 +91,9 @@ class Plotter:
         self.fig.tight_layout()
 
         if self.dim == Dimension.oneD:
-            self.ims = [self.axs[i].plot(self.x_coords, vals[..., i])[0] for i in range(self.ncomp)]
+            if self.per_plot == 1:
+                vals = [vals]
+            self.ims = [[self.axs[i].plot(self.x_coords[j], vals[j][..., i])[0] for j in range(self.per_plot)] for i in range(self.ncomp)]
             for i in range(self.ncomp):
                 self.axs[i].set_ylim(*self.lims[i])
         if self.dim == Dimension.twoD:
@@ -110,7 +113,8 @@ class Plotter:
                 if self.comp_names is not None:
                     self.axs[i].set_title(f"{self.comp_names[i]}")
                 if self.dim == Dimension.oneD:
-                    self.ims[i].set_data(self.x_coords, vals[..., i])
+                    for j in range(self.per_plot):
+                        self.ims[i][j].set_data(self.x_coords, vals[j][..., i])
                 if self.dim == Dimension.twoD:
                     self.ims[i].set_data(vals[..., i].T)
             self.fig.suptitle(f"time: {time:.5}")

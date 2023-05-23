@@ -86,6 +86,15 @@
 - [ ] explosion gresho
 - [x] check conservation LF
   - tot conserved, Ekin -> 0
+- [ ] non averaged grid in viscosity
+- [ ] test normal mach number as eta
+  - works well, but add filter
+- [ ] fix `[..., np.newaxis]` bug
+- [ ] combine eta & visc
+- [ ] bomb next to gresho
+- [ ] riemann 1D
+- [ ] maybe rusanov flux
+- [ ] artificial viscosity instead of "physical"?
 
 
 # To Discuss
@@ -117,3 +126,8 @@
 - better guess for big time step?
 ## 19.05.23
 - big explicit did not benefit
+- LF conserved
+- what about normal Mach number
+- show new eta
+## 26.05.23
+- curl
