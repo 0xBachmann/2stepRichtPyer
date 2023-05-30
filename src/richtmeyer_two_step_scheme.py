@@ -90,9 +90,10 @@ class Solver:
 
 class Richtmeyer2step(Solver):
     def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic",
-                 lerp=False):
+                 lerp=False, order1=False):
         super().__init__(pde, domain, resolutions, bdc)
         self.lerp = lerp
+        self.order1 = order1
 
     def step(self, dt):
         assert isinstance(self.pde, Euler)
@@ -109,15 +110,31 @@ class Richtmeyer2step(Solver):
                     + c[2] * del_z(avg_x(avg_y(fluxes[2])))
 
         def order1() -> tuple[np.ndarray, np.ndarray]:
+            """
+            Returns Godunov solution
+            -------
+            """
             # A = self.pde.jacobian(avg_x(avg_y(v)))  # (self.pde(avg_x(staggered)), self.pde(avg_y(staggered)))  # TODO
             # flux_x = self.pde(avg_y(v))[0]
             # flux_y = self.pde(avg_x(v))[1]
             # return (avg_x(flux_x) - 0.5 * np.einsum("...ij,...j->...i", A[0], del_x(avg_y(v))),
             #         avg_y(flux_y) - 0.5 * np.einsum("...ij,...j->...i", A[1], del_y(avg_x(v))))
             fluxes = self.pde(self.grid)
-            stagg = avg_x(avg_y(self.grid)) + div_fluxes(fluxes)
+            stagg = avg_x(avg_y(self.grid)) - div_fluxes(fluxes) / 2
             fluxes = self.pde(stagg)
-            return avg_y(avg_x(stagg)) + div_fluxes(fluxes)
+            return avg_y(avg_x(stagg)) - div_fluxes(fluxes) / 2
+
+        def rusanov() -> tuple[np.ndarray, np.ndarray]:
+            """
+            Returns Rusanov solution
+            -------
+            """
+            fluxes = self.pde(self.grid)
+
+            fprime, gprime = self.pde.derivatives(self.grid)
+            F = avg_x(fluxes[0]) - fprime[..., np.newaxis] * del_x(self.grid)
+            G = avg_y(fluxes[1]) - gprime[..., np.newaxis] * del_y(self.grid)
+            return self.grid_no_ghost - c[0] * del_x(F[:, 1:-1, ...]) - c[1] * del_y(G[1:-1, ...])
 
         c = dt / self.dxyz
         self.bdc(self.grid)
@@ -126,12 +143,15 @@ class Richtmeyer2step(Solver):
         staggered -= 0.5 * div_fluxes(self.pde(self.grid, False))  # no viscosity for predictor
 
         if self.lerp:
-            # eta = self.pde.eta(staggered, self.dxyz[0], self.dxyz[1])[..., np.newaxis].astype(float)
-            eta = self.pde.eta_(self.grid, self.dxyz[0], self.dxyz[1])
+            eta = self.pde.eta(staggered, self.dxyz[0], self.dxyz[1])[..., np.newaxis].astype(float)
+            # eta = self.pde.eta_(self.grid, self.dxyz[0], self.dxyz[1])
             # eta = np.minimum(eta, 1)
             # TODO or replace order1 by viscosity
-            # self.grid_no_ghost = (1. - eta) * (self.grid_no_ghost - div_fluxes(self.pde(staggered))) + eta * order1()
-            self.grid_no_ghost -= (1. - eta) * div_fluxes(self.pde(staggered, False)) + eta * div_fluxes(self.pde(staggered, True, other=self.grid_no_ghost))
+            if self.order1:
+                self.grid_no_ghost = (1. - eta) * (self.grid_no_ghost - div_fluxes(self.pde(staggered))) + eta * rusanov()
+            else:
+                self.grid_no_ghost -= (1. - eta) * div_fluxes(self.pde(staggered, False)) + eta * div_fluxes(self.pde(staggered, True, other=self.grid_no_ghost)) # TODO -= ???
+
         else:
             self.grid_no_ghost -= div_fluxes(self.pde(staggered, other=self.grid_no_ghost))
 

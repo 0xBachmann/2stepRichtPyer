@@ -112,7 +112,7 @@ class Euler(PDE):
 
         norm_grad_p = np.linalg.norm(grad_p, axis=-1)
         tol = 0.1
-        return (eta >= avg_x(avg_y(csnd)) * norm_grad_p) \
+        return (np.abs(eta) >= avg_x(avg_y(csnd)) * norm_grad_p) \
             & (norm_grad_p >= tol * np.max(norm_grad_p))
             #& (eta >= 0.5)
         return np.minimum(1, np.maximum(0, eta / avg_x(avg_y(csnd)) * norm_grad_p))
@@ -220,10 +220,10 @@ class Euler(PDE):
         q = v[..., 0] * (self.c1 * csnd + self.c2 * velocity_diff) * self.lz
 
         def dx(v: np.ndarray) -> np.ndarray:
-            return (v[2:, ...] - v[:-2, ...])[:, 1:-1, ...] / self.hx
+            return (v[2:, ...] - v[:-2, ...])[:, 1:-1, ...] / (2 * self.hx)
 
         def dy(v: np.ndarray) -> np.ndarray:
-            return (v[:, 2:, ...] - v[:, :-2, ...])[1:-1, ...] / self.hy
+            return (v[:, 2:, ...] - v[:, :-2, ...])[1:-1, ...] / (2 * self.hy)
 
         eps = np.empty(tuple([d for d in v.shape[:-1]] + [2, 2]))
         eps[..., 0, 0] = dx(vx)
@@ -403,7 +403,7 @@ class Euler(PDE):
         primitives[..., 0] = dens
         for i in range(self.dim.value):
             primitives[..., i + 1] = mom[..., i] / dens
-        primitives[..., -1] = (self.gamma - 1) * (E - 0.5 * np.sum(mom ** 2, axis=-1)) / dens
+        primitives[..., -1] = (self.gamma - 1) * (E - 0.5 * np.sum(mom ** 2, axis=-1) / dens)
         return primitives
 
     def primitive_to_conserved(self, w):
@@ -419,6 +419,15 @@ class Euler(PDE):
 
     def angular_momenta(self, v: np.ndarray, XYZ) -> np.ndarray:
         return np.cross(XYZ, v[..., 1:self.dim.value + 1])
+
+    def derivatives(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
+        csnd = self.csnd(v)
+        absvels = np.abs(v[..., 1:self.dim.value + 1] / v[..., 0, np.newaxis])
+        if self.dim == Dimension.twoD:
+            return np.maximum(absvels[1:, ..., 0], absvels[:-1, ..., 0]) + np.maximum(csnd[1:, ...], csnd[:-1, ...]), \
+                np.maximum(absvels[:, 1:, ..., 1], absvels[:, :-1, ..., 1]) + np.maximum(csnd[:, 1:, ...], csnd[:, :-1, ...])
+        else:
+            raise NotImplementedError
 
 
 class EulerScalarAdvect(Euler):

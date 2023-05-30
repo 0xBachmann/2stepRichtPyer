@@ -10,43 +10,38 @@ import numpy as np
 log("definition of variables")
 
 DIM = Dimension.twoD
-resolution = np.array([80] * DIM.value)
-Lx = 1
-Ly = Lx
-h = [Lx / resolution[0], Ly / resolution[1]]
-F = Euler(5. / 3, dim=DIM, c1=0.1, c2=0., hx=h[0], hy=h[1], add_viscosity=True)
+domain = np.array([[-3, 3], [-3, 3]])
+resolution = np.array([160] * DIM.value)
+
+h = ((domain[:, 1] - domain[:, 0]) / resolution).ravel()
+F = Euler(5. / 3, dim=DIM, c1=0.1, c2=0., hx=h[0], hy=h[1], add_viscosity=False)
 
 log("calculate initial conditions")
 
 # stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-8)
-stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, lerp=False)
+stepper = Richtmeyer2step(F, domain, resolution, lerp=False)
 
-center = np.array([Lx / 2, Ly / 2])
+center = np.array([1, 1])
 avg_coords = [avg_x(coord) for coord in stepper.coords]
-X, Y = np.meshgrid(*avg_coords, indexing='ij')
-X -= center[0]
-Y -= center[1]
-
-# get angle
-alpha = np.arctan2(Y, X)
-
-
-def u_phi(grid: np.ndarray) -> np.ndarray:
-    vels = stepper.grid_no_ghost[..., 1:3] / stepper.grid_no_ghost[..., 0:1]
-    u = vels[..., 0] * np.sin(alpha) - vels[..., 1] * np.cos(alpha)
-    return u
-
 
 M = 0.1
 t = 1.
-stepper.initial_cond(lambda x: gresho_vortex(x, center, F, Mmax=M, qr=0.4 * np.pi * Lx / 1))
-
-plotter = Plotter(1, action="show", writeout=10, dim=stepper.dim, filename="gresho_vortex_eta_rel.mp4")
-
-plot_visc = False
 
 
-def plot(stepper, dt, plot_mach=False, plot_curl=True, plot_eta=False):
+def gresho_bomb(x):
+    result = gresho_vortex(x, center, F, M, qr=0.4 * np.pi, primitives=True)
+    midx = resolution[0] // 2
+    midy = resolution[1] // 2
+    result[midx - 3:midx + 4, midy - 3:midy + 4, -1] *= 2
+    return F.primitive_to_conserved(result)
+
+
+stepper.initial_cond(gresho_bomb)
+
+plotter = Plotter(1, action="show", writeout=1, dim=stepper.dim, filename="gresho_bomb.mp4")
+
+
+def plot(stepper, dt, plot_mach=True, plot_curl=False, plot_eta=False, plot_visc=True):
     if plotter.ncomp == 1:
         if plot_mach:
             plotter.write(F.mach(stepper.grid_no_ghost)[..., np.newaxis], dt)
@@ -54,8 +49,6 @@ def plot(stepper, dt, plot_mach=False, plot_curl=True, plot_eta=False):
             plotter.write(curl(stepper.grid[..., 1:3], DIM, h)[..., np.newaxis], dt)
         elif plot_eta:
             plotter.write(F.eta(stepper.grid, h[0], h[1])[..., np.newaxis], dt)
-        else:
-            plotter.write(u_phi(stepper.grid_no_ghost)[..., np.newaxis], dt)
     elif plotter.ncomp == 2:
         to_plot = np.empty((*stepper.grid_no_ghost.shape[:-1], 2))
         to_plot[..., 0] = F.mach(stepper.grid_no_ghost)

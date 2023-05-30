@@ -83,7 +83,6 @@
 - [x] scalaer advect X -> rho X
   - it already was
 - [x] curl
-- [ ] explosion gresho
 - [x] check conservation LF
   - tot conserved, Ekin -> 0
 - [ ] non averaged grid in viscosity
@@ -91,10 +90,15 @@
   - works well, but add filter
 - [ ] fix `[..., np.newaxis]` bug
 - [ ] combine eta & visc
-- [ ] bomb next to gresho
-- [ ] riemann 1D
-- [ ] maybe rusanov flux
+- [x] bomb next to gresho
+  - works
+- [x] riemann 1D
 - [ ] artificial viscosity instead of "physical"?
+- [x] rusanov check
+  - seems to work now
+- [ ] entropy K = p / rho^gamma
+- [ ] laney 22.3 553
+- [ ] better filtering for eta
 
 
 # To Discuss
@@ -131,3 +135,4 @@
 - show new eta
 ## 26.05.23
 - curl
+- extend time?
