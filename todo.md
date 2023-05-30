@@ -96,6 +96,7 @@
 - [ ] artificial viscosity instead of "physical"?
 - [x] rusanov check
   - seems to work now
+  - [ ] now do lerp of fluxes instead solutions
 - [ ] entropy K = p / rho^gamma
 - [ ] laney 22.3 553
 - [ ] better filtering for eta
