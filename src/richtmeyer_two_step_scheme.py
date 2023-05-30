@@ -132,8 +132,8 @@ class Richtmeyer2step(Solver):
             fluxes = self.pde(self.grid)
 
             fprime, gprime = self.pde.derivatives(self.grid)
-            F = avg_x(fluxes[0]) - fprime[..., np.newaxis] * del_x(self.grid)
-            G = avg_y(fluxes[1]) - gprime[..., np.newaxis] * del_y(self.grid)
+            F = avg_x(fluxes[0]) - fprime[..., np.newaxis] / 2 * del_x(self.grid)
+            G = avg_y(fluxes[1]) - gprime[..., np.newaxis] / 2 * del_y(self.grid)
             return self.grid_no_ghost - c[0] * del_x(F[:, 1:-1, ...]) - c[1] * del_y(G[1:-1, ...])
 
         c = dt / self.dxyz
