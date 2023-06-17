@@ -29,7 +29,7 @@ def gresho_vortex(x: np.ndarray, center, F: Euler, Mmax=None, qr=1, primitives=F
 
     # split u_phi int ux and uy
     primitive[..., 1] = u * np.sin(alpha)  # or Y/r
-    primitive[..., 2] = u * -np.cos(alpha)  # or -x/r
+    primitive[..., 2] = u * -np.cos(alpha)  # or -X/r
     gamma = F.gamma
 
     # background pressure

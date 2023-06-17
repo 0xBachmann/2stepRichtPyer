@@ -14,12 +14,13 @@ resolution = np.array([80] * DIM.value)
 Lx = 1
 Ly = Lx
 h = [Lx / resolution[0], Ly / resolution[1]]
-F = Euler(5. / 3, dim=DIM, c1=0.1, c2=0., hx=h[0], hy=h[1], add_viscosity=True)
+F = Euler(5. / 3, dim=DIM, c1=0.1, c2=0., hx=h[0], hy=h[1])
 
 log("calculate initial conditions")
 
 # stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-8)
-stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, lerp=False)
+domain = np.array([Lx, Ly])
+stepper = Richtmeyer2step(F, domain, resolution, lerp=False)
 
 center = np.array([Lx / 2, Ly / 2])
 avg_coords = [avg_x(coord) for coord in stepper.coords]
@@ -39,14 +40,14 @@ def u_phi(grid: np.ndarray) -> np.ndarray:
 
 M = 0.1
 t = 1.
-stepper.initial_cond(lambda x: gresho_vortex(x, center, F, Mmax=M, qr=0.4 * np.pi * Lx / 1))
+stepper.initial_cond(lambda x: gresho_vortex(x, center, F, M))
 
-plotter = Plotter(1, action="show", writeout=10, dim=stepper.dim, filename="gresho_vortex_eta_rel.mp4")
+plotter = Plotter(F, action="show", writeout=1, dim=stepper.dim, filename="gresho_vortex_eta_rel.mp4")
 
 plot_visc = False
 
 
-def plot(stepper, dt, plot_mach=False, plot_curl=True, plot_eta=False):
+def plot(stepper, dt, plot_mach=True, plot_curl=False, plot_eta=False):
     if plotter.ncomp == 1:
         if plot_mach:
             plotter.write(F.mach(stepper.grid_no_ghost)[..., np.newaxis], dt)

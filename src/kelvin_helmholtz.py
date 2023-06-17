@@ -43,7 +43,7 @@ M = 0.001
 stepper.initial_cond(lambda x: kh_with_scalar(x, F, Mr=M))
 
 
-plot_visc = True
+plot_visc = False
 plot_curl = False
 plot_eta = False
 plot_mach = False
@@ -60,7 +60,7 @@ elif plot_eta:
     ncomps = 6
 
 plotter = Plotter(ncomps, action="show", writeout=40, dim=stepper.dim, filename="kelvin_helmholz_eta_rel.mp4"
-                  , lims={0: [-.4, .4], 3: [-.4, .4]}
+                  # , lims={0: [-.4, .4], 3: [-.4, .4]}
                   )
 
 

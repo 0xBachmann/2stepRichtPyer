@@ -23,7 +23,7 @@ stepper_visc = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, lerp=False)
 stepper_lerp = Richtmeyer2step(F_novisc, np.array([Lx, Ly]), resolution, lerp=True, order1=True)
 stepper_lerp_visc = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, lerp=True)
 
-tests = [(1.0, 0.75, 1.0, 0.125, 0.0, 0.1),  # vis makes it incorrect
+tests = [(1.0, 0.75, 1.0, 0.125, 0.0, 0.1),  # rusanov works
          (1.0, -2.0, 0.4, 1.0, 2.0, 0.4),  # not even with visc
          (1.0, 0.0, 1000.0, 1.0, 0.0, 0.01),  # also not too bad
          (5.99924, 19.5975, 460.894, 5.99242, -6.19633, 46.0950),  # also okayish
@@ -31,10 +31,13 @@ tests = [(1.0, 0.75, 1.0, 0.125, 0.0, 0.1),  # vis makes it incorrect
          (1.4, 0.0, 1.0, 1.0, 0.0, 1.0),  # works fine
          (1.4, 0.1, 1.0, 1.0, 0.1, 1.0)]  # densitiy oscilates
 
-which_test = 6
+# TODO: not working well: 1, 3, 4, 5 (as pressure = const -> eta = 1 everywhere)
+#           working well: 0, 2, 6 (also refine filtering of eta)
+which_test = 0
 
 rhol, ul, pl, rhor, ur, pr = tests[which_test]
-RP_exact = RP1D_Euler(5. / 3., rhol, ul, pl, rhor, ur, pr, xdiaph=0.25)
+RP_exact_l = RP1D_Euler(5. / 3., rhol, ul, pl, rhor, ur, pr, xdiaph=0.25)
+RP_exact_r = RP1D_Euler(5. / 3., rhor, ur, pr, rhol, ul, pl, xdiaph=0.75)
 
 scalrho = 1
 scalu = 1
@@ -78,7 +81,8 @@ stepper_visc.initial_cond(test)
 stepper_lerp_visc.initial_cond(test)
 
 coords = np.linspace(0, 1, resolution[0])
-coords_exact = np.linspace(0, 0.5, 200)
+coords_exact = np.linspace(0, 1, 400)
+
 
 msz = 8
 plot_args = [{"marker": "1", "markersize": msz, "linewidth": 0, "label": "vanilla"},
@@ -96,7 +100,10 @@ plot_visc = False
 
 
 def plot(dt):
-    exact = np.stack(RP_exact.sample(coords_exact, time), axis=-1)
+    half = coords_exact.shape[0] // 2
+    exact_l = np.stack(RP_exact_l.sample(coords_exact[:half], time), axis=-1)
+    exact_r = np.stack(RP_exact_r.sample(coords_exact[half:], time), axis=-1)
+    exact = np.concatenate([exact_l, exact_r])
 
     plotter.write((np.column_stack(
         [F.conserved_to_primitive(stepper_vanilla.grid_no_ghost)[..., 0, (0, 1, 3)],
@@ -131,7 +138,7 @@ while time < T:
     if np.any(np.isnan([stepper_vanilla.cfl(), stepper_lerp.cfl(), stepper_visc.cfl(), stepper_lerp_visc.cfl()])):
         print(cfls)
 
-    stepper_vanilla.step(dt)
+    # stepper_vanilla.step(dt)
     stepper_lerp.step(dt)
     # stepper_visc.step(dt)
     # stepper_lerp_visc.step(dt)

@@ -60,7 +60,7 @@
   - maybe because M is not small enough
 - [x] look at godunov
 - [ ] jacobain for burgers
-- [ ] implement `Stepper.step_for(t)`
+- [x] implement `Stepper.step_for(t)`
 - [x] add cleanup flag for plotter
 - [ ] derivation for c
 - [x] rewrite lsa
@@ -98,8 +98,10 @@
   - seems to work now
   - [ ] now do lerp of fluxes instead solutions
 - [ ] entropy K = p / rho^gamma
-- [ ] laney 22.3 553
+- [ ] laney 22.3 553 (swanson turkel shock switch)
 - [ ] better filtering for eta
+  - somehow right disc is not detected well
+- [ ] replace `\ref` by `\cref`
 
 
 # To Discuss
