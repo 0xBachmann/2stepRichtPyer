@@ -96,12 +96,20 @@
 - [ ] artificial viscosity instead of "physical"?
 - [x] rusanov check
   - seems to work now
-  - [ ] now do lerp of fluxes instead solutions
+  - [x] now do lerp of fluxes instead solutions
 - [ ] entropy K = p / rho^gamma
+  - not good for contact disc
 - [ ] laney 22.3 553 (swanson turkel shock switch)
+  - not better than shock detection
 - [ ] better filtering for eta
-  - somehow right disc is not detected well
+  - somehow right disc is not detected well ???
 - [ ] replace `\ref` by `\cref`
+- [ ] check punctuation in equations
+- [ ] ask about references of what he showed
+  - "exact" solution
+- [ ] fix two step or two-step
+- [ ] check timetense ie present vs past
+- [ ] double sided vs one sided?
 
 
 # To Discuss

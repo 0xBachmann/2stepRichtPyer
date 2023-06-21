@@ -134,21 +134,26 @@ class Richtmeyer2step(Solver):
             fprime, gprime = self.pde.derivatives(self.grid)
             F = avg_x(fluxes[0]) - fprime[..., np.newaxis] / 2 * del_x(self.grid)
             G = avg_y(fluxes[1]) - gprime[..., np.newaxis] / 2 * del_y(self.grid)
-            return self.grid_no_ghost - c[0] * del_x(F[:, 1:-1, ...]) - c[1] * del_y(G[1:-1, ...])
+            return c[0] * del_x(F[:, 1:-1, ...]) + c[1] * del_y(G[1:-1, ...])
 
         c = dt / self.dxyz
         self.bdc(self.grid)
 
-        staggered = avg_x(avg_y(self.grid))
+        staggered = avg_x(self.grid)
+        if self.dim >= Dimension.twoD:
+            staggered = avg_y(staggered)
+
         staggered -= 0.5 * div_fluxes(self.pde(self.grid, False))  # no viscosity for predictor
 
         if self.lerp:
-            eta = self.pde.eta(staggered, self.dxyz[0], self.dxyz[1])[..., np.newaxis].astype(float)
+            # eta = self.pde.eta(staggered, self.dxyz[0], self.dxyz[1])[..., np.newaxis].astype(float)
             # eta = self.pde.eta_(self.grid, self.dxyz[0], self.dxyz[1])
+            # eta = self.pde.eta_entropy(self.grid, self.dxyz[0], self.dxyz[1])[..., np.newaxis]
+            eta = self.pde.eta_st(self.grid, self.dxyz[0], self.dxyz[1])[..., np.newaxis]
             # eta = np.minimum(eta, 1)
             # TODO or replace order1 by viscosity
             if self.order1:
-                self.grid_no_ghost = (1. - eta) * (self.grid_no_ghost - div_fluxes(self.pde(staggered))) + eta * rusanov()
+                self.grid_no_ghost -= (1. - eta) * div_fluxes(self.pde(staggered)) + eta * rusanov()
             else:
                 self.grid_no_ghost -= (1. - eta) * div_fluxes(self.pde(staggered, False)) + eta * div_fluxes(self.pde(staggered, True, other=self.grid_no_ghost)) # TODO -= ???
 

@@ -14,12 +14,12 @@ resolutions = np.array([[int(2**(i/2)), int(2**(i/2))] for i in range(4, 18)])
 # resolutions = np.array([[50, 50]])
 w0 = np.array([1, 1, 1])
 w02d = np.array([1, 1, 0, 1])
-waves = [F.waves(i, w0, amp=1e-5, alpha=0*np.pi/4) for i in range(3)]
+waves = [F.waves(i, w0, amp=1e-5, alpha=1*np.pi/4) for i in range(3)]
 
 print("resolution\tL2 norm of w-wref")
 print("="*40)
 for r in resolutions:
-    print(np.product(r), end="\t\t")
+    print(r[0], end="\t\t")
 
     coords_x = np.linspace(0, L, r[0] + 1)
     coords_y = np.linspace(0, L, r[1] + 1)
@@ -30,7 +30,7 @@ for r in resolutions:
     T = 1 / (w0[1] + a)
 
     for i in range(3):
-        stepper = Richtmeyer2stepImplicit(F, np.array([L, L]), r)
+        stepper = Richtmeyer2step(F, np.array([L, L]), r)
         stepper.initial_cond(waves[i])
 
         time = 0.
@@ -44,7 +44,7 @@ for r in resolutions:
             stepper.step(dt)
 
         ref = waves[i](grid, time)
-        print(L / r[0] * np.sum((ref - stepper.grid_no_ghost)**2), end="\t")
+        print((L / r[0])**2 * np.sqrt(np.sum((ref - stepper.grid_no_ghost)**2)), end="\t")
         # print(np.max(np.abs(ref - stepper.grid_no_ghost)), end="\t")
 
         # fig, ax = plt.subplots(2, 2)

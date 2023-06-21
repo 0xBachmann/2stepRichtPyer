@@ -21,19 +21,20 @@ for r in range(2, 17):
     coords_x = np.linspace(0, L, r + 1)[..., np.newaxis]
 
     a = F.csnd(F.primitive_to_conserved(w0))
-    T = 1 / (w0[1] + a)
+    T = [1 / (w0[1]), 1 / (w0[1] + a), 1 / (w0[1] - a)]
 
     for i in range(3):
-        stepper = Richtmeyer2step(F, np.array([L]), np.array([r]))
+        stepper = Richtmeyer2stepImplicit(F, np.array([L]), np.array([r]))
         stepper.initial_cond(lambda x: waves[i](x))
 
         time = 0.
-        while time < T:
+        while time < T[i]:
             dt = stepper.cfl()
+            dt = min(dt, T[i] - time)
             stepper.step(dt)
             time += dt
 
-        print((L / r * np.sum((waves[i](avg_x(coords_x), time) - stepper.grid_no_ghost)**2)), end="\t")
+        print((L / r * np.sqrt(np.sum((waves[i](avg_x(coords_x), 0) - stepper.grid_no_ghost)**2))), end="\t")
 
     print("")
 

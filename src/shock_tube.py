@@ -33,6 +33,23 @@ tests = [(1.0, 0.75, 1.0, 0.125, 0.0, 0.1),  # rusanov works
 
 # TODO: not working well: 1, 3, 4, 5 (as pressure = const -> eta = 1 everywhere)
 #           working well: 0, 2, 6 (also refine filtering of eta)
+# detection eta:
+# test nr   0: right side weird
+#           1:
+#           2: good, small osz
+#           3:
+#           4:
+#           5: needs filter, p = const -> eta = 1
+#           6: need more filter, shouldn't wash out
+
+# st eta:
+# test nr   0: nah, better with higher eta, * 10
+#           1: pressure gets too low
+#           2: eta bit too small?
+#           3: only left side wrong
+#           4: osz a bit high, right side more
+#           5: good
+#           6: small osz
 which_test = 0
 
 rhol, ul, pl, rhor, ur, pr = tests[which_test]
@@ -111,7 +128,7 @@ def plot(dt):
          F.viscosity2(stepper_vanilla.grid_no_ghost, avg_x(avg_y(stepper_vanilla.grid_no_ghost)))[..., 0, 0, 0]]),
                    np.column_stack(
                        [F.conserved_to_primitive(stepper_lerp.grid_no_ghost)[..., 0, (0, 1, 3)],
-                        F.eta(avg_x(avg_y(stepper_lerp.grid)), h[0], h[1])[..., 0],
+                        F.eta_st(((stepper_lerp.grid)), h[0], h[1])[..., 0],
                         F.viscosity2(stepper_lerp.grid_no_ghost, avg_x(avg_y(stepper_lerp.grid_no_ghost)))[
                             ..., 0, 0, 0]]),
                    np.column_stack(
@@ -129,7 +146,7 @@ def plot(dt):
 
 time = 0.
 plot(0)
-T = 0.2
+T = 0.02
 while time < T:
     cfls = [stepper_vanilla.cfl(), stepper_lerp.cfl(), stepper_visc.cfl(), stepper_lerp_visc.cfl()]
     dt = np.min(cfls)

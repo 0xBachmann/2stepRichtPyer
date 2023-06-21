@@ -105,21 +105,52 @@ class Euler(PDE):
         avg_vels = avg_x(avg_y(vels))
 
         eta = (1. - self.gamma) * (div((v[..., -1] + p)[..., np.newaxis] * vels)
-                                   + 0.5 * np.sum(avg_vels**2, axis=-1) * div(mom)
+                                   + 0.5 * np.sum(avg_vels ** 2, axis=-1) * div(mom)
                                    + np.sum(avg_vels * div(np.einsum("...i,...j->...ij", mom, vels)
-                                                     + np.einsum("...i,jk->...ijk", p, np.identity(self.dim.value))), axis=-1)
+                                                           + np.einsum("...i,jk->...ijk", p,
+                                                                       np.identity(self.dim.value))), axis=-1)
                                    + np.sum(avg_vels * grad_p, axis=-1))
 
         norm_grad_p = np.linalg.norm(grad_p, axis=-1)
-        tol = 0.1
+        tol = 0.2
         return (np.abs(eta) >= avg_x(avg_y(csnd)) * norm_grad_p) \
             & (norm_grad_p >= tol * np.max(norm_grad_p))
-            #& (eta >= 0.5)
-        return np.minimum(1, np.maximum(0, eta / avg_x(avg_y(csnd)) * norm_grad_p))
-        eta[np.logical_not((eta >= avg_x(avg_y(csnd)) * norm_grad_p)
-            & (norm_grad_p >= tol * np.max(norm_grad_p))
-            & (eta >= 0.5))] = 0.
-        return np.minimum(1, eta)
+        # & (eta >= 0.5)
+        # return np.clip(eta / avg_x(avg_y(csnd)) * norm_grad_p, a_min=0, a_max=1)
+        eta[np.logical_not((np.abs(eta) >= avg_x(avg_y(csnd)) * norm_grad_p)
+                           & (norm_grad_p >= tol * np.max(norm_grad_p))
+                           # & (eta >= 0.5)
+                           )] = 0.
+        eta = np.abs(eta)
+        return np.clip(eta, a_min=0, a_max=1)
+
+    def eta_st(self, v: np.ndarray, dx, dy) -> np.ndarray:
+        assert self.dim == Dimension.twoD
+
+        c = self.csnd(v)
+
+        w = 0.5
+        d = 1e-9
+        thetax = np.abs((c[2:, ...] - 2 * c[1:-1, ...] + c[:-2, ...]) /
+                        ((1. - w) * (np.abs(c[2:, ...] - c[1:-1, ...]) + np.abs(c[1:-1, ...] - c[:-2, ...]))
+                         + w * (np.abs(c[2:, ...]) + 2 * np.abs(c[1:-1, ...]) + np.abs(c[:-2, ...])) + d))
+        thetay = np.abs((c[:, 2:, ...] - 2 * c[:, 1:-1, ...] + c[:, :-2, ...]) /
+                        ((1. - w) * (np.abs(c[:, 2:, ...] - c[:, 1:-1, ...]) + np.abs(c[:, 1:-1, ...] - c[:, :-2, ...]))
+                         + w * (np.abs(c[:, 2:, ...]) + 2 * np.abs(c[:, 1:-1, ...]) + np.abs(c[:, :-2, ...])) + d))
+        eta = (thetax[:, 1:-1, ...] + thetay[1:-1, ...]) * 10
+        return np.clip(eta, a_min=0, a_max=1)
+
+    def eta_entropy(self, v: np.ndarray, dx, dy) -> np.ndarray:
+        assert self.dim == Dimension.twoD
+
+        p = self.pres(v)
+        rho = v[..., 0]
+
+        K = p / rho**self.gamma
+        eta = np.maximum(del_x(avg_x(K))[:, 1:-1, ...] / dx
+                         , del_y(avg_y(K))[1:-1, ...] / dy
+                         )
+        return np.clip(eta, a_min=0, a_max=1)
 
     def eta_(self, v: np.ndarray, dx, dy) -> np.ndarray:
         assert self.dim == Dimension.twoD
@@ -425,14 +456,16 @@ class Euler(PDE):
         absvels = np.abs(v[..., 1:self.dim.value + 1] / v[..., 0, np.newaxis])
         if self.dim == Dimension.twoD:
             return np.maximum(absvels[1:, ..., 0], absvels[:-1, ..., 0]) + np.maximum(csnd[1:, ...], csnd[:-1, ...]), \
-                np.maximum(absvels[:, 1:, ..., 1], absvels[:, :-1, ..., 1]) + np.maximum(csnd[:, 1:, ...], csnd[:, :-1, ...])
+                   np.maximum(absvels[:, 1:, ..., 1], absvels[:, :-1, ..., 1]) + np.maximum(csnd[:, 1:, ...],
+                                                                                            csnd[:, :-1, ...])
         else:
             raise NotImplementedError
 
 
 class EulerScalarAdvect(Euler):
     def __init__(self, gamma, dim: Dimension, add_viscosity=False, c1=0, c2=0, hx=None, hy=None):
-        super().__init__(gamma, dim, extra_comp=1, add_viscosity=add_viscosity, c1=c1, c2=c2, hx=hx, hy=hy)  # nr of dims velocities + density plus energy_new
+        super().__init__(gamma, dim, extra_comp=1, add_viscosity=add_viscosity, c1=c1, c2=c2, hx=hx,
+                         hy=hy)  # nr of dims velocities + density plus energy_new
         self.comp_names = ["density", *[f"momenta_{dim}" for dim in "xyz"[:dim.value]], "Energy", "X"]
 
     def pres(self, v):
