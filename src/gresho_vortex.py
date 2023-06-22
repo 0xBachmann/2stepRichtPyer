@@ -3,7 +3,7 @@ from plotter import Plotter
 from richtmeyer_two_step_scheme import Richtmeyer2step, Richtmeyer2stepImplicit
 from two_step_richtmeyer_util import Dimension, log, avg_x
 from intitial import gresho_vortex
-
+import sys
 import copy
 import numpy as np
 
@@ -42,7 +42,7 @@ M = 1.e-4
 t = 1.
 stepper.initial_cond(lambda x: gresho_vortex(x, center, F, M, qr=0.4*np.pi*Lx))
 
-plotter = Plotter(1, action="saveb", writeout=1, dim=stepper.dim, filename="gresho_vortex_eta_rel.mp4")
+plotter = Plotter(1, action="show", writeout=1, dim=stepper.dim, filename="gresho_vortex_eta_rel.mp4")
 
 plot_visc = False
 
@@ -72,8 +72,12 @@ def plot(stepper, dt, plot_mach=True, plot_curl=False, plot_eta=False):
         plotter.write(stepper.grid_no_ghost, dt)
 
 
-stepper.step_for(t, fact=1, callback=None)
+fact = 1
+if len(sys.argv) >= 2:
+    fact = float(sys.argv[1])
+
+stepper.step_for(t, fact=fact, callback=None)
 
 plot(stepper, 1.)
 
-# plotter.finalize()
+plotter.finalize()
