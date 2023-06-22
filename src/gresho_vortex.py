@@ -76,7 +76,9 @@ fact = 1
 if len(sys.argv) >= 2:
     fact = float(sys.argv[1])
 
-stepper.step_for(t, fact=fact, callback=None)
+stepper.step_for(t, fact=fact, callback=None, log_step=False)
+
+print(f"finished, fact={fact}")
 
 plot(stepper, 1.)
 
