@@ -64,15 +64,13 @@ t = 1.
 generate = False
 if generate:
     for i, stepper in enumerate(steppers):
-        if i != 1:
-            continue
-        for j, M in enumerate(Ms):
+        for j, M in enumerate(Ms[:-1]):
             energies = []
             times = []
 
             print(f"stepper: {i}, M = {M}")
 
-            stepper.initial_cond(lambda x: gresho_vortex(x, center, F, M, qr=0.4 * np.pi * Lx / 1.))
+            stepper.initial_cond(lambda x: gresho_vortex(x, center, F, M, qr=1))#0.4 * np.pi * Lx / 1.))
             stepper.step_for(0.01, fact=stepper_fact[i], callback=E_kin)
             np.save(str(Path("traj", f"gresho_vortex_{stepper_names[i]}_1e{-(j+1)}_t1.npy")),
                     F.mach(stepper.grid_no_ghost)[..., np.newaxis] / M)
@@ -96,6 +94,7 @@ if plot:
             ax_en.plot(np.cumsum(times), energies / energies[0], label=f"{stepper_names[i]}")
     ax_en.set_xlabel(r"$t$")
     ax_en.set_ylabel(r"$E_\mathrm{kin}(t)/E_\mathrm{kin}(0)$")
+    ax_en.ticklabel_format(useOffset=False)
 
     # l = ax.legend([(p1, p2)], ['Two keys'], numpoints=1,
     #               handler_map={tuple: HandlerTuple(ndivide=None)})
@@ -116,7 +115,7 @@ if plot:
         grid = ImageGrid(fig, 111,  # as in plt.subplot(111)
                          nrows_ncols=(1, nM),
                          axes_pad=0.,
-                         share_all=True,
+                         share_all=False,
                          cbar_location="right",
                          cbar_mode="single",
                          cbar_size="7%",
@@ -130,8 +129,8 @@ if plot:
 
             ax.set_yticks(np.linspace(0, 1, 6, endpoint=True))
             ax.set_xticks(np.linspace(0, 1, 5, endpoint=False))
-            # ax.set_yticklabels([0., 0.2, 0.4, 0.6, 0.8, 1.0])
-            # ax.set_xticklabels([0., 0.2, 0.4, 0.6, 0.8])
+            if j == nM - 1:
+                ax.set_xticks(np.linspace(0, 1, 6, endpoint=True))
             ax.spines['bottom'].set_color('grey')
             ax.spines['top'].set_color('grey')
             ax.spines['right'].set_color('grey')

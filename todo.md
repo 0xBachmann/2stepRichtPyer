@@ -113,6 +113,9 @@
 - [ ] double sided vs one sided?
 - [ ] remove all occurences of we
 - [ ] gresho mach increases...
+  - check formula with käppeli, scaling not very clear...
+- [ ] conserved vs primitive tell that primitive measured, hence often init or smth are given that way
+- [ ] tikzit staggered mesh 2d
 
 # To Discuss
 ## 06.04.23
@@ -149,3 +152,5 @@
 ## 26.05.23
 - curl
 - extend time?
+## 23.06.23
+- refstyle?
