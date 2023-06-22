@@ -78,22 +78,28 @@ class Solver:
             callback(self, 0)
         while time < T:
             dt = self.cfl() * fact
+            dt = min(dt, T - time)
             self.step(dt)
+
+            time += dt
 
             if callable(callback):
                 callback(self, dt)
 
-            time += min(dt, T - time)
             if log_step:
-                print(f"dt = {dt}, time = {time:.3f}/{T}")
+                print(f"dt = {dt}, time = {time:.3f}/{T}", end="\r")
+
+        if log_step:
+            print("")
 
 
 class Richtmeyer2step(Solver):
     def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic",
-                 lerp=False, order1=False):
+                 lerp=False, order1=True, first_order=False):
         super().__init__(pde, domain, resolutions, bdc)
         self.lerp = lerp
         self.order1 = order1
+        self.fo = first_order
 
     def step(self, dt):
         assert isinstance(self.pde, Euler)
@@ -156,7 +162,8 @@ class Richtmeyer2step(Solver):
                 self.grid_no_ghost -= (1. - eta) * div_fluxes(self.pde(staggered)) + eta * rusanov()
             else:
                 self.grid_no_ghost -= (1. - eta) * div_fluxes(self.pde(staggered, False)) + eta * div_fluxes(self.pde(staggered, True, other=self.grid_no_ghost)) # TODO -= ???
-
+        elif self.fo:
+            self.grid_no_ghost -= rusanov()
         else:
             self.grid_no_ghost -= div_fluxes(self.pde(staggered, other=self.grid_no_ghost))
 

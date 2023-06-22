@@ -20,8 +20,8 @@ F_novisc = Euler(5. / 3, dim=DIM, c1=1., c2=1., hx=h[0], hy=h[1], add_viscosity=
 
 stepper_vanilla = Richtmeyer2step(F_novisc, np.array([Lx, Ly]), resolution, lerp=False)
 stepper_visc = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, lerp=False)
-stepper_lerp = Richtmeyer2step(F_novisc, np.array([Lx, Ly]), resolution, lerp=True, order1=True)
-stepper_lerp_visc = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, lerp=True)
+stepper_lerp = Richtmeyer2step(F_novisc, np.array([Lx, Ly]), resolution, lerp=True)
+stepper_lerp_visc = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, lerp=True, order1=False)
 
 tests = [(1.0, 0.75, 1.0, 0.125, 0.0, 0.1),  # rusanov works
          (1.0, -2.0, 0.4, 1.0, 2.0, 0.4),  # not even with visc

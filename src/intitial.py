@@ -34,7 +34,7 @@ def gresho_vortex(x: np.ndarray, center, F: Euler, Mmax=None, qr=1, primitives=F
 
     # background pressure
     if Mmax is not None:
-        p0 = rho / (gamma * Mmax ** 2) - 0.5
+        p0 = rho * qr**2 / (gamma * Mmax ** 2) - 0.5
     else:
         p0 = 5.
 

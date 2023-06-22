@@ -10,7 +10,7 @@ import numpy as np
 log("definition of variables")
 
 DIM = Dimension.twoD
-resolution = np.array([80] * DIM.value)
+resolution = np.array([40] * DIM.value)
 Lx = 1
 Ly = Lx
 h = [Lx / resolution[0], Ly / resolution[1]]
@@ -38,11 +38,11 @@ def u_phi(grid: np.ndarray) -> np.ndarray:
     return u
 
 
-M = 0.1
+M = 0.001
 t = 1.
-stepper.initial_cond(lambda x: gresho_vortex(x, center, F, M))
+stepper.initial_cond(lambda x: gresho_vortex(x, center, F, M, qr=0.4*np.pi*Lx))
 
-plotter = Plotter(F, action="show", writeout=1, dim=stepper.dim, filename="gresho_vortex_eta_rel.mp4")
+plotter = Plotter(1, action="show", writeout=1000, dim=stepper.dim, filename="gresho_vortex_eta_rel.mp4")
 
 plot_visc = False
 

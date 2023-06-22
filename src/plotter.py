@@ -15,7 +15,7 @@ from typing import Union
 import uuid
 
 import matplotlib as mpl
-mpl.rc('image', cmap='coolwarm')  # 'magma', 'bwr', 'inferno', 'viridis'
+mpl.rc('image', cmap='magma')  # 'magma', 'bwr', 'inferno', 'viridis', 'coolwarm'
 
 
 class Plotter:

@@ -104,13 +104,15 @@
 - [ ] better filtering for eta
   - somehow right disc is not detected well ???
 - [ ] replace `\ref` by `\cref`
+  - `\cref` or `\Cref`?
 - [ ] check punctuation in equations
 - [ ] ask about references of what he showed
   - "exact" solution
 - [ ] fix two step or two-step
 - [ ] check timetense ie present vs past
 - [ ] double sided vs one sided?
-
+- [ ] remove all occurences of we
+- [ ] gresho mach increases...
 
 # To Discuss
 ## 06.04.23
