@@ -1,3 +1,4 @@
+from plotting_setup import *
 from PDE_Types import *
 from plotter import Plotter
 from richtmeyer_two_step_scheme import Richtmeyer2step, Richtmeyer2stepImplicit
@@ -22,7 +23,7 @@ stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution)
 
 center = np.array([Lx / 2, Ly / 2])
 
-M = 0.1
+M = 1.e-1
 t = 1.
 stepper.initial_cond(lambda x: gresho_vortex(x, center, F, Mmax=M, qr=0.4 * np.pi * Lx / 1))
 
@@ -36,11 +37,16 @@ XY[..., 1] = Y
 
 plotter = Plotter(1, action="show", writeout=100, dim=stepper.dim, filename="gresho_vortex_iml_100_hybr_eps1e-9.mp4")
 
+j = []
+times = []
 
 def plot(stepper, dt):
-    return plotter.write(F.angular_momenta(stepper.grid_no_ghost, XY - center)[..., np.newaxis], dt)
+    global j, times
+    j.append(np.sum(F.angular_momenta(stepper.grid_no_ghost, XY - center)))
+    times.append(dt)
 
 
 stepper.step_for(t, fact=1, callback=plot)
 
-plotter.finalize()
+plt.plot(np.cumsum(times), np.array(j) - j[0])
+plt.show()

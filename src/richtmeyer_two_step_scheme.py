@@ -87,7 +87,7 @@ class Solver:
                 callback(self, dt)
 
             if log_step:
-                print(f"dt = {dt}, time = {time:.3f}/{T}", end="\r")
+                print(f"dt = {dt:.10f}, time = {time:.3f}/{T}", end="\r")
 
         if log_step:
             print("")
@@ -149,7 +149,7 @@ class Richtmeyer2step(Solver):
         if self.dim >= Dimension.twoD:
             staggered = avg_y(staggered)
 
-        staggered -= 0.5 * div_fluxes(self.pde(self.grid, False))  # no viscosity for predictor
+        staggered -= 0.5 * div_fluxes(self.pde(self.grid, visc=False))  # no viscosity for predictor
 
         if self.lerp:
             # eta = self.pde.eta(staggered, self.dxyz[0], self.dxyz[1])[..., np.newaxis].astype(float)

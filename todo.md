@@ -109,13 +109,33 @@
 - [ ] ask about references of what he showed
   - "exact" solution
 - [ ] fix two step or two-step
+  - two-step, as markdown suggests
 - [ ] check timetense ie present vs past
-- [ ] double sided vs one sided?
+- [x] double sided vs one-sided?
+  - one-sided
 - [ ] remove all occurences of we
-- [ ] gresho mach increases...
+- [x] gresho mach increases...
   - check formula with käppeli, scaling not very clear...
 - [ ] conserved vs primitive tell that primitive measured, hence often init or smth are given that way
 - [ ] tikzit staggered mesh 2d
+- [ ] in riemann section tell about scalar vs vector, meybe bit more fundamental
+- [x] show why two-step is lax wendroff, define A just as some matrix
+  - is the reasoning sensible?
+- [ ] code
+  - solvers
+  - python
+  - numpy vectorized
+  - maybe einsum flux
+- [ ] visc, add new pressure to energy conservation qeq
+- [ ] is able to solve navier stokes -> good because turns parabolic, where timestep low but implicit
+- [ ] low mach is incompressible bc expand of 1/Mach
+- [ ] angular momenta explicit calculation
+  - show why angular momenta conserving with calc
+- [ ] show a bit code for explicit
+  - even though only python, some vectorization techniques used, numpy, einsum
+- [ ] maybe better if different eta in each direction?
+  - refer to kelvin helmholtz
+- [ ] decide for fixed notation concerning scalar vs vector valued functions
 
 # To Discuss
 ## 06.04.23
@@ -154,3 +174,11 @@
 - extend time?
 ## 23.06.23
 - refstyle?
+  - doesn't matter
+  - numbers
+  - `\citeauth` notbib, dont forget lax wendroff cite
+- reference solution for gresho instead of rusanov
+- double sided vs onesided
+- scaling of gresho double check
+- entropy not so good
+- swanson turkel shock switch rather good, however seometimes too low -> scale

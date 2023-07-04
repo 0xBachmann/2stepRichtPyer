@@ -50,7 +50,7 @@ tests = [(1.0, 0.75, 1.0, 0.125, 0.0, 0.1),  # rusanov works
 #           4: osz a bit high, right side more
 #           5: good
 #           6: small osz
-which_test = 0
+which_test = 3
 
 rhol, ul, pl, rhor, ur, pr = tests[which_test]
 RP_exact_l = RP1D_Euler(5. / 3., rhol, ul, pl, rhor, ur, pr, xdiaph=0.25)

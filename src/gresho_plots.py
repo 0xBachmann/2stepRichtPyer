@@ -3,14 +3,14 @@ from pathlib import Path
 from richtmeyer_two_step_scheme import Richtmeyer2step, Richtmeyer2stepImplicit
 from two_step_richtmeyer_util import Dimension, log, avg_x
 from intitial import gresho_vortex
-import matplotlib.pyplot as plt
 import numpy as np
+import time
 from matplotlib.lines import Line2D
 from mpl_toolkits.axes_grid1 import ImageGrid
 import matplotlib as mpl
+from plotting_setup import *
 mpl.rc('image', cmap='magma')
 
-plt.rcParams['text.usetex'] = True
 # cycler = plt.cycler(color=plt.cm.tab20c.colors)
 colors = ["firebrick", "darkviolet", "teal", "darkkhaki"]
 cycler = plt.cycler(color=colors) + plt.cycler(lw=[1, 0.8, 0.6, 0.3]) + plt.cycler(markersize=[6, 3, 2, 1])
@@ -27,15 +27,16 @@ F = Euler(5. / 3, dim=DIM, c1=0.1, c2=0., hx=h[0], hy=h[1])
 domain = np.array([Lx, Ly])
 steppers = [Richtmeyer2step(F, domain, resolution, first_order=True),
             Richtmeyer2step(F, domain, resolution),
-            Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution),
-            Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution),
-            Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution)]
+            Richtmeyer2stepImplicit(F, domain, resolution),
+            Richtmeyer2stepImplicit(F, domain, resolution),
+            Richtmeyer2stepImplicit(F, domain, resolution)]
 
 stepper_names = {0: "first",
                  1: "expl",
                  2: "impl",
                  3: "impl_10",
-                 4: "impl_100"}
+                 4: "impl_100",
+                 5: "impl_M"}
 stepper_names_fancy = {0: "Rusanov",
                        1: "two step",
                        2: r"implicit",
@@ -64,7 +65,9 @@ t = 1.
 generate = False
 if generate:
     for i, stepper in enumerate(steppers):
-        for j, M in enumerate(Ms[:-1]):
+        if i != 1:
+            continue
+        for j, M in enumerate(Ms):
             energies = []
             times = []
 
@@ -74,12 +77,29 @@ if generate:
             stepper.step_for(0.01, fact=stepper_fact[i], callback=E_kin)
             np.save(str(Path("traj", f"gresho_vortex_{stepper_names[i]}_1e{-(j+1)}_t1.npy")),
                     F.mach(stepper.grid_no_ghost)[..., np.newaxis] / M)
+            start = time.time()
             stepper.step_for(t - 0.01, fact=stepper_fact[i], callback=E_kin)
+            end = time.time()
+            if i == 1:
+                print(f"M = {M:.5f} took {end - start}s")
             np.save(str(Path("traj", f"gresho_vortex_{stepper_names[i]}_1e{-(j+1)}_t2.npy")),
                     F.mach(stepper.grid_no_ghost)[..., np.newaxis] / M)
 
             np.save(str(Path("energy", f"en_{stepper_names[i]}_1e{-(j+1)}.npy")), np.array(energies))
             np.save(str(Path("energy", f"times_{stepper_names[i]}_1e{-(j+1)}.npy")), np.array(times))
+
+generate_timings = False
+if generate_timings:
+    for j, M in enumerate(Ms):
+        stepper = Richtmeyer2stepImplicit(F, domain, resolution)
+        stepper.initial_cond(lambda x: gresho_vortex(x, center, F, M, qr=0.4 * np.pi * Lx / 1.))
+        start = time.time()
+        stepper.step_for(1., fact=1./M, callback=E_kin)
+        end = time.time()
+        print(f"M = {M:.5f} took {end-start}s")
+        np.save(str(Path("traj", f"gresho_vortex_impl_M-1_1e{-(j + 1)}.npy")),
+                F.mach(stepper.grid_no_ghost)[..., np.newaxis] / M)
+
 
 plot = True
 if plot:
@@ -107,8 +127,7 @@ if plot:
     plt.savefig(Path("ims", "energy_gresho_all.pdf"), dpi=200)
 
     # Mach number
-    for i in range(len(steppers)):
-
+    for i in range(len(steppers) + 1):
         fig = plt.figure(figsize=(3 * nM, 3))  # Notice the equal aspect ratio
         # axs_mach = [fig.add_subplot(1, nM, i + 1) for i in range(nM)]
 
@@ -123,7 +142,12 @@ if plot:
                          )
 
         for j, ax in enumerate(grid):
-            data = np.load(str(Path("traj", f"gresho_vortex_{stepper_names[i]}_1e{-(j+1)}_t{1 if i == 0 else 2}.npy")))
+
+            if i == len(steppers):
+                data = np.load(str(Path("traj", f"gresho_vortex_impl_M-1_1e{-(j + 1)}.npy")))
+            else:
+                data = np.load(str(Path("traj", f"gresho_vortex_{stepper_names[i]}_1e{-(j+1)}_t{1 if i == 0 else 2}.npy")))
+
             # print(np.mean(data.ravel()))
             im = ax.imshow(data.T[0], origin="lower", vmin=0, vmax=1, extent=(0, 1, 0, 1))
 

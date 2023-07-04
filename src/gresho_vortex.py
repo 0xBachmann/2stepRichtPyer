@@ -4,7 +4,7 @@ from richtmeyer_two_step_scheme import Richtmeyer2step, Richtmeyer2stepImplicit
 from two_step_richtmeyer_util import Dimension, log, avg_x
 from intitial import gresho_vortex
 import sys
-import copy
+import time
 import numpy as np
 
 log("definition of variables")
@@ -38,16 +38,16 @@ def u_phi(grid: np.ndarray) -> np.ndarray:
     return u
 
 
-M = 1.e-4
+M = 1.e-3
 t = 1.
 stepper.initial_cond(lambda x: gresho_vortex(x, center, F, M, qr=0.4*np.pi*Lx))
 
-plotter = Plotter(1, action="show", writeout=1, dim=stepper.dim, filename="gresho_vortex_eta_rel.mp4")
+plotter = Plotter(1, action="show", writeout=100, dim=stepper.dim, filename="gresho_vortex_eta_rel.mp4")
 
 plot_visc = False
 
 
-def plot(stepper, dt, plot_mach=True, plot_curl=False, plot_eta=False):
+def plot(stepper, dt, plot_mach=False, plot_curl=True, plot_eta=False):
     if plotter.ncomp == 1:
         if plot_mach:
             plotter.write(F.mach(stepper.grid_no_ghost)[..., np.newaxis], dt)
@@ -72,14 +72,14 @@ def plot(stepper, dt, plot_mach=True, plot_curl=False, plot_eta=False):
         plotter.write(stepper.grid_no_ghost, dt)
 
 
-fact = 1
+fact = 1. / M
 if len(sys.argv) >= 2:
     fact = float(sys.argv[1])
-
-stepper.step_for(t, fact=fact, callback=None, log_step=False)
+start = time.time()
+stepper.step_for(t, fact=fact, callback=None)
+end = time.time()
 
 print(f"finished, fact={fact}")
-
-plot(stepper, 1.)
+print(f"took {end-start}s")
 
 plotter.finalize()
