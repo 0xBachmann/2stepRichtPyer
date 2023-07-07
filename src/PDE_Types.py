@@ -88,6 +88,9 @@ class Euler(PDE):
         return np.sqrt(self.gamma * p / dens)
 
     def eta(self, v: np.ndarray, dx, dy) -> np.ndarray:
+        """
+        post-processing shock detection
+        """
         assert self.dim == Dimension.twoD
 
         csnd = self.csnd(v)
@@ -153,6 +156,9 @@ class Euler(PDE):
         return np.clip(eta, a_min=0, a_max=1)
 
     def eta_(self, v: np.ndarray, dx, dy) -> np.ndarray:
+        """
+        the one from Baslare et al
+        """
         assert self.dim == Dimension.twoD
 
         csnd = self.csnd(v)
@@ -360,7 +366,7 @@ class Euler(PDE):
             JG[..., 2, 2] = velx
             JG[..., 2, 3] = 0
 
-            JG[..., 1, 0] = velx2 * ((self.gamma - 1) / 1) + vely2 * ((self.gamma - 3) / 2)
+            JG[..., 1, 0] = velx2 * ((self.gamma - 1) / 2) + vely2 * ((self.gamma - 3) / 2)
             JG[..., 1, 1] = velx * (1 - self.gamma)
             JG[..., 1, 2] = vely * (3 - self.gamma)
             JG[..., 1, 3] = self.gamma - 1

@@ -103,8 +103,9 @@
   - not better than shock detection
 - [ ] better filtering for eta
   - somehow right disc is not detected well ???
-- [ ] replace `\ref` by `\cref`
+- [x] replace `\ref` by `\cref`
   - `\cref` or `\Cref`?
+- [ ] make sure afte e.g. `\ ` is
 - [ ] check punctuation in equations
 - [ ] ask about references of what he showed
   - "exact" solution
@@ -136,6 +137,7 @@
 - [ ] maybe better if different eta in each direction?
   - refer to kelvin helmholtz
 - [ ] decide for fixed notation concerning scalar vs vector valued functions
+- [ ] richtmyer instead of richtmeyer
 
 # To Discuss
 ## 06.04.23
