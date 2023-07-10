@@ -138,6 +138,8 @@
   - refer to kelvin helmholtz
 - [ ] decide for fixed notation concerning scalar vs vector valued functions
 - [ ] richtmyer instead of richtmeyer
+- [ ] whenever author check for et al.
+- [ ] precalc optimal einsum
 
 # To Discuss
 ## 06.04.23
@@ -184,3 +186,6 @@
 - scaling of gresho double check
 - entropy not so good
 - swanson turkel shock switch rather good, however seometimes too low -> scale
+## 14.07.23
+- angular momentum formula?
+- hpclab 10 extra points

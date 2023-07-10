@@ -18,7 +18,7 @@ F = Euler(5. / 3, dim=DIM, c1=0.1, c2=0., hx=h[0], hy=h[1])
 
 log("calculate initial conditions")
 
-stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1.e-16)
+stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, lerp=-1)  # works: 1, 3. doesn't: 0, 2
 domain = np.array([Lx, Ly])
 # stepper = Richtmeyer2step(F, domain, resolution, lerp=False)
 
@@ -38,16 +38,16 @@ def u_phi(grid: np.ndarray) -> np.ndarray:
     return u
 
 
-M = 1.e-3
+M = 1.e-2
 t = 1.
-stepper.initial_cond(lambda x: gresho_vortex(x, center, F, M, qr=0.4*np.pi*Lx))
+stepper.initial_cond(lambda x: gresho_vortex(x, center, F, M, qr=0.4 * np.pi * Lx))
 
 plotter = Plotter(1, action="show", writeout=100, dim=stepper.dim, filename="gresho_vortex_eta_rel.mp4")
 
 plot_visc = False
 
 
-def plot(stepper, dt, plot_mach=False, plot_curl=True, plot_eta=False):
+def plot(stepper, dt, plot_mach=True, plot_curl=False, plot_eta=False):
     if plotter.ncomp == 1:
         if plot_mach:
             plotter.write(F.mach(stepper.grid_no_ghost)[..., np.newaxis], dt)
@@ -72,14 +72,17 @@ def plot(stepper, dt, plot_mach=False, plot_curl=True, plot_eta=False):
         plotter.write(stepper.grid_no_ghost, dt)
 
 
-fact = 1. / M
+if isinstance(stepper, Richtmeyer2step):
+    fact = 1.
+else:
+    fact = 1. / M
 if len(sys.argv) >= 2:
     fact = float(sys.argv[1])
 start = time.time()
-stepper.step_for(t, fact=fact, callback=None)
+stepper.step_for(t, fact=fact, callback=plot)
 end = time.time()
 
 print(f"finished, fact={fact}")
-print(f"took {end-start}s")
+print(f"took {end - start}s")
 
 plotter.finalize()

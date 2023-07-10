@@ -18,10 +18,10 @@ h = [Lx / resolution[0], Ly / resolution[1]]
 F = Euler(5. / 3, dim=DIM, c1=1., c2=1., hx=h[0], hy=h[1], add_viscosity=True)
 F_novisc = Euler(5. / 3, dim=DIM, c1=1., c2=1., hx=h[0], hy=h[1], add_viscosity=False)
 
-stepper_vanilla = Richtmeyer2step(F_novisc, np.array([Lx, Ly]), resolution, lerp=False)
-stepper_visc = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, lerp=False)
-stepper_lerp = Richtmeyer2step(F_novisc, np.array([Lx, Ly]), resolution, lerp=True)
-stepper_lerp_visc = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, lerp=True, order1=False)
+stepper_vanilla = Richtmeyer2step(F_novisc, np.array([Lx, Ly]), resolution, lerp=-1)
+stepper_visc = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, lerp=-1)
+stepper_lerp = Richtmeyer2step(F_novisc, np.array([Lx, Ly]), resolution, lerp=3)
+stepper_lerp_visc = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, lerp=3, order1=False)
 
 tests = [(1.0, 0.75, 1.0, 0.125, 0.0, 0.1),  # rusanov works
          (1.0, -2.0, 0.4, 1.0, 2.0, 0.4),  # not even with visc
@@ -50,7 +50,7 @@ tests = [(1.0, 0.75, 1.0, 0.125, 0.0, 0.1),  # rusanov works
 #           4: osz a bit high, right side more
 #           5: good
 #           6: small osz
-which_test = 3
+which_test = 6
 
 rhol, ul, pl, rhor, ur, pr = tests[which_test]
 RP_exact_l = RP1D_Euler(5. / 3., rhol, ul, pl, rhor, ur, pr, xdiaph=0.25)
@@ -124,21 +124,21 @@ def plot(dt):
 
     plotter.write((np.column_stack(
         [F.conserved_to_primitive(stepper_vanilla.grid_no_ghost)[..., 0, (0, 1, 3)],
-         F.eta(avg_x(avg_y(stepper_vanilla.grid)), h[0], h[1])[..., 0],
+         F.eta(((stepper_vanilla.grid)), None, h[0], h[1], 3)[..., 0],
          F.viscosity2(stepper_vanilla.grid_no_ghost, avg_x(avg_y(stepper_vanilla.grid_no_ghost)))[..., 0, 0, 0]]),
                    np.column_stack(
                        [F.conserved_to_primitive(stepper_lerp.grid_no_ghost)[..., 0, (0, 1, 3)],
-                        F.eta_st(((stepper_lerp.grid)), h[0], h[1])[..., 0],
+                        F.eta(((stepper_lerp.grid)), None, h[0], h[1], 3)[..., 0],
                         F.viscosity2(stepper_lerp.grid_no_ghost, avg_x(avg_y(stepper_lerp.grid_no_ghost)))[
                             ..., 0, 0, 0]]),
                    np.column_stack(
                        [F.conserved_to_primitive(stepper_visc.grid_no_ghost)[..., 0, (0, 1, 3)],
-                        F.eta(avg_x(avg_y(stepper_visc.grid)), h[0], h[1])[..., 0],
+                        F.eta(((stepper_visc.grid)), None, h[0], h[1], 3)[..., 0],
                         F.viscosity2(stepper_visc.grid_no_ghost, avg_x(avg_y(stepper_visc.grid_no_ghost)))[
                             ..., 0, 0, 0]]),
                    np.column_stack(
                        [F.conserved_to_primitive(stepper_lerp_visc.grid_no_ghost)[..., 0, (0, 1, 3)],
-                        F.eta(avg_x(avg_y(stepper_lerp_visc.grid)), h[0], h[1])[..., 0],
+                        F.eta(((stepper_lerp_visc.grid)), None, h[0], h[1], 3)[..., 0],
                         F.viscosity2(stepper_lerp_visc.grid_no_ghost, avg_x(avg_y(stepper_lerp_visc.grid_no_ghost)))[
                             ..., 0, 0, 0]]),
                    exact), dt)
@@ -146,7 +146,7 @@ def plot(dt):
 
 time = 0.
 plot(0)
-T = 0.02
+T = 0.05
 while time < T:
     cfls = [stepper_vanilla.cfl(), stepper_lerp.cfl(), stepper_visc.cfl(), stepper_lerp_visc.cfl()]
     dt = np.min(cfls)

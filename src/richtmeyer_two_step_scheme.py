@@ -72,12 +72,14 @@ class Solver:
     def step(self, dt):
         raise RuntimeError(f"{self.__class__} is only an abstract base class")
 
-    def step_for(self, T, fact=1., callback=None, log_step=True):
+    def step_for(self, T, fact=1., callback=None, log_step=True, const_dt=False):
         time = 0.
+        dt = self.cfl() * fact
         if callable(callback):
             callback(self, 0)
-        while time < T:
-            dt = self.cfl() * fact
+        while time < (T - 1e-12):
+            if not const_dt:
+                dt = self.cfl() * fact
             dt = min(dt, T - time)
             self.step(dt)
 
@@ -87,7 +89,7 @@ class Solver:
                 callback(self, dt)
 
             if log_step:
-                print(f"dt = {dt:.10f}, time = {time:.3f}/{T}", end="\r")
+                print(f"dt = {dt:.10f}, time = {time:.4f}/{T}", end="\r")
 
         if log_step:
             print("")
@@ -95,9 +97,9 @@ class Solver:
 
 class Richtmeyer2step(Solver):
     def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic",
-                 lerp=False, order1=True, first_order=False):
+                 lerp=-1, order1=True, first_order=False):
         super().__init__(pde, domain, resolutions, bdc)
-        self.lerp = lerp
+        self.lerp = lerp  # 0: post, 1: baslara, 2: entropy, 3: st
         self.order1 = order1
         self.fo = first_order
 
@@ -151,12 +153,9 @@ class Richtmeyer2step(Solver):
 
         staggered -= 0.5 * div_fluxes(self.pde(self.grid, visc=False))  # no viscosity for predictor
 
-        if self.lerp:
-            # eta = self.pde.eta(staggered, self.dxyz[0], self.dxyz[1])[..., np.newaxis].astype(float)
-            # eta = self.pde.eta_(self.grid, self.dxyz[0], self.dxyz[1])
-            # eta = self.pde.eta_entropy(self.grid, self.dxyz[0], self.dxyz[1])[..., np.newaxis]
-            eta = self.pde.eta_st(self.grid, self.dxyz[0], self.dxyz[1])[..., np.newaxis]
-            # eta = np.minimum(eta, 1)
+        if self.lerp >= 0:
+            eta = self.pde.eta(self.grid, staggered, self.dxyz[0], self.dxyz[1], which=self.lerp)
+
             # TODO or replace order1 by viscosity
             if self.order1:
                 self.grid_no_ghost -= (1. - eta) * div_fluxes(self.pde(staggered)) + eta * rusanov()

@@ -63,7 +63,7 @@ class BurgersEq(PDE):
 
 
 class Euler(PDE):
-    def __init__(self, gamma, dim: Dimension, extra_comp=0, add_viscosity=False, c1=0., c2=0., hx=0., hy=0.):
+    def __init__(self, gamma, dim: Dimension, extra_comp=0, add_viscosity=-1, c1=0., c2=0., hx=0., hy=0., mu=1.):
         super().__init__(dim=dim, ncomp=dim.value + 2 + extra_comp,
                          Type=PDE_Type.Euler)  # nr of dims velocities + density plus energy_new
         self.gamma = gamma
@@ -74,6 +74,7 @@ class Euler(PDE):
         self.hx = hx
         self.hy = hy
         self.lz = np.minimum(hx, hy)
+        self.mu = mu
 
     def pres(self, v):
         dens = v[..., 0]
@@ -87,7 +88,20 @@ class Euler(PDE):
         dens = v[..., 0]
         return np.sqrt(self.gamma * p / dens)
 
-    def eta(self, v: np.ndarray, dx, dy) -> np.ndarray:
+    def eta(self, primary: np.ndarray, staggered: np.ndarray, dx, dy, which=-1) -> np.ndarray:
+        if which == 0:
+            return self.eta_post(staggered, dx, dy)[..., np.newaxis].astype(float)
+        elif which == 1:
+            return self.eta_(primary, dx, dy)
+        elif which == 2:
+            return self.eta_entropy(primary, dx, dy)[..., np.newaxis]
+        elif which == 3:
+            return self.eta_st(primary, dx, dy)[..., np.newaxis]
+        else:
+            return
+            raise ValueError
+
+    def eta_post(self, v: np.ndarray, dx, dy) -> np.ndarray:
         """
         post-processing shock detection
         """
@@ -140,7 +154,7 @@ class Euler(PDE):
         thetay = np.abs((c[:, 2:, ...] - 2 * c[:, 1:-1, ...] + c[:, :-2, ...]) /
                         ((1. - w) * (np.abs(c[:, 2:, ...] - c[:, 1:-1, ...]) + np.abs(c[:, 1:-1, ...] - c[:, :-2, ...]))
                          + w * (np.abs(c[:, 2:, ...]) + 2 * np.abs(c[:, 1:-1, ...]) + np.abs(c[:, :-2, ...])) + d))
-        eta = (thetax[:, 1:-1, ...] + thetay[1:-1, ...]) * 10
+        eta = (thetax[:, 1:-1, ...] + thetay[1:-1, ...]) * 11
         return np.clip(eta, a_min=0, a_max=1)
 
     def eta_entropy(self, v: np.ndarray, dx, dy) -> np.ndarray:
@@ -191,6 +205,35 @@ class Euler(PDE):
         # eta[:, 1:][(eta > 0)[:, :-1] & (eta[:, 1:] == 0) & (p[:, :-1] > p[:, 1:])] = eta[:, :-1]
         # eta[:, -1][(eta > 0)[:, 1:] & (eta[:, :-1] == 0) & (p[:, :-1] < p[:, 1:])] = eta[:, 1:]
         return eta
+
+    def viscosity_ns(self, v: np.ndarray, other: np.ndarray) -> np.ndarray:
+        vels = np.empty(tuple([d + 2 for d in other.shape[:-1]] + [2]))
+        vels[1:-1, 1:-1, ...] = other[..., 1:3] / other[..., 0, np.newaxis]
+
+        vels[0, ...] = vels[-3, ...]
+        vels[-1, ...] = vels[2, ...]
+        vels[:, 0, ...] = vels[:, -3, ...]
+        vels[:, -1, ...] = vels[:, 2, ...]
+
+        vx = vels[..., 0]
+        vy = vels[..., 1]
+
+        def dx(v: np.ndarray) -> np.ndarray:
+            return avg_y(del_x(v)) / self.hx
+
+        def dy(v: np.ndarray) -> np.ndarray:
+            return avg_x(del_y(v)) / self.hy
+
+        tau = np.empty(tuple([d for d in v.shape[:-1]] + [2, 2]))
+        tau[..., 0, 0] = 2 * dx(vx)
+        tau[..., 0, 1] = (dx(vy) + dy(vx))
+        tau[..., 1, 0] = (dx(vy) + dy(vx))
+        tau[..., 1, 1] = 2 * dy(vy)
+
+        tau -= 2. / 3 * np.einsum("...i,jk->...ijk", dx(vx) + dy(vy), np.eye(2, 2))
+
+        return self.mu * tau
+
 
     def viscosity2(self, v: np.ndarray, other: np.ndarray) -> np.ndarray:
         csnd = self.csnd(v)
@@ -285,16 +328,22 @@ class Euler(PDE):
                                                + np.einsum("...i,jk->...ijk", p, np.identity(self.dim.value))
         result[..., -1, :] = np.einsum("...,...i->...i", Etot + p, vels)
 
-        if self.add_viscosity and visc:
+        if self.add_viscosity >= 0 and visc:
             if self.dim != Dimension.twoD:
                 raise NotImplementedError("Viscosity only possible for 2D")
-            # version 1: dx = mux delx
-            if False:
-                result[..., 1:3, :] -= self.viscosity(v)
-            # version 2: dx = muy delx
+            if self.add_viscosity == 0:  # artificial
+                # version 1: dx = mux delx
+                if False:
+                    result[..., 1:3, :] -= self.viscosity(v)
+                # version 2: dx = muy delx
+                else:
+                    result[..., 1:3, :] -= self.viscosity2(v, avg_x(avg_y(v)) if other is None else other)
+            elif self.add_viscosity == 1:
+                tau = self.viscosity_ns(v, avg_x(avg_y(v)) if other is None else other)
+                result[..., 1:3, :] -= tau
+                result[..., -1, :] = np.einsum("...,...i->...i", Etot, vels) + np.einsum("...ij,...j->...i", tau, vels)
             else:
-                result[..., 1:3, :] -= self.viscosity2(v, avg_x(avg_y(v)) if other is None else other)
-
+                raise ValueError
         return tuple(result[..., i] for i in range(self.dim.value))
 
     def max_speed(self, v: np.ndarray) -> np.ndarray:
@@ -469,9 +518,9 @@ class Euler(PDE):
 
 
 class EulerScalarAdvect(Euler):
-    def __init__(self, gamma, dim: Dimension, add_viscosity=False, c1=0, c2=0, hx=None, hy=None):
+    def __init__(self, gamma, dim: Dimension, add_viscosity=-1, c1=0, c2=0, hx=None, hy=None, mu=1.):
         super().__init__(gamma, dim, extra_comp=1, add_viscosity=add_viscosity, c1=c1, c2=c2, hx=hx,
-                         hy=hy)  # nr of dims velocities + density plus energy_new
+                         hy=hy, mu=mu)  # nr of dims velocities + density plus energy_new
         self.comp_names = ["density", *[f"momenta_{dim}" for dim in "xyz"[:dim.value]], "Energy", "X"]
 
     def pres(self, v):
@@ -496,14 +545,22 @@ class EulerScalarAdvect(Euler):
         result[..., -2, :] = np.einsum("...,...i->...i", Etot + p, vels)
         result[..., -1, :] = np.einsum("...,...i->...i", X, v[..., 1:self.dim.value + 1])
 
-        if self.add_viscosity and visc:
-            # version 1: dx = mux delx
-            if False:
-                result[..., 1:3, :] -= self.viscosity(v)
-            # version 2: dx = muy delx
+        if self.add_viscosity >= 0 and visc:
+            if self.dim != Dimension.twoD:
+                raise NotImplementedError("Viscosity only possible for 2D")
+            if self.add_viscosity == 0:  # artificial
+                # version 1: dx = mux delx
+                if False:
+                    result[..., 1:3, :] -= self.viscosity(v)
+                # version 2: dx = muy delx
+                else:
+                    result[..., 1:3, :] -= self.viscosity2(v, avg_x(avg_y(v)) if other is None else other)
+            elif self.add_viscosity == 1:
+                tau = self.viscosity_ns(v, avg_x(avg_y(v)) if other is None else other)
+                result[..., 1:3, :] -= tau
+                result[..., -2, :] = np.einsum("...,...i->...i", Etot, vels) + np.einsum("...ji,...i->...j", tau, vels)
             else:
-                result[..., 1:3, :] -= self.viscosity2(v, avg_x(avg_y(v)) if other is None else other)
-
+                raise ValueError
         return tuple(result[..., i] for i in range(self.dim.value))
 
     def jacobian(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
