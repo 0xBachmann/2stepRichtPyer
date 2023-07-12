@@ -15,12 +15,14 @@ resolution = np.array([n, 80])
 Lx = 1
 Ly = Lx
 h = [Lx / resolution[0], Ly / resolution[1]]
-F = Euler(5. / 3, dim=DIM, c1=1., c2=1., hx=h[0], hy=h[1], add_viscosity=True)
-F_novisc = Euler(5. / 3, dim=DIM, c1=1., c2=1., hx=h[0], hy=h[1], add_viscosity=False)
+c = 1.
+F = Euler(5. / 3, dim=DIM, c1=c/10, c2=c, hx=h[0], hy=h[1], add_viscosity=0)
+F_novisc = Euler(5. / 3, dim=DIM, c1=1., c2=1., hx=h[0], hy=h[1], add_viscosity=-1)
 
 stepper_vanilla = Richtmeyer2step(F_novisc, np.array([Lx, Ly]), resolution, lerp=-1)
 stepper_visc = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, lerp=-1)
-stepper_lerp = Richtmeyer2step(F_novisc, np.array([Lx, Ly]), resolution, lerp=3)
+lerp = 1
+stepper_lerp = Richtmeyer2step(F_novisc, np.array([Lx, Ly]), resolution, lerp=lerp)
 stepper_lerp_visc = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, lerp=3, order1=False)
 
 tests = [(1.0, 0.75, 1.0, 0.125, 0.0, 0.1),  # rusanov works
@@ -50,7 +52,7 @@ tests = [(1.0, 0.75, 1.0, 0.125, 0.0, 0.1),  # rusanov works
 #           4: osz a bit high, right side more
 #           5: good
 #           6: small osz
-which_test = 6
+which_test = 4
 
 rhol, ul, pl, rhor, ur, pr = tests[which_test]
 RP_exact_l = RP1D_Euler(5. / 3., rhol, ul, pl, rhor, ur, pr, xdiaph=0.25)
@@ -124,21 +126,21 @@ def plot(dt):
 
     plotter.write((np.column_stack(
         [F.conserved_to_primitive(stepper_vanilla.grid_no_ghost)[..., 0, (0, 1, 3)],
-         F.eta(((stepper_vanilla.grid)), None, h[0], h[1], 3)[..., 0],
+         F.eta(((stepper_vanilla.grid)), avg_x(avg_y(stepper_vanilla.grid)), h[0], h[1], lerp)[..., 0],
          F.viscosity2(stepper_vanilla.grid_no_ghost, avg_x(avg_y(stepper_vanilla.grid_no_ghost)))[..., 0, 0, 0]]),
                    np.column_stack(
                        [F.conserved_to_primitive(stepper_lerp.grid_no_ghost)[..., 0, (0, 1, 3)],
-                        F.eta(((stepper_lerp.grid)), None, h[0], h[1], 3)[..., 0],
+                        F.eta(((stepper_lerp.grid)), avg_x(avg_y(stepper_lerp.grid)), h[0], h[1], lerp)[..., 0],
                         F.viscosity2(stepper_lerp.grid_no_ghost, avg_x(avg_y(stepper_lerp.grid_no_ghost)))[
                             ..., 0, 0, 0]]),
                    np.column_stack(
                        [F.conserved_to_primitive(stepper_visc.grid_no_ghost)[..., 0, (0, 1, 3)],
-                        F.eta(((stepper_visc.grid)), None, h[0], h[1], 3)[..., 0],
+                        F.eta(((stepper_visc.grid)), avg_x(avg_y(stepper_visc.grid)), h[0], h[1], lerp)[..., 0],
                         F.viscosity2(stepper_visc.grid_no_ghost, avg_x(avg_y(stepper_visc.grid_no_ghost)))[
                             ..., 0, 0, 0]]),
                    np.column_stack(
                        [F.conserved_to_primitive(stepper_lerp_visc.grid_no_ghost)[..., 0, (0, 1, 3)],
-                        F.eta(((stepper_lerp_visc.grid)), None, h[0], h[1], 3)[..., 0],
+                        F.eta(((stepper_lerp_visc.grid)), avg_x(avg_y(stepper_lerp_visc.grid)), h[0], h[1], lerp)[..., 0],
                         F.viscosity2(stepper_lerp_visc.grid_no_ghost, avg_x(avg_y(stepper_lerp_visc.grid_no_ghost)))[
                             ..., 0, 0, 0]]),
                    exact), dt)
@@ -146,22 +148,22 @@ def plot(dt):
 
 time = 0.
 plot(0)
-T = 0.05
+T = [0.06, 0.06, 0.0015, 0.005, 0.0015, 0.05, 0.05][which_test]
+dt = stepper_lerp.cfl()
 while time < T:
     cfls = [stepper_vanilla.cfl(), stepper_lerp.cfl(), stepper_visc.cfl(), stepper_lerp_visc.cfl()]
-    dt = np.min(cfls)
+    # dt = np.min(cfls)
     # dt = 0.0001
 
-    if np.any(np.isnan([stepper_vanilla.cfl(), stepper_lerp.cfl(), stepper_visc.cfl(), stepper_lerp_visc.cfl()])):
-        print(cfls)
+    # if np.any(np.isnan([stepper_vanilla.cfl(), stepper_lerp.cfl(), stepper_visc.cfl(), stepper_lerp_visc.cfl()])):
+    #     print(cfls)
 
     # stepper_vanilla.step(dt)
-    stepper_lerp.step(dt)
-    # stepper_visc.step(dt)
+    # stepper_lerp.step(dt)
+    stepper_visc.step(dt)
     # stepper_lerp_visc.step(dt)
 
     plot(dt)
-
     print(f"dt = {dt}, time = {time:.3f}/{T}")
     time += dt
 

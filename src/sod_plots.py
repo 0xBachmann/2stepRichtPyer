@@ -12,16 +12,17 @@ from RP1D_Euler import RP1D_Euler
 import numpy as np
 
 DIM = Dimension.twoD
-n = 320
+n = 160
 resolution = np.array([n, 80])
 Lx = 1
 Ly = Lx
 h = [Lx / resolution[0], Ly / resolution[1]]
 
 
-lerp = 3
-visc = False
-F = Euler(5. / 3, dim=DIM, c1=0.1, c2=1., hx=h[0], hy=h[1], add_viscosity=visc)
+lerp = -1
+visc = 1
+c = 1.
+F = Euler(5. / 3, dim=DIM, c1=c/10, c2=c, hx=h[0], hy=h[1], add_viscosity=visc, mu=1e-4)  # 8.9e-5)
 stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, lerp=lerp)
 
 ntest = 7
@@ -66,8 +67,7 @@ for i in range(ntest):
     stepper.initial_cond(test)
 
     T = times[i]
-    cfl = stepper.cfl()
-    stepper.step_for(T, const_dt=True)
+    stepper.step_for(T, const_dt=True, fact=1)
 
     coords = np.linspace(0, 1, resolution[0])
     coords_exact = np.linspace(0, 0.5, 400)
@@ -79,31 +79,34 @@ for i in range(ntest):
     fig, axs = plt.subplots(2, 2)
     for j in range(2):
         for k in range(2):
-            axs[j, k].yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+            if i == 6 and j == 0 and k == 1:
+                axs[j, k].yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+
+            if i == 6 and j == 1 and k == 0:
+                axs[j, k].yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+            axs[j, k].set_xlabel(r"$\mathrm{Position}$")
     # exact
     exact_l = np.stack(RP_exact_l.sample(coords_exact, T), axis=-1)
     exact = exact_l
-    axs[0, 0].plot(coords_exact, exact[..., 0], **plot_exact)
+    axs[0, 0].plot(2 * coords_exact, exact[..., 0], **plot_exact)
     axs[0, 0].set_ylabel(r"$\mathrm{Density}$")
-    axs[0, 1].plot(coords_exact, exact[..., 1], **plot_exact)
+    axs[0, 1].plot(2 * coords_exact, exact[..., 1], **plot_exact)
     axs[0, 1].set_ylabel(r"$\mathrm{Velocity}$")
-    axs[1, 0].plot(coords_exact, exact[..., 2], **plot_exact)
+    axs[1, 0].plot(2 * coords_exact, exact[..., 2], **plot_exact)
     axs[1, 0].set_ylabel(r"$\mathrm{Pressure}$")
-    # todo, subtract kinetic smth wrong
     internal_energy_exact = exact[..., 2] / (F.gamma - 1) / exact[..., 0]
-    axs[1, 1].plot(coords_exact, internal_energy_exact, **plot_exact)
+    axs[1, 1].plot(2 * coords_exact, internal_energy_exact, **plot_exact)
     axs[1, 1].set_ylabel(r"$\mathrm{Internal\ energy}$")
 
     primitives = F.conserved_to_primitive(stepper.grid_no_ghost)[..., 0, (0, 1, 3)]
     # approx
     half = coords.shape[0] // 2
-    axs[0, 0].scatter(coords[:half], primitives[:half, 0], **plot_approx)
-    axs[0, 1].scatter(coords[:half], primitives[:half, 1], **plot_approx)
-    axs[1, 0].scatter(coords[:half], primitives[:half, 2], **plot_approx)
-    # todo, subtract kinetic smth wrong
+    axs[0, 0].scatter(2 * coords[:half], primitives[:half, 0], **plot_approx)
+    axs[0, 1].scatter(2 * coords[:half], primitives[:half, 1], **plot_approx)
+    axs[1, 0].scatter(2 * coords[:half], primitives[:half, 2], **plot_approx)
     internal_energy = (stepper.grid_no_ghost[..., 0, -1] - 0.5 * primitives[..., 0] * np.power(primitives[..., 1], 2)) / primitives[..., 0]
-    axs[1, 1].scatter(coords[:half], internal_energy[:half], **plot_approx)
+    axs[1, 1].scatter(2 * coords[:half], internal_energy[:half], **plot_approx)
 
     fig.tight_layout()
-    plt.savefig(Path("sod_shock", f"sod_{lerp}_{int(visc)}_{i}.pdf"))
+    plt.savefig(Path("sod_shock", f"sod_{lerp}_{visc}_{i}.pdf"))
 

@@ -88,9 +88,12 @@ if generate:
             np.save(str(Path("energy", f"en_{stepper_names[i]}_1e{-(j+1)}.npy")), np.array(energies))
             np.save(str(Path("energy", f"times_{stepper_names[i]}_1e{-(j+1)}.npy")), np.array(times))
 
-generate_timings = False
+generate_timings = True
 if generate_timings:
     for j, M in enumerate(Ms):
+        energies = []
+        times = []
+
         stepper = Richtmeyer2stepImplicit(F, domain, resolution)
         stepper.initial_cond(lambda x: gresho_vortex(x, center, F, M, qr=0.4 * np.pi * Lx / 1.))
         start = time.time()
@@ -100,11 +103,14 @@ if generate_timings:
         np.save(str(Path("traj", f"gresho_vortex_impl_M-1_1e{-(j + 1)}.npy")),
                 F.mach(stepper.grid_no_ghost)[..., np.newaxis] / M)
 
+        np.save(str(Path("energy", f"en_impl_M-1_1e{-(j + 1)}.npy")), np.array(energies))
+        np.save(str(Path("energy", f"times_impl_M-1_1e{-(j + 1)}.npy")), np.array(times))
 
-plot = True
+
+plot = False
 if plot:
     # energies
-    fig_en, ax_en = plt.subplots()
+    fig_en, ax_en = plt.subplots(figsize=(8, 4.5))
     for i in range(len(steppers)):
         if i == 0:
             continue

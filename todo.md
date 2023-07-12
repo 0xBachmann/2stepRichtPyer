@@ -140,6 +140,7 @@
 - [ ] richtmyer instead of richtmeyer
 - [ ] whenever author check for et al.
 - [ ] precalc optimal einsum
+- [ ] link github
 
 # To Discuss
 ## 06.04.23

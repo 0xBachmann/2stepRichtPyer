@@ -96,9 +96,10 @@ class Euler(PDE):
         elif which == 2:
             return self.eta_entropy(primary, dx, dy)[..., np.newaxis]
         elif which == 3:
-            return self.eta_st(primary, dx, dy)[..., np.newaxis]
+            return self.eta_st(primary, kind="csnd")[..., np.newaxis]
+        elif which == 4:
+            return self.eta_st(primary, kind="entropy")[..., np.newaxis]
         else:
-            return
             raise ValueError
 
     def eta_post(self, v: np.ndarray, dx, dy) -> np.ndarray:
@@ -129,9 +130,17 @@ class Euler(PDE):
                                    + np.sum(avg_vels * grad_p, axis=-1))
 
         norm_grad_p = np.linalg.norm(grad_p, axis=-1)
-        tol = 0.2
-        return (np.abs(eta) >= avg_x(avg_y(csnd)) * norm_grad_p) \
-            & (norm_grad_p >= tol * np.max(norm_grad_p))
+        tol = 0.0001
+        # for test case 4
+        # eta = np.clip(np.abs(eta) / (avg_x(avg_y(csnd)) * norm_grad_p * 0.3 + 1e-24), a_min=0, a_max=1)
+        # eta[norm_grad_p < tol * np.max(norm_grad_p)] = 0.
+        # return eta
+        eta = np.clip(np.abs(eta) / (avg_x(avg_y(csnd)) * norm_grad_p * 1. + 1e-24), a_min=0, a_max=1)
+        eta[norm_grad_p < tol * np.max(norm_grad_p)] = 0.
+        return eta
+
+        return (np.abs(eta) >= avg_x(avg_y(csnd)) * norm_grad_p * 1.) \
+            & (norm_grad_p >= tol * np.max(norm_grad_p))  # & (norm_grad_p >= 0.5)
         # & (eta >= 0.5)
         # return np.clip(eta / avg_x(avg_y(csnd)) * norm_grad_p, a_min=0, a_max=1)
         eta[np.logical_not((np.abs(eta) >= avg_x(avg_y(csnd)) * norm_grad_p)
@@ -141,10 +150,16 @@ class Euler(PDE):
         eta = np.abs(eta)
         return np.clip(eta, a_min=0, a_max=1)
 
-    def eta_st(self, v: np.ndarray, dx, dy) -> np.ndarray:
+    def eta_st(self, v: np.ndarray, kind="csnd") -> np.ndarray:
         assert self.dim == Dimension.twoD
 
-        c = self.csnd(v)
+        if kind == "csnd":
+            c = self.csnd(v)
+        elif kind == "entropy":
+            p = self.pres(v)
+            c = p / np.power(v[..., 0], self.gamma)
+        else:
+            raise ValueError
 
         w = 0.5
         d = 1e-9
@@ -191,17 +206,17 @@ class Euler(PDE):
         k1 = 0.004
         vels = v[..., 1:3] / v[..., 0, np.newaxis]
         div = 2 * (avg_x(del_x(vels[..., 0]))[..., 1:-1] / dx + avg_y(del_y(vels[..., 1]))[1:-1, ...] / dy)
-        eta = np.minimum(1, np.maximum(0, -dx * div / (k1 * min_c) - 1))[..., np.newaxis]  # TODO why * dx??
+        eta = np.clip(-dx * div / (k1 * min_c) - 1, a_min=0, a_max=1)[..., np.newaxis]
 
         p = self.pres(v)[1:-1, 1:-1, np.newaxis]
 
-        np.putmask(eta[1:], (eta > 0)[:-1] & (eta[1:] == 0) & (p[:-1] > p[1:]), eta[:-1])
-        np.putmask(eta[:-1], (eta > 0)[1:] & (eta[:-1] == 0) & (p[:-1] < p[1:]), eta[1:])
+        np.putmask(eta[1:], (eta > 0)[:-1] & np.isclose(eta[1:], 0) & (p[:-1] > p[1:]), eta[:-1])
+        np.putmask(eta[:-1], (eta > 0)[1:] & np.isclose(eta[:-1], 0) & (p[:-1] < p[1:]), eta[1:])
         # eta[1:][(eta > 0)[:-1] & (eta[1:] == 0) & (p[:-1] > p[1:])] = eta[:-1]
         # eta[:-1][(eta > 0)[1:] & (eta[:-1] == 0) & (p[:-1] < p[1:])] = eta[1:]
 
-        np.putmask(eta[:, 1:], (eta > 0)[:, :-1] & (eta[:, 1:] == 0) & (p[:, :-1] > p[:, 1:]), eta[:, :-1])
-        np.putmask(eta[:, :-1], (eta > 0)[:, 1:] & (eta[:, :-1] == 0) & (p[:, :-1] < p[:, 1:]), eta[:, 1:])
+        np.putmask(eta[:, 1:], (eta > 0)[:, :-1] & np.isclose(eta[:, 1:], 0) & (p[:, :-1] > p[:, 1:]), eta[:, :-1])
+        np.putmask(eta[:, :-1], (eta > 0)[:, 1:] & np.isclose(eta[:, :-1], 0) & (p[:, :-1] < p[:, 1:]), eta[:, 1:])
         # eta[:, 1:][(eta > 0)[:, :-1] & (eta[:, 1:] == 0) & (p[:, :-1] > p[:, 1:])] = eta[:, :-1]
         # eta[:, -1][(eta > 0)[:, 1:] & (eta[:, :-1] == 0) & (p[:, :-1] < p[:, 1:])] = eta[:, 1:]
         return eta
@@ -254,7 +269,7 @@ class Euler(PDE):
             np.linalg.norm(vels[1:, 1:, ...] - vels[:-1, 1:, ...], axis=-1),
             np.linalg.norm(vels[1:, 1:, ...] - vels[:-1, :-1, ...], axis=-1),
             np.linalg.norm(vels[:-1, :-1, ...] - vels[1:, :-1, ...], axis=-1),
-            np.linalg.norm(vels[:-1, :-1, ...] - vels[1:, :-1, ...], axis=-1),
+            np.linalg.norm(vels[:-1, :-1, ...] - vels[:-1, 1:, ...], axis=-1),
             np.linalg.norm(vels[:-1, 1:, ...] - vels[1:, :-1, ...], axis=-1),
         ])
 
@@ -341,7 +356,7 @@ class Euler(PDE):
             elif self.add_viscosity == 1:
                 tau = self.viscosity_ns(v, avg_x(avg_y(v)) if other is None else other)
                 result[..., 1:3, :] -= tau
-                result[..., -1, :] = np.einsum("...,...i->...i", Etot, vels) + np.einsum("...ij,...j->...i", tau, vels)
+                result[..., -1, :] += np.einsum("...ij,...j->...i", tau, vels)
             else:
                 raise ValueError
         return tuple(result[..., i] for i in range(self.dim.value))
