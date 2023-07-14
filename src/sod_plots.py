@@ -1,6 +1,6 @@
 from PDE_Types import *
-from richtmeyer_two_step_scheme import Richtmeyer2step
-from two_step_richtmeyer_util import Dimension
+from richtmyer_two_step_scheme import Richtmyer2step
+from two_step_richtmyer_util import Dimension
 from plotting_setup import *
 from matplotlib.ticker import FormatStrFormatter
 
@@ -19,11 +19,11 @@ Ly = Lx
 h = [Lx / resolution[0], Ly / resolution[1]]
 
 
-lerp = -1
+lerp = 3
 visc = 1
 c = 1.
-F = Euler(5. / 3, dim=DIM, c1=c/10, c2=c, hx=h[0], hy=h[1], add_viscosity=visc, mu=1e-4)  # 8.9e-5)
-stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, lerp=lerp)
+F = Euler(5. / 3, dim=DIM, c1=c/10, c2=c, hx=h[0], hy=h[1], add_viscosity=visc, mu=8.9e-5)  # 8.9e-5)
+stepper = Richtmyer2step(F, np.array([Lx, Ly]), resolution, lerp=lerp)  # , order1=(visc < 0))
 
 ntest = 7
 tests = [(1.0, 0.75, 1.0, 0.125, 0.0, 0.1),  # rusanov works

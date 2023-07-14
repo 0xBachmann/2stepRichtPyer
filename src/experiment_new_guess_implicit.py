@@ -1,7 +1,7 @@
 from PDE_Types import *
 from plotter import Plotter
-from richtmeyer_two_step_scheme import Richtmeyer2step, Richtmeyer2stepImplicit
-from two_step_richtmeyer_util import Dimension, log, avg_x
+from richtmyer_two_step_scheme import Richtmyer2step, Richtmyer2stepImplicit
+from two_step_richtmyer_util import Dimension, log, avg_x
 from intitial import gresho_vortex
 
 import copy
@@ -17,8 +17,8 @@ log("calculate initial conditions")
 resolution = np.array([80] * DIM.value)
 Lx = 1
 Ly = Lx
-stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-8)
-stepper_explicit = Richtmeyer2step(F, np.array([Lx, Ly]), resolution)
+stepper = Richtmyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-8)
+stepper_explicit = Richtmyer2step(F, np.array([Lx, Ly]), resolution)
 
 
 center = np.array([Lx / 2, Ly / 2])

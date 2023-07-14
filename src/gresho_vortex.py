@@ -1,7 +1,7 @@
 from PDE_Types import *
 from plotter import Plotter
-from richtmeyer_two_step_scheme import Richtmeyer2step, Richtmeyer2stepImplicit
-from two_step_richtmeyer_util import Dimension, log, avg_x
+from richtmyer_two_step_scheme import Richtmyer2step, Richtmyer2stepImplicit
+from two_step_richtmyer_util import Dimension, log, avg_x
 from intitial import gresho_vortex
 import sys
 import time
@@ -18,9 +18,9 @@ F = Euler(5. / 3, dim=DIM, c1=0.1, c2=0., hx=h[0], hy=h[1])
 
 log("calculate initial conditions")
 
-stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, lerp=-1)  # works: 1, 3. doesn't: 0, 2
+stepper = Richtmyer2step(F, np.array([Lx, Ly]), resolution, lerp=-1)  # works: 1, 3. doesn't: 0, 2
 domain = np.array([Lx, Ly])
-# stepper = Richtmeyer2step(F, domain, resolution, lerp=False)
+# stepper = Richtmyer2step(F, domain, resolution, lerp=False)
 
 center = np.array([Lx / 2, Ly / 2])
 avg_coords = [avg_x(coord) for coord in stepper.coords]
@@ -72,7 +72,7 @@ def plot(stepper, dt, plot_mach=True, plot_curl=False, plot_eta=False):
         plotter.write(stepper.grid_no_ghost, dt)
 
 
-if isinstance(stepper, Richtmeyer2step):
+if isinstance(stepper, Richtmyer2step):
     fact = 1.
 else:
     fact = 1. / M

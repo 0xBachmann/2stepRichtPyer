@@ -1,7 +1,7 @@
 from PDE_Types import *
 from plotter import Plotter
-from richtmeyer_two_step_scheme import Richtmeyer2stepImplicit, Richtmeyer2step, Richtmeyer2stepLerp
-from two_step_richtmeyer_util import Dimension, log
+from richtmyer_two_step_scheme import Richtmyer2stepImplicit, Richtmyer2step, Richtmyer2stepLerp
+from two_step_richtmyer_util import Dimension, log
 import numpy as np
 
 log("definition of variables")
@@ -21,7 +21,7 @@ else:
 log("calculate initial conditions")
 
 L = 1
-stepper = Richtmeyer2stepLerp(F, np.array([L]), np.array([100]))
+stepper = Richtmyer2stepLerp(F, np.array([L]), np.array([100]))
 
 
 def f(x):

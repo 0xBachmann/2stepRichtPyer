@@ -1,7 +1,7 @@
 from PDE_Types import *
 from pathlib import Path
-from richtmeyer_two_step_scheme import Richtmeyer2step, Richtmeyer2stepImplicit
-from two_step_richtmeyer_util import Dimension, log, avg_x
+from richtmyer_two_step_scheme import Richtmyer2step, Richtmyer2stepImplicit
+from two_step_richtmyer_util import Dimension, log, avg_x
 from intitial import gresho_vortex
 import numpy as np
 import time
@@ -13,8 +13,8 @@ mpl.rc('image', cmap='magma')
 
 # cycler = plt.cycler(color=plt.cm.tab20c.colors)
 colors = ["firebrick", "darkviolet", "teal", "darkkhaki"]
-cycler = plt.cycler(color=colors) + plt.cycler(lw=[1, 0.8, 0.6, 0.3]) + plt.cycler(markersize=[6, 3, 2, 1])
-plt.rc('axes', prop_cycle=plt.cycler(linestyle=["solid", "dotted", "dashed", "dashdot"]) * cycler)
+cycler = plt.cycler(color=colors) + plt.cycler(lw=[1, 1, 1, 1])  # + plt.cycler(markersize=[6, 3, 2, 1])
+plt.rc('axes', prop_cycle=plt.cycler(linestyle=["solid", "dotted"]) * cycler)
 
 DIM = Dimension.twoD
 R = 40
@@ -24,12 +24,13 @@ Ly = Lx
 h = [Lx / resolution[0], Ly / resolution[1]]
 F = Euler(5. / 3, dim=DIM, c1=0.1, c2=0., hx=h[0], hy=h[1])
 
+tol = 1e-17
 domain = np.array([Lx, Ly])
-steppers = [Richtmeyer2step(F, domain, resolution, first_order=True),
-            Richtmeyer2step(F, domain, resolution),
-            Richtmeyer2stepImplicit(F, domain, resolution),
-            Richtmeyer2stepImplicit(F, domain, resolution),
-            Richtmeyer2stepImplicit(F, domain, resolution)]
+steppers = [Richtmyer2step(F, domain, resolution, first_order=True),
+            Richtmyer2step(F, domain, resolution),
+            Richtmyer2stepImplicit(F, domain, resolution, eps=tol),
+            Richtmyer2stepImplicit(F, domain, resolution, eps=tol),
+            Richtmyer2stepImplicit(F, domain, resolution, eps=tol)]
 
 stepper_names = {0: "first",
                  1: "expl",
@@ -90,27 +91,29 @@ if generate:
 
 generate_timings_and_energy = True
 if generate_timings_and_energy:
+    # for j, M in enumerate(Ms):
+    #     energies = []
+    #     times = []
+    #
+    #     stepper = Richtmyer2stepImplicit(F, domain, resolution)
+    #     stepper.initial_cond(lambda x: gresho_vortex(x, center, F, M, qr=0.4 * np.pi * Lx / 1.))
+    #     start = time.time()
+    #     stepper.step_for(1., fact=1./M, callback=E_kin)
+    #     end = time.time()
+    #     print(f"M = {M:.5f} took {end-start}s")
+    #     np.save(str(Path("traj", f"gresho_vortex_impl_M-1_1e{-(j + 1)}.npy")),
+    #             F.mach(stepper.grid_no_ghost)[..., np.newaxis] / M)
+    #
+    #     np.save(str(Path("energy", f"en_impl_M-1_1e{-(j + 1)}.npy")), np.array(energies))
+    #     np.save(str(Path("energy", f"times_impl_M-1_1e{-(j + 1)}.npy")), np.array(times))
+
     for j, M in enumerate(Ms):
+        if j > 1:
+            continue
         energies = []
         times = []
 
-        stepper = Richtmeyer2stepImplicit(F, domain, resolution)
-        stepper.initial_cond(lambda x: gresho_vortex(x, center, F, M, qr=0.4 * np.pi * Lx / 1.))
-        start = time.time()
-        stepper.step_for(1., fact=1./M, callback=E_kin)
-        end = time.time()
-        print(f"M = {M:.5f} took {end-start}s")
-        np.save(str(Path("traj", f"gresho_vortex_impl_M-1_1e{-(j + 1)}.npy")),
-                F.mach(stepper.grid_no_ghost)[..., np.newaxis] / M)
-
-        np.save(str(Path("energy", f"en_impl_M-1_1e{-(j + 1)}.npy")), np.array(energies))
-        np.save(str(Path("energy", f"times_impl_M-1_1e{-(j + 1)}.npy")), np.array(times))
-
-    for j, M in enumerate(Ms):
-        energies = []
-        times = []
-
-        stepper = Richtmeyer2step(F, domain, resolution)
+        stepper = Richtmyer2step(F, domain, resolution)
         stepper.initial_cond(lambda x: gresho_vortex(x, center, F, M, qr=0.4 * np.pi * Lx / 1.))
         start = time.time()
         stepper.step_for(1., fact=1., callback=E_kin)
@@ -123,30 +126,51 @@ if generate_timings_and_energy:
         np.save(str(Path("energy", f"times_expl_1e{-(j + 1)}.npy")), np.array(times))
 
 
-plot = False
+plot = True
 if plot:
     # energies
-    fig_en, ax_en = plt.subplots(figsize=(8, 4.5))
-    for i in range(len(steppers)):
-        if i == 0:
-            continue
-        for j, M in enumerate(Ms):
-            energies = np.load(str(Path("energy", f"en_{stepper_names[i]}_1e{-(j+1)}.npy")))
-            times = np.load(str(Path("energy", f"times_{stepper_names[i]}_1e{-(j+1)}.npy")))
-            ax_en.plot(np.cumsum(times), energies / energies[0], label=f"{stepper_names[i]}")
-    ax_en.set_xlabel(r"$t$")
-    ax_en.set_ylabel(r"$E_\mathrm{kin}(t)/E_\mathrm{kin}(0)$")
-    ax_en.ticklabel_format(useOffset=False)
+    if False:
+        fig_en, ax_en = plt.subplots(figsize=(8, 4.5))
+        for i in range(len(steppers)):
+            if i == 0:
+                continue
+            for j, M in enumerate(Ms):
+                energies = np.load(str(Path("energy", f"en_{stepper_names[i]}_1e{-(j+1)}.npy")))
+                times = np.load(str(Path("energy", f"times_{stepper_names[i]}_1e{-(j+1)}.npy")))
+                ax_en.plot(np.cumsum(times), energies / energies[0], label=f"{stepper_names[i]}")
+        ax_en.set_xlabel(r"$t$")
+        ax_en.set_ylabel(r"$E_\mathrm{kin}(t)/E_\mathrm{kin}(0)$")
+        ax_en.ticklabel_format(useOffset=False)
 
-    # l = ax.legend([(p1, p2)], ['Two keys'], numpoints=1,
-    #               handler_map={tuple: HandlerTuple(ndivide=None)})
+        # l = ax.legend([(p1, p2)], ['Two keys'], numpoints=1,
+        #               handler_map={tuple: HandlerTuple(ndivide=None)})
 
-    custom_labels = [Line2D([0], [0], color=colors[i], lw=1) for i in range(len(Ms))] + \
-                    [Line2D([0], [0], color="grey", lw=1, linestyle=i) for i in ["solid", "dotted", "dashed", "dashdot"]]
+        custom_labels = [Line2D([0], [0], color=colors[i], lw=1) for i in range(len(Ms))] + \
+                        [Line2D([0], [0], color="grey", lw=1, linestyle=i) for i in ["solid", "dotted", "dashed", "dashdot"]]
 
-    ax_en.legend(custom_labels, [fr"$M_\mathrm{{max}} = 10^{{{-i}}}$" for i in range(1, nM + 1)] + [*stepper_names_fancy.values()][1:], ncol=2)
-    fig_en.tight_layout()
-    plt.savefig(Path("ims", "energy_gresho_all.pdf"), dpi=200)
+        ax_en.legend(custom_labels, [fr"$M_\mathrm{{max}} = 10^{{{-i}}}$" for i in range(1, nM + 1)] + [*stepper_names_fancy.values()][1:], ncol=2)
+        fig_en.tight_layout()
+        plt.savefig(Path("ims", "energy_gresho_all.pdf"), dpi=200)
+    if True:
+        fig_en, ax_en = plt.subplots(figsize=(8, 4.5))
+        for stepper_name in ["expl", "impl_M-1"]:
+            for j, M in enumerate(Ms):
+                energies = np.load(str(Path("energy", f"en_{stepper_name}_1e{-(j + 1)}.npy")))
+                times = np.load(str(Path("energy", f"times_{stepper_name}_1e{-(j + 1)}.npy")))
+                ax_en.plot(np.cumsum(times), energies / energies[0], label=f"{stepper_name}_{M}")
+        ax_en.set_xlabel(r"$t$")
+        ax_en.set_ylabel(r"$E_\mathrm{kin}(t)/E_\mathrm{kin}(0)$")
+        ax_en.ticklabel_format(useOffset=False)
+
+        custom_labels = [Line2D([0], [0], color=colors[i], lw=1) for i in range(len(Ms))] + \
+                        [Line2D([0], [0], color="grey", lw=1, linestyle=i) for i in
+                         ["solid", "dotted"]] + [Line2D([0], [0], color="white", lw=0)]
+
+        ax_en.legend(custom_labels,
+                     [fr"$M_\mathrm{{max}} = 10^{{{-i}}}$" for i in range(1, nM + 1)] + [r"$\mathrm{explicit}$",
+                                                                                         r"$\mathrm{implicit, d}t\cdot\frac{1}{M_{\mathrm{max}}}$", ""], ncol=2)
+        fig_en.tight_layout()
+        plt.savefig(Path("ims", "energy_gresho_all_new.pdf"), dpi=200)
 
     # Mach number
     for i in range(len(steppers) + 1):

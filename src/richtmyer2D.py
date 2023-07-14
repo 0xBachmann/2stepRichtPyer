@@ -1,7 +1,7 @@
 from PDE_Types import *
 from plotter import Plotter
-from richtmeyer_two_step_scheme import Richtmeyer2step, Richtmeyer2stepImplicit
-from two_step_richtmeyer_util import Dimension, log
+from richtmyer_two_step_scheme import Richtmyer2step, Richtmyer2stepImplicit
+from two_step_richtmyer_util import Dimension, log
 
 log("definition of variables")
 
@@ -25,7 +25,7 @@ alpha = 0.8 * np.pi / 4
 
 Lx = 1
 Ly = 1
-stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution)
+stepper = Richtmyer2step(F, np.array([Lx, Ly]), resolution)
 
 
 def f(x):

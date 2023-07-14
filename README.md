@@ -13,12 +13,12 @@ Example usage of evolving the Euler equations in 2D with the linearized solution
 ```python
 from src.PDE_Types import Euler
 from src.plotter import Plotter
-from src.richtmeyer_two_step_scheme import Richtmeyer2step
-from src.two_step_richtmeyer_util import Dimension
+from src.richtmyer_two_step_scheme import Richtmeyer2step
+from src.two_step_richtmyer_util import Dimension
 import numpy as np
 
 DIM = Dimension.twoD
-PDE = Euler(gamma=5./3, dim=DIM)
+PDE = Euler(gamma=5. / 3, dim=DIM)
 
 resolution = np.array([100, 100])
 

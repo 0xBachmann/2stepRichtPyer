@@ -8,7 +8,7 @@ from pathlib import Path
 
 from PDE_Types import PDE
 from copy import deepcopy
-from two_step_richtmeyer_util import Dimension
+from two_step_richtmyer_util import Dimension
 
 from typing import Union
 

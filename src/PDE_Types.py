@@ -1,5 +1,5 @@
 from enum import Enum
-from two_step_richtmeyer_util import *
+from two_step_richtmyer_util import *
 import numpy as np
 
 

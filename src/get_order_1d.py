@@ -1,7 +1,7 @@
 import numpy as np
 from PDE_Types import Euler
-from two_step_richtmeyer_util import Dimension, avg_x
-from richtmeyer_two_step_scheme import Richtmeyer2step, Richtmeyer2stepImplicit
+from two_step_richtmyer_util import Dimension, avg_x
+from richtmyer_two_step_scheme import Richtmyer2step, Richtmyer2stepImplicit
 
 
 DIM = Dimension.oneD
@@ -24,7 +24,7 @@ for r in range(2, 17):
     T = [1 / (w0[1]), 1 / (w0[1] + a), 1 / (w0[1] - a)]
 
     for i in range(3):
-        stepper = Richtmeyer2stepImplicit(F, np.array([L]), np.array([r]))
+        stepper = Richtmyer2stepImplicit(F, np.array([L]), np.array([r]))
         stepper.initial_cond(lambda x: waves[i](x))
 
         time = 0.

@@ -1,7 +1,7 @@
 from PDE_Types import *
 from plotter import Plotter
-from richtmeyer_two_step_scheme import Richtmeyer2step
-from two_step_richtmeyer_util import Dimension
+from richtmyer_two_step_scheme import Richtmyer2step
+from two_step_richtmyer_util import Dimension
 from intitial import gresho_vortex
 
 from RP1D_Euler import RP1D_Euler
@@ -19,11 +19,11 @@ c = 1.
 F = Euler(5. / 3, dim=DIM, c1=c/10, c2=c, hx=h[0], hy=h[1], add_viscosity=0)
 F_novisc = Euler(5. / 3, dim=DIM, c1=1., c2=1., hx=h[0], hy=h[1], add_viscosity=-1)
 
-stepper_vanilla = Richtmeyer2step(F_novisc, np.array([Lx, Ly]), resolution, lerp=-1)
-stepper_visc = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, lerp=-1)
+stepper_vanilla = Richtmyer2step(F_novisc, np.array([Lx, Ly]), resolution, lerp=-1)
+stepper_visc = Richtmyer2step(F, np.array([Lx, Ly]), resolution, lerp=-1)
 lerp = 1
-stepper_lerp = Richtmeyer2step(F_novisc, np.array([Lx, Ly]), resolution, lerp=lerp)
-stepper_lerp_visc = Richtmeyer2step(F, np.array([Lx, Ly]), resolution, lerp=3, order1=False)
+stepper_lerp = Richtmyer2step(F_novisc, np.array([Lx, Ly]), resolution, lerp=lerp)
+stepper_lerp_visc = Richtmyer2step(F, np.array([Lx, Ly]), resolution, lerp=3, order1=False)
 
 tests = [(1.0, 0.75, 1.0, 0.125, 0.0, 0.1),  # rusanov works
          (1.0, -2.0, 0.4, 1.0, 2.0, 0.4),  # not even with visc

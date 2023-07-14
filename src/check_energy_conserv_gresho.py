@@ -1,7 +1,7 @@
 from PDE_Types import Euler
 from plotter import Plotter
-from richtmeyer_two_step_scheme import Richtmeyer2step, Richtmeyer2stepImplicit
-from two_step_richtmeyer_util import Dimension, log
+from richtmyer_two_step_scheme import Richtmyer2step, Richtmyer2stepImplicit
+from two_step_richtmyer_util import Dimension, log
 from intitial import gresho_vortex
 
 import matplotlib.pyplot as plt
@@ -21,7 +21,7 @@ resolution = np.array([20] * DIM.value)
 Lx = 1
 Ly = Lx
 center = np.array([Lx / 2, Ly / 2])
-stepper = Richtmeyer2step(F, np.array([Lx, Ly]), resolution)
+stepper = Richtmyer2step(F, np.array([Lx, Ly]), resolution)
 
 M = 0.001
 t = 1
@@ -66,7 +66,7 @@ np.save(f"energy/times_expl.npy", np.array(times))
 ax1.plot(times, energies[:, 0], label="explicit")
 ax2.plot(times, energies[:, 1], label="explicit")
 
-# stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-16, method="krylov")
+# stepper = Richtmyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-16, method="krylov")
 #
 # for i in [1, 2, 4, 8, 10, 15, 20, 30, 50, 100]:
 #     print(f"\n{i}")

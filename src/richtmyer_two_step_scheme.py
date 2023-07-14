@@ -1,4 +1,4 @@
-from two_step_richtmeyer_util import *
+from two_step_richtmyer_util import *
 from PDE_Types import PDE, Euler
 import numpy as np
 from copy import deepcopy
@@ -95,7 +95,7 @@ class Solver:
             print("")
 
 
-class Richtmeyer2step(Solver):
+class Richtmyer2step(Solver):
     def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic",
                  lerp=-1, order1=True, first_order=False):
         super().__init__(pde, domain, resolutions, bdc)
@@ -167,7 +167,7 @@ class Richtmeyer2step(Solver):
             self.grid_no_ghost -= div_fluxes(self.pde(staggered, other=self.grid_no_ghost))
 
 
-class Richtmeyer2stepImplicit(Solver):
+class Richtmyer2stepImplicit(Solver):
     def __init__(self, pde: PDE, domain: np.ndarray, resolutions: np.ndarray, bdc: Union[str, Callable] = "periodic",
                  eps=sys.float_info.epsilon, method="krylov", manual_jacobian=False, use_sparse=False):
         super().__init__(pde, domain, resolutions, bdc)

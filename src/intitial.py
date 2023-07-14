@@ -2,7 +2,7 @@ import numpy as np
 from PDE_Types import Euler
 
 
-def gresho_vortex(x: np.ndarray, center, F: Euler, Mmax=None, qr=1, primitives=False) -> np.ndarray:
+def gresho_vortex(x: np.ndarray, center, F: Euler, Mmax=None, qr=1, primitives=False, background=True) -> np.ndarray:
     primitive = np.empty((*x.shape[:-1], 4))
 
     # offset domain
@@ -18,7 +18,10 @@ def gresho_vortex(x: np.ndarray, center, F: Euler, Mmax=None, qr=1, primitives=F
 
     # density
     rho = 1.
-    primitive[..., 0] = rho
+    if background:
+        primitive[..., 0] = rho
+    else:
+        primitive[..., 0] = 0
 
     # define u_phi
     u = np.zeros(x.shape[:-1])
@@ -38,7 +41,10 @@ def gresho_vortex(x: np.ndarray, center, F: Euler, Mmax=None, qr=1, primitives=F
     else:
         p0 = 5.
 
-    primitive[..., 3] = p0
+    if background:
+        primitive[..., 3] = p0
+    else:
+        primitive[..., 3] = 0
 
     # pressure disturbance
     inner_ring = r < 0.4
@@ -53,13 +59,52 @@ def gresho_vortex(x: np.ndarray, center, F: Euler, Mmax=None, qr=1, primitives=F
         return F.primitive_to_conserved(primitive)
 
 
-def sound_wave_packet(x: np.ndarray, F: Euler, x0, Mmax=None, alpha=100, primitives=False) -> np.ndarray:
+def isentropic_vortices(x: np.ndarray, centers, beta, F: Euler, primitives=False, u=0, v=0) -> np.ndarray:
+    primitive = np.empty((*x.shape[:-1], 4))
+
+    # density
+    rho = 1.
+    primitive[..., 0] = rho
+    primitive[..., 1] = u
+    primitive[..., 2] = v
+    primitive[..., 3] = 1
+
+    factT = np.zeros(x.shape[:-1])
+
+    for center in centers:
+        # offset domain
+        X = x[..., 0] - center[0]
+        Y = x[..., 1] - center[1]
+
+        # get angle
+        alpha = np.arctan2(Y, X)
+
+        # calculate radius
+        r2 = X ** 2 + Y ** 2
+
+        fact = beta / (2 * np.pi) * np.exp((1 - r2) / 2)
+        primitive[..., 1] += -Y * fact
+        primitive[..., 2] += X * fact
+
+        factT += - (F.gamma - 1) * beta**2 / (8 * F.gamma * np.pi**2) * np.exp(1 - r2)
+
+    Tinf = 1
+    primitive[..., 0] = np.power(Tinf + factT, 1 / (F.gamma - 1))
+    primitive[..., 3] = primitive[..., 0]**F.gamma
+
+    if primitives:
+        return primitive
+    else:
+        return F.primitive_to_conserved(primitive)
+
+
+def sound_wave_packet(x: np.ndarray, F: Euler, x0, Mmax=None, alpha=100, primitives=False, qr=1.) -> np.ndarray:
     X = x[..., 0] - x0
-    psi = np.exp(-alpha * X**2) * Mmax
+    psi = np.exp(-alpha * X**2)
 
     rho0 = 1.
     if Mmax is not None:
-        p0 = rho0 / (F.gamma * Mmax ** 2) - 0.5
+        p0 = rho0 * qr**2 / (F.gamma * Mmax ** 2) - 0.5
     else:
         p0 = 5.
         raise NotImplementedError
@@ -67,7 +112,7 @@ def sound_wave_packet(x: np.ndarray, F: Euler, x0, Mmax=None, alpha=100, primiti
 
     primitive = np.empty((*x.shape[:-1], 4))
     u = - 2 * alpha * X * psi
-    p = - 2 * alpha * c / Mmax * X * psi
+    p = - 2 * alpha * c * Mmax * X * psi
     rho = p / c**2
 
     primitive[..., 0] = rho

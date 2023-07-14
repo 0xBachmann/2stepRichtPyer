@@ -1,7 +1,7 @@
 from PDE_Types import EulerScalarAdvect, Euler
 from plotter import Plotter
-from richtmeyer_two_step_scheme import Richtmeyer2step, Richtmeyer2stepImplicit
-from two_step_richtmeyer_util import *
+from richtmyer_two_step_scheme import Richtmyer2step, Richtmyer2stepImplicit
+from two_step_richtmyer_util import *
 from intitial import kelvin_helmholtz
 
 import copy
@@ -19,8 +19,8 @@ F = EulerScalarAdvect(5. / 3, dim=DIM, c1=1., c2=1., hx=h[0], hy=h[1], add_visco
 
 log("calculate initial conditions")
 
-# stepper = Richtmeyer2stepImplicit(F, domain, resolution, eps=1e-9)
-stepper = Richtmeyer2step(F, domain, resolution, lerp=-1)
+# stepper = Richtmyer2stepImplicit(F, domain, resolution, eps=1e-9)
+stepper = Richtmyer2step(F, domain, resolution, lerp=-1)
 
 center = np.array([0.5, 0.5])
 

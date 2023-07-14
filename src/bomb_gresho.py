@@ -1,7 +1,7 @@
 from PDE_Types import *
 from plotter import Plotter
-from richtmeyer_two_step_scheme import Richtmeyer2step, Richtmeyer2stepImplicit
-from two_step_richtmeyer_util import Dimension, log, avg_x
+from richtmyer_two_step_scheme import Richtmyer2step, Richtmyer2stepImplicit
+from two_step_richtmyer_util import Dimension, log, avg_x
 from intitial import gresho_vortex
 
 import copy
@@ -18,8 +18,8 @@ F = Euler(5. / 3, dim=DIM, c1=0.1, c2=0., hx=h[0], hy=h[1], add_viscosity=False)
 
 log("calculate initial conditions")
 
-# stepper = Richtmeyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-8)
-stepper = Richtmeyer2step(F, domain, resolution, lerp=False)
+# stepper = Richtmyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-8)
+stepper = Richtmyer2step(F, domain, resolution, lerp=False)
 
 center = np.array([1, 1])
 avg_coords = [avg_x(coord) for coord in stepper.coords]
