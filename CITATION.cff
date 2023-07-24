@@ -1,0 +1,24 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: 2stepRichtPyer
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Jonas
+    family-names: Bachmann
+    email: jonas.bachmann@inf.ethz.ch
+repository-code: 'https://github.com/0xBachmann/bachelor-thesis'
+abstract: >-
+  Codebase used for thesis ``Structure preserving
+  Lax-Wendroff schemes for low Mach number flows''
+keywords:
+  - FVM
+  - low Mach
+  - Euler equations
+  - hybrid method
+  - viscosity
+license: MIT
