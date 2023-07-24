@@ -103,6 +103,8 @@ class Richtmyer2step(Solver):
         self.order1 = order1
         self.fo = first_order
 
+        self.j_box = 0.
+
     def step(self, dt):
         assert isinstance(self.pde, Euler)
 
@@ -151,7 +153,15 @@ class Richtmyer2step(Solver):
         if self.dim >= Dimension.twoD:
             staggered = avg_y(staggered)
 
-        staggered -= 0.5 * div_fluxes(self.pde(self.grid, visc=False))  # no viscosity for predictor
+        fgh = self.pde(self.grid, visc=False)
+        staggered -= 0.5 * div_fluxes(fgh)  # no viscosity for predictor
+
+        # box angular momenta
+        avg_coords = [avg_x(coord) for coord in self.coords]
+        XYZ = np.stack(np.meshgrid(*avg_coords, indexing='ij'), axis=-1)
+        X = XYZ[..., 0]
+        Y = XYZ[..., 1]
+        dx, dy = self.dxyz
 
         if self.lerp >= 0:
             eta = self.pde.eta(self.grid, staggered, self.dxyz[0], self.dxyz[1], which=self.lerp)
@@ -160,11 +170,18 @@ class Richtmyer2step(Solver):
             if self.order1:
                 self.grid_no_ghost -= (1. - eta) * div_fluxes(self.pde(staggered)) + eta * rusanov()
             else:
-                self.grid_no_ghost -= (1. - eta) * div_fluxes(self.pde(staggered, False)) + eta * div_fluxes(self.pde(staggered, True, other=self.grid_no_ghost)) # TODO -= ???
+                self.grid_no_ghost -= (1. - eta) * div_fluxes(self.pde(staggered, False)) + eta * div_fluxes(
+                    self.pde(staggered, True, other=self.grid_no_ghost))  # TODO -= ???
         elif self.fo:
             self.grid_no_ghost -= rusanov()
         else:
-            self.grid_no_ghost -= div_fluxes(self.pde(staggered, other=self.grid_no_ghost))
+            fgh = self.pde(staggered, other=self.grid_no_ghost)
+            self.grid_no_ghost -= div_fluxes(fgh)
+            djdt = - 1. / dx * (((X + dx / 2) * avg_y(fgh[0][1:, :, 2]) - Y * avg_y(fgh[0][1:, :, 1]))
+                                - ((X - dx / 2) * avg_y(fgh[0][:-1, :, 2]) - Y * avg_y(fgh[0][:-1, :, 1]))) \
+                   - 1. / dy * ((X * (avg_x(fgh[1][:, 1:, 2])) - (Y + dy / 2) * avg_x(fgh[1][:, 1:, 1]))
+                                - (X * (avg_x(fgh[1][:, :-1, 2])) - (Y - dy / 2) * avg_x(fgh[1][:, :-1, 1])))
+            self.j_box += np.sum(djdt * dt)
 
 
 class Richtmyer2stepImplicit(Solver):
@@ -182,6 +199,7 @@ class Richtmyer2stepImplicit(Solver):
         self.method = method
         self.use_sparse = use_sparse
         self.nfevs = []
+        self.j_box = 0
 
     def step(self, dt, guess=None):
         c = dt / self.dxyz
@@ -343,12 +361,45 @@ class Richtmyer2stepImplicit(Solver):
 
         if self.use_root:
             if guess is None:
-                guess = self.grid_no_ghost
-            sol = root(F, guess.ravel(), tol=self.eps * np.product(self.ncellsxyz),
-                       jac=J if self.manual_jacobian else False, method=self.method)
+                guess = deepcopy(self.grid_no_ghost)
+            sol = root(F, guess.ravel(), tol=self.eps,
+                       jac=J if self.manual_jacobian else None, method=self.method)
             # self.nfevs.append(sol.nfev)
+
+            # old = self.grid
             self.grid_no_ghost = sol.x.reshape(self.grid_no_ghost.shape)
             self.bdc(self.grid)
+
+            # # TODO: take sol for flux then evolv
+            # def div_fluxes(fluxes: tuple[np.ndarray]) -> np.ndarray:
+            #     if self.dim == Dimension.oneD:
+            #         return c[0] * del_x(fluxes[0])
+            #     elif self.dim == Dimension.twoD:
+            #         return c[0] * del_x(avg_y(fluxes[0])) \
+            #             + c[1] * del_y(avg_x(fluxes[1]))
+            #     else:
+            #         return c[0] * del_x(avg_y(avg_z(fluxes[0]))) \
+            #             + c[1] * del_y(avg_x(avg_z(fluxes[1]))) \
+            #             + c[2] * del_z(avg_x(avg_y(fluxes[2])))
+            #
+            # fgh = self.pde(avg_x(avg_y(0.5 * (self.grid + new))))
+            # self.grid_no_ghost -= div_fluxes(fgh)
+            # self.bdc(self.grid)
+            # print(np.sum(np.square(self.grid_no_ghost - new[self.no_ghost])))
+
+            # correction for angular momenta
+            if True:
+                avg_coords = [avg_x(coord) for coord in self.coords]
+                XYZ = np.stack(np.meshgrid(*avg_coords, indexing='ij'), axis=-1)
+                X = XYZ[..., 0]
+                Y = XYZ[..., 1]
+                dx, dy = self.dxyz
+                fgh = self.pde(avg_x(avg_y(0.5 * (grid_old + self.grid))))
+                djdt = - 1. / dx * (((X + dx / 2) * avg_y(fgh[0][1:, :, 2]) - Y * avg_y(fgh[0][1:, :, 1]))
+                                    - ((X - dx / 2) * avg_y(fgh[0][:-1, :, 2]) - Y * avg_y(fgh[0][:-1, :, 1]))) \
+                       - 1. / dy * ((X * (avg_x(fgh[1][:, 1:, 2])) - (Y + dy / 2) * avg_x(fgh[1][:, 1:, 1]))
+                                    - (X * (avg_x(fgh[1][:, :-1, 2])) - (Y - dy / 2) * avg_x(fgh[1][:, :-1, 1])))
+                self.j_box += np.sum(djdt) * dt
         else:
             F_value, J_value = FJ(self.grid_no_ghost.ravel())
             F_norm = np.linalg.norm(F_value)
@@ -362,4 +413,3 @@ class Richtmyer2stepImplicit(Solver):
                 self.bdc(self.grid)
                 F_value, J_value = FJ(self.grid_no_ghost.ravel())
                 F_norm = np.linalg.norm(F_value)
-

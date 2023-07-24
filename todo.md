@@ -141,6 +141,16 @@
 - [ ] whenever author check for et al.
 - [ ] precalc optimal einsum
 - [ ] link github
+- [ ] go through references and maybe cite sections
+- [ ] whenever two authors replace and by \\&
+- [ ] acknowledgements
+
+### infos for flaff
+- commas
+- grammar
+- not understanding
+- present
+- 
 
 # To Discuss
 ## 06.04.23

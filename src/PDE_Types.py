@@ -533,7 +533,7 @@ class Euler(PDE):
 
 
 class EulerScalarAdvect(Euler):
-    def __init__(self, gamma, dim: Dimension, add_viscosity=-1, c1=0, c2=0, hx=None, hy=None, mu=1.):
+    def __init__(self, gamma, dim: Dimension, add_viscosity=-1, c1=0, c2=0, hx=0., hy=0., mu=1.):
         super().__init__(gamma, dim, extra_comp=1, add_viscosity=add_viscosity, c1=c1, c2=c2, hx=hx,
                          hy=hy, mu=mu)  # nr of dims velocities + density plus energy_new
         self.comp_names = ["density", *[f"momenta_{dim}" for dim in "xyz"[:dim.value]], "Energy", "X"]
@@ -573,7 +573,7 @@ class EulerScalarAdvect(Euler):
             elif self.add_viscosity == 1:
                 tau = self.viscosity_ns(v, avg_x(avg_y(v)) if other is None else other)
                 result[..., 1:3, :] -= tau
-                result[..., -2, :] = np.einsum("...,...i->...i", Etot, vels) + np.einsum("...ji,...i->...j", tau, vels)
+                result[..., -2, :] += np.einsum("...ij,...j->...i", tau, vels)
             else:
                 raise ValueError
         return tuple(result[..., i] for i in range(self.dim.value))

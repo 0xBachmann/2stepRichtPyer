@@ -21,7 +21,7 @@ log("calculate initial conditions")
 domain = np.array([[-10, 9], [0, 1]])
 res_per_unit = 40
 resolution = np.array([res_per_unit * (domain[0, 1] - domain[0, 0]), res_per_unit])
-steppers = [Richtmyer2step(F, domain, resolution), Richtmyer2stepImplicit(F, domain, resolution, eps=1e-19)]
+steppers = [Richtmyer2step(F, domain, resolution), Richtmyer2stepImplicit(F, domain, resolution)]
 nS = len(steppers)
 
 center = np.array([0.5, 0.5])

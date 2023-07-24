@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from mpl_toolkits.axes_grid1 import ImageGrid
 
@@ -16,7 +17,7 @@ import copy
 import numpy as np
 
 colors = ["darkmagenta", "mediumpurple"]  # , "teal", "darkkhaki"]
-cycler = plt.cycler(color=colors)  # + plt.cycler(lw=[1, 1, 1, 1])  # + plt.cycler(markersize=[6, 3, 2, 1])
+cycler = plt.cycler(color=colors) * plt.cycler(linestyle=["solid", "dotted"]) # + plt.cycler(lw=[1, 1, 1, 1])  # + plt.cycler(markersize=[6, 3, 2, 1])
 plt.rc('axes', prop_cycle=cycler)
 mpl.rc('image', cmap='magma_r')
 
@@ -34,7 +35,7 @@ F = Euler(5. / 3, dim=DIM, c1=0.1, c2=1., hx=h[0], hy=h[1], add_viscosity=-1)
 log("calculate initial conditions")
 
 # stepper = Richtmyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-8)
-steppers = [Richtmyer2step(F, domain, resolution, lerp=-1), Richtmyer2stepImplicit(F, domain, resolution, eps=1e-16)]
+steppers = [Richtmyer2step(F, domain, resolution, lerp=-1), Richtmyer2stepImplicit(F, domain, resolution)]
 nS = len(steppers)
 stepper_names = ["expl", "impl"]
 
@@ -55,7 +56,8 @@ def vortex_bomb(x, bcenter=np.array([0, 0]), n_v=3):
     return F.primitive_to_conserved(vortices)
 
 
-generate = False
+generate = True
+generate_non_corr = True
 if generate:
     for i, stepper in enumerate(steppers):
         avg_coords = [avg_x(coord) for coord in stepper.coords]
@@ -64,19 +66,25 @@ if generate:
         XY[..., 0] = X
         XY[..., 1] = Y
         j = []
+        j_non_corr = []
         times = []
 
         def angular(stepper, dt):
-            global j, times
-            j.append(np.sum(F.angular_momenta(stepper.grid_no_ghost, XY)))
+            global j, times, j_non_corr
+            j.append(np.sum(F.angular_momenta(stepper.grid_no_ghost, XY)) - stepper.j_box)
+            if generate_non_corr:
+                j_non_corr.append(np.sum(F.angular_momenta(stepper.grid_no_ghost, XY)))
             times.append(dt)
 
         stepper.initial_cond(vortex_bomb)
+        # print(np.max(F.csnd(stepper.grid_no_ghost)))
 
         stepper.step_for(t, fact=1, callback=angular)
         np.save(str(Path("traj", f"bomb_{stepper_names[i]}.npy")), stepper.grid_no_ghost[..., 0])
 
         np.save(str(Path("ang", f"bomb_{stepper_names[i]}_j.npy")), np.array(j))
+        if generate_non_corr:
+            np.save(str(Path("ang", f"bomb_{stepper_names[i]}_j_non_corr.npy")), np.array(j_non_corr))
         np.save(str(Path("ang", f"bomb_{stepper_names[i]}_times.npy")), np.array(times))
 
 plot = True
@@ -126,18 +134,23 @@ if plot:
     fig_j, ax_j = plt.subplots(figsize=(8, 3))
     for stepper_name in stepper_names:
         j = np.load(str(Path("ang", f"bomb_{stepper_name}_j.npy")))
+        j_non_corr = np.load(str(Path("ang", f"bomb_{stepper_name}_j_non_corr.npy")))
         times = np.load(str(Path("ang", f"bomb_{stepper_name}_times.npy")))
         ax_j.plot(np.cumsum(times), np.abs(j / j[0] - 1), label=f"{stepper_name}")
+        ax_j.plot(np.cumsum(times), np.abs(j_non_corr / j_non_corr[0] - 1), label=f"{stepper_name} no correction")
     ax_j.set_xlabel(r"$t$")
     ax_j.set_ylabel(r"$|J(t)/J(0) - 1|$")
     ax_j.ticklabel_format(useOffset=False)
 
     custom_labels = [Line2D([0], [0], color="darkmagenta", lw=1),
-                     Line2D([0], [0], color="mediumpurple", lw=1)]
+                     Line2D([0], [0], color="mediumpurple", lw=1),
+                     Line2D([0], [0], color="grey", linestyle="solid", lw=1),
+                     Line2D([0], [0], color="grey", linestyle="dotted", lw=1)]
 
     ax_j.semilogy()
 
-    ax_j.legend(custom_labels, [r"$\mathrm{explicit}$", r"$\mathrm{implicit}$"])
+    ax_j.legend(custom_labels, [r"$\mathrm{explicit}$", r"$\mathrm{implicit}$",
+                                r"$\mathrm{with\ correction}$", r"$\mathrm{without\ correction}$"], ncols=2)
     fig_j.tight_layout()
     plt.savefig(Path("ims", "bomb_ang_mom.pdf"), dpi=200)
 

@@ -19,10 +19,10 @@ Ly = Lx
 h = [Lx / resolution[0], Ly / resolution[1]]
 
 
-lerp = 3
+lerp = -1
 visc = 1
 c = 1.
-F = Euler(5. / 3, dim=DIM, c1=c/10, c2=c, hx=h[0], hy=h[1], add_viscosity=visc, mu=8.9e-5)  # 8.9e-5)
+F = Euler(5. / 3, dim=DIM, c1=c/10, c2=c, hx=h[0], hy=h[1], add_viscosity=visc, mu=8.9e-4)  # 8.9e-5)
 stepper = Richtmyer2step(F, np.array([Lx, Ly]), resolution, lerp=lerp)  # , order1=(visc < 0))
 
 ntest = 7

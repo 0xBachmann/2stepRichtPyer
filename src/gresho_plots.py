@@ -24,13 +24,13 @@ Ly = Lx
 h = [Lx / resolution[0], Ly / resolution[1]]
 F = Euler(5. / 3, dim=DIM, c1=0.1, c2=0., hx=h[0], hy=h[1])
 
-tol = 1e-17
+tol = 3e-16
 domain = np.array([Lx, Ly])
 steppers = [Richtmyer2step(F, domain, resolution, first_order=True),
             Richtmyer2step(F, domain, resolution),
-            Richtmyer2stepImplicit(F, domain, resolution, eps=tol),
-            Richtmyer2stepImplicit(F, domain, resolution, eps=tol),
-            Richtmyer2stepImplicit(F, domain, resolution, eps=tol)]
+            Richtmyer2stepImplicit(F, domain, resolution),
+            Richtmyer2stepImplicit(F, domain, resolution),
+            Richtmyer2stepImplicit(F, domain, resolution)]
 
 stepper_names = {0: "first",
                  1: "expl",
@@ -69,6 +69,8 @@ if generate:
         if i != 1:
             continue
         for j, M in enumerate(Ms):
+            if j != 0:
+                continue
             energies = []
             times = []
 
@@ -91,39 +93,37 @@ if generate:
 
 generate_timings_and_energy = True
 if generate_timings_and_energy:
+    for j, M in enumerate(Ms):
+        energies = []
+        times = []
+
+        stepper = Richtmyer2stepImplicit(F, domain, resolution, eps=11e-16)
+        stepper.initial_cond(lambda x: gresho_vortex(x, center, F, M, qr=1))#0.4 * np.pi * Lx / 1.))
+        start = time.time()
+        stepper.step_for(1., fact=1./M, callback=E_kin)
+        end = time.time()
+        print(f"M = {M:.5f} took {end-start}s")
+        np.save(str(Path("traj", f"gresho_vortex_impl_M-1_1e{-(j + 1)}.npy")),
+                F.mach(stepper.grid_no_ghost)[..., np.newaxis] / M)
+
+        np.save(str(Path("energy", f"en_impl_M-1_1e{-(j + 1)}.npy")), np.array(energies))
+        np.save(str(Path("energy", f"times_impl_M-1_1e{-(j + 1)}.npy")), np.array(times))
+
     # for j, M in enumerate(Ms):
     #     energies = []
     #     times = []
     #
-    #     stepper = Richtmyer2stepImplicit(F, domain, resolution)
-    #     stepper.initial_cond(lambda x: gresho_vortex(x, center, F, M, qr=0.4 * np.pi * Lx / 1.))
+    #     stepper = Richtmyer2step(F, domain, resolution)
+    #     stepper.initial_cond(lambda x: gresho_vortex(x, center, F, M, qr=1))#0.4 * np.pi * Lx / 1.))
     #     start = time.time()
-    #     stepper.step_for(1., fact=1./M, callback=E_kin)
+    #     stepper.step_for(1., callback=E_kin)
     #     end = time.time()
     #     print(f"M = {M:.5f} took {end-start}s")
-    #     np.save(str(Path("traj", f"gresho_vortex_impl_M-1_1e{-(j + 1)}.npy")),
+    #     np.save(str(Path("traj", f"gresho_vortex_expl_1e{-(j + 1)}.npy")),
     #             F.mach(stepper.grid_no_ghost)[..., np.newaxis] / M)
     #
-    #     np.save(str(Path("energy", f"en_impl_M-1_1e{-(j + 1)}.npy")), np.array(energies))
-    #     np.save(str(Path("energy", f"times_impl_M-1_1e{-(j + 1)}.npy")), np.array(times))
-
-    for j, M in enumerate(Ms):
-        if j > 1:
-            continue
-        energies = []
-        times = []
-
-        stepper = Richtmyer2step(F, domain, resolution)
-        stepper.initial_cond(lambda x: gresho_vortex(x, center, F, M, qr=0.4 * np.pi * Lx / 1.))
-        start = time.time()
-        stepper.step_for(1., fact=1., callback=E_kin)
-        end = time.time()
-        print(f"M = {M:.5f} took {end-start}s")
-        np.save(str(Path("traj", f"gresho_vortex_expl_1e{-(j + 1)}.npy")),
-                F.mach(stepper.grid_no_ghost)[..., np.newaxis] / M)
-
-        np.save(str(Path("energy", f"en_expl_1e{-(j + 1)}.npy")), np.array(energies))
-        np.save(str(Path("energy", f"times_expl_1e{-(j + 1)}.npy")), np.array(times))
+    #     np.save(str(Path("energy", f"en_expl_1e{-(j + 1)}.npy")), np.array(energies))
+    #     np.save(str(Path("energy", f"times_expl_1e{-(j + 1)}.npy")), np.array(times))
 
 
 plot = True
