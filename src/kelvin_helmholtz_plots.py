@@ -14,11 +14,22 @@ log("definition of variables")
 DIM = Dimension.twoD
 
 domain = np.array([[0, 1], [0, 1]])
-resolution = np.array([1024] * DIM.value)
+resolution = np.array([128] * DIM.value)
 
 h = ((domain[:, 1] - domain[:, 0]) / resolution).ravel()
-F_visc = EulerScalarAdvect(5. / 3, dim=DIM, c1=.1, c2=1., hx=h[0], hy=h[1], add_viscosity=0, mu=0.001)
-F_visc_1 = EulerScalarAdvect(5. / 3, dim=DIM, c1=.1, c2=1., hx=h[0], hy=h[1], add_viscosity=1, mu=0.001)
+
+M = 0.01
+pr = 2.5
+
+rhor = 1.
+xr = 1.
+cr = np.sqrt(pr / rhor)
+ur = M * cr
+tr = xr / ur
+
+c = 0.05
+F_visc = EulerScalarAdvect(5. / 3, dim=DIM, c1=c/10, c2=c, hx=h[0], hy=h[1], add_viscosity=0)
+F_visc_1 = EulerScalarAdvect(5. / 3, dim=DIM, hx=h[0], hy=h[1], add_viscosity=1, mu=0.0001)
 F = EulerScalarAdvect(5. / 3, dim=DIM)
 
 log("calculate initial conditions")
@@ -34,7 +45,7 @@ stepper_names = ["default", "1", "2", "3"]
 
 def kh_with_scalar(x: np.ndarray, F, Mr, pr=2.5, rhor=1., primitives=False):
     primitive = np.empty((*x.shape[:-1], 5))
-    primitive[..., :-1] = kelvin_helmholtz(x, F, Mr=Mr, pr=pr, rhor=rhor, primitives=True)
+    primitive[..., :-1] = kelvin_helmholtz(x, F, Mr=Mr, pr=pr, rhor=rhor, primitives=True, ref=True)
 
     Y = x[..., 1]
     primitive[(Y < 0.25) | (0.75 <= Y), -1] = 0
@@ -46,22 +57,20 @@ def kh_with_scalar(x: np.ndarray, F, Mr, pr=2.5, rhor=1., primitives=False):
         return F.primitive_to_conserved(primitive)
 
 
-M = 0.01
-t = 3.
+t = 3. * tr
 generate = True
 if generate:
     for i, stepper in enumerate(steppers):
-        if False:
+        if i != 3:
             continue
-        stepper.initial_cond(lambda x: kh_with_scalar(x, stepper.pde, Mr=M))
-
-        stepper.step_for(3.)
-        np.save(str(Path("traj", f"kh_{stepper_names[i]}.npy")), stepper.grid_no_ghost[..., -1])
+        stepper.initial_cond(lambda x: kh_with_scalar(x, F, Mr=M, rhor=rhor, pr=pr))
+        print(np.max(F.mach(stepper.grid_no_ghost)))
+        stepper.step_for(t)
+        np.save(str(Path("traj", f"kh_{stepper_names[i]}_{M:.5f}.npy")), stepper.grid_no_ghost[..., -1])
 
 plot = True
 if plot:
-    times_latex = [r"$t = 0.0$", r"$t = 7.0 \times 10^{-4}$", r"$t = 1.0$"]
-    fig = plt.figure(figsize=(12, 12))  # Notice the equal aspect ratio
+    fig = plt.figure(figsize=(13, 12))  # Notice the equal aspect ratio
     # axs_mach = [fig.add_subplot(1, nM, i + 1) for i in range(nM)]
 
     grid = ImageGrid(fig, 111,  # as in plt.subplot(111)
@@ -77,13 +86,13 @@ if plot:
     for j, ax in enumerate(grid):
         y = j // 2
         x = j % 2
-        data = np.load(str(Path("traj", f"kh_{stepper_names[j]}.npy")))
+        data = np.load(str(Path("traj", f"kh_{stepper_names[j]}_{M:.5f}.npy")))
 
         im = ax.imshow(data.T, origin="lower", vmin=0, vmax=1, extent=(0, 1, 0, 1))
 
         ax.set_yticks(np.linspace(0, 1, 5, endpoint=False))
         ax.set_xticks(np.linspace(0, 1, 5, endpoint=False))
-        if x == 2:
+        if x == 1:
             ax.set_xticks(np.linspace(0, 1, 6, endpoint=True))
         if y == 0:
             ax.set_yticks(np.linspace(0, 1, 6, endpoint=True))
@@ -101,7 +110,7 @@ if plot:
     cbar.ax.tick_params(color='gray', direction="in")
     ax.cax.toggle_label(True)
 
-    plt.savefig(Path("ims", f"kelvin_helmholtz_high_res.pdf"), dpi=200)
+    plt.savefig(Path("ims", f"kelvin_helmholtz_{M:.5f}.pdf"), dpi=200)
 
 
 

@@ -15,7 +15,7 @@ domain = np.array([[0, 1], [0, 1]])
 resolution = np.array([128] * DIM.value)
 
 h = ((domain[:, 1] - domain[:, 0]) / resolution).ravel()
-F = EulerScalarAdvect(5. / 3, dim=DIM, c1=1., c2=1., hx=h[0], hy=h[1], add_viscosity=1, mu=0.001)
+F = EulerScalarAdvect(5. / 3, dim=DIM, c1=1., c2=1., hx=h[0], hy=h[1], add_viscosity=-1, mu=0.001)
 
 log("calculate initial conditions")
 
@@ -27,7 +27,7 @@ center = np.array([0.5, 0.5])
 
 def kh_with_scalar(x: np.ndarray, F, Mr, pr=2.5, rhor=1., primitives=False):
     primitive = np.empty((*x.shape[:-1], 5))
-    primitive[..., :-1] = kelvin_helmholtz(x, F, Mr=Mr, pr=pr, rhor=rhor, primitives=True)
+    primitive[..., :-1] = kelvin_helmholtz(x, F, Mr=Mr, pr=pr, rhor=rhor, primitives=True, ref=True)
 
     Y = x[..., 1]
     primitive[(Y < 0.25) | (0.75 <= Y), -1] = 0
@@ -40,7 +40,15 @@ def kh_with_scalar(x: np.ndarray, F, Mr, pr=2.5, rhor=1., primitives=False):
 
 
 M = 0.01
-stepper.initial_cond(lambda x: kh_with_scalar(x, F, Mr=M))
+pr = 2.5
+
+rhor = 1.
+xr = 1.
+cr = np.sqrt(pr / rhor)
+ur = M * cr
+tr = xr / ur
+
+stepper.initial_cond(lambda x: kh_with_scalar(x, F, Mr=M, rhor=rhor, pr=pr))
 
 
 plot_visc = False
@@ -59,7 +67,7 @@ elif plot_visc:
 elif plot_eta:
     ncomps = 6
 
-plotter = Plotter(ncomps, action="show", writeout=40, dim=stepper.dim, filename="kelvin_helmholz_eta_rel.mp4"
+plotter = Plotter(ncomps, action="show", writeout=4000, dim=stepper.dim, filename="kelvin_helmholz_eta_rel.mp4"
                   # , lims={0: [-.4, .4], 3: [-.4, .4]}
                   )
 
@@ -97,7 +105,7 @@ def plot(dt):
 plot(0)
 
 fact = 1
-T = 3
+T = 3 * tr
 time = 0.
 while time < T:
     dt = stepper.cfl() * fact
