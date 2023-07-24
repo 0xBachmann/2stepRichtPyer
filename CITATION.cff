@@ -11,7 +11,7 @@ authors:
   - given-names: Jonas
     family-names: Bachmann
     email: jonas.bachmann@inf.ethz.ch
-repository-code: 'https://github.com/0xBachmann/bachelor-thesis'
+repository-code: 'https://github.com/0xBachmann/2stepRichtPyer'
 abstract: >-
   Codebase used for thesis ``Structure preserving
   Lax-Wendroff schemes for low Mach number flows''
