@@ -31,16 +31,8 @@ stepper.initial_cond(initial_condition)
 
 plotter = Plotter(PDE, action="show", writeout=10, dim=stepper.dim)
 
-T = 1
-time = 0.
-while time < T:
-    dt = stepper.cfl()
-    stepper.step(dt)
+stepper.setp_for(1., callback=lambda S: plotter.write(stepper.grid_no_ghost))
 
-    plotter.write(stepper.grid_no_ghost, dt)
-
-    print(f"dt = {dt}, time = {time:.3f}/{T}")
-    time += dt
 plotter.finalize()
 ```
 
