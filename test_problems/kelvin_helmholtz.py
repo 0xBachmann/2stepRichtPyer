@@ -1,8 +1,8 @@
-from PDE_Types import EulerScalarAdvect, Euler
-from plotter import Plotter
-from richtmyer_two_step_scheme import Richtmyer2step, Richtmyer2stepImplicit
-from two_step_richtmyer_util import *
-from intitial import kelvin_helmholtz
+from src.PDE_Types import EulerScalarAdvect, Euler
+from src.plotter import Plotter
+from src.richtmyer_two_step_scheme import Richtmyer2step, Richtmyer2stepImplicit
+from src.two_step_richtmyer_util import *
+from src.intitial import kelvin_helmholtz
 
 import copy
 import numpy as np

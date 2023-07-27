@@ -1,7 +1,7 @@
 import numpy as np
-from PDE_Types import Euler
-from two_step_richtmyer_util import Dimension, avg_x
-from plotter import Plotter
+from src.PDE_Types import Euler
+from src.two_step_richtmyer_util import Dimension, avg_x
+from src.plotter import Plotter
 
 
 DIM = Dimension.twoD

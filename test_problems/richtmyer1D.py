@@ -1,7 +1,7 @@
-from PDE_Types import *
-from plotter import Plotter
-from richtmyer_two_step_scheme import Richtmyer2stepImplicit, Richtmyer2step, Richtmyer2stepLerp
-from two_step_richtmyer_util import Dimension, log
+from src.PDE_Types import *
+from src.plotter import Plotter
+from src.richtmyer_two_step_scheme import Richtmyer2stepImplicit, Richtmyer2step, Richtmyer2stepLerp
+from src.two_step_richtmyer_util import Dimension, log
 import numpy as np
 
 log("definition of variables")

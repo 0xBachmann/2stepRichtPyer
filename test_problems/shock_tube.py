@@ -1,10 +1,9 @@
-from PDE_Types import *
-from plotter import Plotter
-from richtmyer_two_step_scheme import Richtmyer2step
-from two_step_richtmyer_util import Dimension
-from intitial import gresho_vortex
+from src.PDE_Types import *
+from src.plotter import Plotter
+from src.richtmyer_two_step_scheme import Richtmyer2step
+from src.two_step_richtmyer_util import Dimension
 
-from RP1D_Euler import RP1D_Euler
+from src.RP1D_Euler import RP1D_Euler
 
 import copy
 import numpy as np

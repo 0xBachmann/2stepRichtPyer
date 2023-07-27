@@ -1,9 +1,9 @@
-from plotting_setup import *
-from PDE_Types import *
-from plotter import Plotter
-from richtmyer_two_step_scheme import Richtmyer2step, Richtmyer2stepImplicit
-from two_step_richtmyer_util import Dimension, log, avg_x
-from intitial import gresho_vortex
+from src.plotting_setup import *
+from src.PDE_Types import *
+from src.plotter import Plotter
+from src.richtmyer_two_step_scheme import Richtmyer2step, Richtmyer2stepImplicit
+from src.two_step_richtmyer_util import Dimension, log, avg_x
+from src.intitial import gresho_vortex
 
 import copy
 import numpy as np
