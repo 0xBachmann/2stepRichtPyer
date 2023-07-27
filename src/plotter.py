@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from tqdm import tqdm
 
 import numpy as np
 import os
@@ -150,7 +149,7 @@ class Plotter:
             plt.show()
 
         elif self.action == "saveb":
-            for i, t in tqdm(enumerate(self.traj[:len(self.traj) - self.drop_last]), desc="Generating Movie", total=len(self.traj)):
+            for i, t in enumerate(self.traj[:len(self.traj) - self.drop_last]):
                 vals = np.load(str(Path(self.savedir, f"{self.PDE_type}_{i}_{self.uuid}")))
                 os.remove(Path(self.savedir, f"{self.PDE_type}_{i}_{self.uuid}.npy"))
                 self.plot(vals, t)

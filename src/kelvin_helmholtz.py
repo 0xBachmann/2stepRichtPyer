@@ -25,9 +25,9 @@ stepper = Richtmyer2step(F, domain, resolution, lerp=-1)
 center = np.array([0.5, 0.5])
 
 
-def kh_with_scalar(x: np.ndarray, F, Mr, pr=2.5, rhor=1., primitives=False):
+def kh_with_scalar(x: np.ndarray, F, Mr, pr=2.5, rhor=1., primitives=False, mode=2):
     primitive = np.empty((*x.shape[:-1], 5))
-    primitive[..., :-1] = kelvin_helmholtz(x, F, Mr=Mr, pr=pr, rhor=rhor, primitives=True, ref=True)
+    primitive[..., :-1] = kelvin_helmholtz(x, F, Mr=Mr, pr=pr, rhor=rhor, primitives=True, ref=True, mode=mode)
 
     Y = x[..., 1]
     primitive[(Y < 0.25) | (0.75 <= Y), -1] = 0
@@ -67,7 +67,7 @@ elif plot_visc:
 elif plot_eta:
     ncomps = 6
 
-plotter = Plotter(ncomps, action="show", writeout=4000, dim=stepper.dim, filename="kelvin_helmholz_eta_rel.mp4"
+plotter = Plotter(ncomps, action="show", writeout=int(40 / M), dim=stepper.dim, filename="kelvin_helmholz_eta_rel.mp4"
                   # , lims={0: [-.4, .4], 3: [-.4, .4]}
                   )
 

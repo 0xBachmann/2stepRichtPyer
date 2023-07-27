@@ -8,6 +8,7 @@ from plotting_setup import *
 from pathlib import Path
 
 import numpy as np
+import dask as da
 
 log("definition of variables")
 
@@ -18,7 +19,18 @@ resolution = np.array([128] * DIM.value)
 
 h = ((domain[:, 1] - domain[:, 0]) / resolution).ravel()
 
-M = 0.01
+M = 1.
+# M = 1
+# st_fact = / 0.15
+# c = M / 6
+
+# M = 0.1:
+# st_fact = / 1.5
+# c = M / 2
+
+# M = 0.01
+# st_fact = / 15
+# c = M / 2
 pr = 2.5
 
 rhor = 1.
@@ -27,7 +39,7 @@ cr = np.sqrt(pr / rhor)
 ur = M * cr
 tr = xr / ur
 
-c = 0.05
+c = M / 6
 F_visc = EulerScalarAdvect(5. / 3, dim=DIM, c1=c/10, c2=c, hx=h[0], hy=h[1], add_viscosity=0)
 F_visc_1 = EulerScalarAdvect(5. / 3, dim=DIM, hx=h[0], hy=h[1], add_viscosity=1, mu=0.0001)
 F = EulerScalarAdvect(5. / 3, dim=DIM)
@@ -43,9 +55,9 @@ steppers = [Richtmyer2step(F, domain, resolution, lerp=-1),
 stepper_names = ["default", "1", "2", "3"]
 
 
-def kh_with_scalar(x: np.ndarray, F, Mr, pr=2.5, rhor=1., primitives=False):
+def kh_with_scalar(x: np.ndarray, F, Mr, pr=2.5, rhor=1., primitives=False, mode=2):
     primitive = np.empty((*x.shape[:-1], 5))
-    primitive[..., :-1] = kelvin_helmholtz(x, F, Mr=Mr, pr=pr, rhor=rhor, primitives=True, ref=True)
+    primitive[..., :-1] = kelvin_helmholtz(x, F, Mr=Mr, pr=pr, rhor=rhor, primitives=True, ref=True, mode=mode)
 
     Y = x[..., 1]
     primitive[(Y < 0.25) | (0.75 <= Y), -1] = 0
@@ -57,15 +69,16 @@ def kh_with_scalar(x: np.ndarray, F, Mr, pr=2.5, rhor=1., primitives=False):
         return F.primitive_to_conserved(primitive)
 
 
-t = 3. * tr
+t = 2.5 * tr
 generate = True
 if generate:
     for i, stepper in enumerate(steppers):
-        if i != 3:
-            continue
         stepper.initial_cond(lambda x: kh_with_scalar(x, F, Mr=M, rhor=rhor, pr=pr))
-        print(np.max(F.mach(stepper.grid_no_ghost)))
-        stepper.step_for(t)
+
+    delayed = [da.delayed(stepper.step_for)(t) for stepper in steppers]
+    da.compute(delayed)
+
+    for i, stepper in enumerate(steppers):
         np.save(str(Path("traj", f"kh_{stepper_names[i]}_{M:.5f}.npy")), stepper.grid_no_ghost[..., -1])
 
 plot = True
@@ -110,7 +123,7 @@ if plot:
     cbar.ax.tick_params(color='gray', direction="in")
     ax.cax.toggle_label(True)
 
-    plt.savefig(Path("ims", f"kelvin_helmholtz_{M:.5f}.pdf"), dpi=200)
+    plt.savefig(Path("ims", f"kelvin_helmholtz_{M:.5f}_multi.pdf"), dpi=200)
 
 
 

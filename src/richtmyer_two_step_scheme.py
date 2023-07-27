@@ -362,7 +362,7 @@ class Richtmyer2stepImplicit(Solver):
         if self.use_root:
             if guess is None:
                 guess = deepcopy(self.grid_no_ghost)
-            sol = root(F, guess.ravel(), tol=self.eps,
+            sol = root(F, guess.ravel(), options={"ftol": self.eps},
                        jac=J if self.manual_jacobian else None, method=self.method)
             # self.nfevs.append(sol.nfev)
 

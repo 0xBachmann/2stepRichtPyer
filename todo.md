@@ -144,6 +144,7 @@
 - [ ] go through references and maybe cite sections
 - [ ] whenever two authors replace and by \\&
 - [ ] acknowledgements
+- [ ] fix timestep constraint in code
 
 ### infos for flaff
 - commas
