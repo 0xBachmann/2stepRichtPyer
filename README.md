@@ -3,7 +3,7 @@
 Bachelor Thesis from [Jonas Bachmann](mailto:jonas.bachmann@inf.ethz.ch).
 
 ## Requirements
-See `src/requirements.txt` for the required python packages. 
+See `requirements.txt` for the required python packages. 
 For storing trajectories instead of keeping them in memory, FFmpeg is required.
 
 
