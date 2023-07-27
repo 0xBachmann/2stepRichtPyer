@@ -11,6 +11,9 @@ authors:
   - given-names: Jonas
     family-names: Bachmann
     email: jonas.bachmann@inf.ethz.ch
+  - given-names: Roger
+    family-names: Käppeli
+    email: roger.kaeppeli@sam.math.ethz.ch
 repository-code: 'https://github.com/0xBachmann/2stepRichtPyer'
 abstract: >-
   Codebase used for thesis ``Structure preserving
