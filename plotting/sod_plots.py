@@ -1,13 +1,13 @@
-from PDE_Types import *
-from richtmyer_two_step_scheme import Richtmyer2step
-from two_step_richtmyer_util import Dimension
-from plotting_setup import *
+from src.PDE_Types import *
+from src.richtmyer_two_step_scheme import Richtmyer2step
+from src.two_step_richtmyer_util import Dimension
+from src.plotting_setup import *
 from matplotlib.ticker import FormatStrFormatter
 
 from pathlib import Path
 
 
-from RP1D_Euler import RP1D_Euler
+from src.RP1D_Euler import RP1D_Euler
 
 import numpy as np
 

@@ -1,12 +1,12 @@
 from mpl_toolkits.axes_grid1 import ImageGrid
 
-from PDE_Types import Euler
-from plotter import Plotter
-from richtmyer_two_step_scheme import Richtmyer2step, Richtmyer2stepImplicit
-from two_step_richtmyer_util import Dimension, log
-from intitial import gresho_vortex, sound_wave_packet
+from src.PDE_Types import Euler
+from src.plotter import Plotter
+from src.richtmyer_two_step_scheme import Richtmyer2step, Richtmyer2stepImplicit
+from src.two_step_richtmyer_util import Dimension, log
+from src.intitial import gresho_vortex, sound_wave_packet
 
-from plotting_setup import *
+from src.plotting_setup import *
 from pathlib import Path
 
 import numpy as np

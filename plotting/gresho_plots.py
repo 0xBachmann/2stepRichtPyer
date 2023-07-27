@@ -1,14 +1,14 @@
-from PDE_Types import *
+from src.PDE_Types import *
 from pathlib import Path
-from richtmyer_two_step_scheme import Richtmyer2step, Richtmyer2stepImplicit
-from two_step_richtmyer_util import Dimension, log, avg_x
-from intitial import gresho_vortex
+from src.richtmyer_two_step_scheme import Richtmyer2step, Richtmyer2stepImplicit
+from src.two_step_richtmyer_util import Dimension, log, avg_x
+from src.intitial import gresho_vortex
 import numpy as np
 import time
 from matplotlib.lines import Line2D
 from mpl_toolkits.axes_grid1 import ImageGrid
 import matplotlib as mpl
-from plotting_setup import *
+from src.plotting_setup import *
 mpl.rc('image', cmap='magma')
 
 # cycler = plt.cycler(color=plt.cm.tab20c.colors)

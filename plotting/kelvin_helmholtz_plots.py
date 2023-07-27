@@ -1,10 +1,10 @@
 from mpl_toolkits.axes_grid1 import ImageGrid
 
-from PDE_Types import EulerScalarAdvect
-from richtmyer_two_step_scheme import Richtmyer2step
-from two_step_richtmyer_util import *
-from intitial import kelvin_helmholtz
-from plotting_setup import *
+from src.PDE_Types import EulerScalarAdvect
+from src.richtmyer_two_step_scheme import Richtmyer2step
+from src.two_step_richtmyer_util import *
+from src.intitial import kelvin_helmholtz
+from src.plotting_setup import *
 from pathlib import Path
 
 import numpy as np
