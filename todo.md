@@ -24,9 +24,9 @@
     - [x] linear stability analysis
 - [x] vortex test
   - works now when using arctan2 correctly
-  - [ ] check energy conservation
-- [ ] reference solutions?
-- [ ] review CFL for diagonal motion
+  - [x] check energy conservation
+- [x] reference solutions?
+- [x] review CFL for diagonal motion
 - [x] neumann stability analysis
   - done in 1D
 - [x] check triangles in accuracy plotter for correctness

@@ -58,7 +58,7 @@ class Solver:
     def cfl(self):
         prime = self.pde.max_speed(self.grid[self.no_ghost])
         a = np.max(np.reshape(np.abs(prime), (np.prod(self.ncellsxyz), self.dim.value)), axis=0)
-        dts = self.dxyz / (2 * a)  # TODO (2 bc half step)
+        dts = self.dxyz / (np.sqrt(self.dim.value) * a)  # TODO (2 bc half step)
         # TODO correct for diagonal?
         return np.min(dts)
 
