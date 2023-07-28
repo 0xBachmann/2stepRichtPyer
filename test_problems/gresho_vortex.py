@@ -18,7 +18,7 @@ F = Euler(5. / 3, dim=DIM, c1=0.1, c2=0., hx=h[0], hy=h[1])
 
 log("calculate initial conditions")
 
-stepper = Richtmyer2stepImplicit(F, np.array([Lx, Ly]), resolution)  # , lerp=-1)  # works: 1, 3. doesn't: 0, 2
+stepper = Richtmyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-10)  # , lerp=-1)  # works: 1, 3. doesn't: 0, 2
 domain = np.array([Lx, Ly])
 # stepper = Richtmyer2step(F, domain, resolution, lerp=False)
 

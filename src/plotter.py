@@ -126,7 +126,7 @@ class Plotter:
                     self.ims[i].set_data(vals[..., i].T)
             self.fig.suptitle(f"time: {time:.5}")
 
-    def write(self, vals: Union[np.ndarray, tuple[np.ndarray, ...]], dt):
+    def write(self, vals: Union[np.ndarray, tuple[np.ndarray, ...]], dt=None):
         if self.step % self.writeout == 0:
             if self.action == "show":
                 self.traj.append((deepcopy(vals), self.time))
@@ -137,7 +137,8 @@ class Plotter:
                 np.save(str(Path(self.savedir, f"{self.PDE_type}_{int(self.step / self.writeout)}_{self.uuid}.npy")), vals)
                 self.traj.append(self.time)
 
-        self.time += dt
+        if dt is not None:
+            self.time += dt
         self.step += 1
 
     def finalize(self):
