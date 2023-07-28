@@ -1,5 +1,5 @@
 import numpy as np
-from PDE_Types import Euler
+from .PDE_Types import Euler
 
 
 def gresho_vortex(x: np.ndarray, center, F: Euler, Mmax=None, qr=1, primitives=False, background=True) -> np.ndarray:

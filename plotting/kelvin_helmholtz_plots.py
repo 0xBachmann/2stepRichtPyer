@@ -70,7 +70,7 @@ def kh_with_scalar(x: np.ndarray, F, Mr, pr=2.5, rhor=1., primitives=False, mode
 
 
 t = 2.5 * tr
-generate = True
+generate = False
 if generate:
     for i, stepper in enumerate(steppers):
         stepper.initial_cond(lambda x: kh_with_scalar(x, F, Mr=M, rhor=rhor, pr=pr))

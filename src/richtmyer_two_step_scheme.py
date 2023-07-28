@@ -1,5 +1,5 @@
-from two_step_richtmyer_util import *
-from PDE_Types import PDE, Euler
+from .two_step_richtmyer_util import *
+from .PDE_Types import PDE, Euler
 import numpy as np
 from copy import deepcopy
 import sys

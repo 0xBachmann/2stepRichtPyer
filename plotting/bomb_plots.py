@@ -56,7 +56,7 @@ def vortex_bomb(x, bcenter=np.array([0, 0]), n_v=3):
     return F.primitive_to_conserved(vortices)
 
 
-generate = True
+generate = False
 generate_non_corr = True
 if generate:
     for i, stepper in enumerate(steppers):

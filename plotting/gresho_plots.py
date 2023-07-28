@@ -91,7 +91,7 @@ if generate:
             np.save(str(Path("energy", f"en_{stepper_names[i]}_1e{-(j+1)}.npy")), np.array(energies))
             np.save(str(Path("energy", f"times_{stepper_names[i]}_1e{-(j+1)}.npy")), np.array(times))
 
-generate_timings_and_energy = True
+generate_timings_and_energy = False
 if generate_timings_and_energy:
     for j, M in enumerate(Ms):
         energies = []
