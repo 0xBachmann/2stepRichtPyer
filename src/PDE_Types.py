@@ -16,6 +16,7 @@ class PDE(object):
         self.ncomp = ncomp
         self.comp_names = None
         self.Type = Type
+        self.paths = dict()
 
     def __call__(self, v: np.ndarray):
         raise NotImplementedError
@@ -169,7 +170,7 @@ class Euler(PDE):
         thetay = np.abs((c[:, 2:, ...] - 2 * c[:, 1:-1, ...] + c[:, :-2, ...]) /
                         ((1. - w) * (np.abs(c[:, 2:, ...] - c[:, 1:-1, ...]) + np.abs(c[:, 1:-1, ...] - c[:, :-2, ...]))
                          + w * (np.abs(c[:, 2:, ...]) + 2 * np.abs(c[:, 1:-1, ...]) + np.abs(c[:, :-2, ...])) + d))
-        eta = (thetax[:, 1:-1, ...] + thetay[1:-1, ...]) * 2.5 # factor possible
+        eta = (thetax[:, 1:-1, ...] + thetay[1:-1, ...]) * 2.5  # factor possible
         return np.clip(eta, a_min=0, a_max=1)
 
     def eta_entropy(self, v: np.ndarray, dx, dy) -> np.ndarray:
@@ -178,7 +179,7 @@ class Euler(PDE):
         p = self.pres(v)
         rho = v[..., 0]
 
-        K = p / rho**self.gamma
+        K = p / rho ** self.gamma
         eta = np.maximum(del_x(avg_x(K))[:, 1:-1, ...] / dx
                          , del_y(avg_y(K))[1:-1, ...] / dy
                          )
@@ -248,7 +249,6 @@ class Euler(PDE):
         tau -= 2. / 3 * np.einsum("...i,jk->...ijk", dx(vx) + dy(vy), np.eye(2, 2))
 
         return self.mu * tau
-
 
     def viscosity2(self, v: np.ndarray, other: np.ndarray) -> np.ndarray:
         csnd = self.csnd(v)
@@ -339,9 +339,20 @@ class Euler(PDE):
         result = np.empty((*v.shape, self.dim.value))
 
         result[..., 0, :] = v[..., 1:self.dim.value + 1]
-        result[..., 1:self.dim.value + 1, :] = np.einsum("...i,...j->...ij", v[..., 1:self.dim.value + 1], vels) \
-                                               + np.einsum("...i,jk->...ijk", p, np.identity(self.dim.value))
-        result[..., -1, :] = np.einsum("...,...i->...i", Etot + p, vels)
+
+        shape = v.shape
+        if shape not in self.paths.keys():
+            self.paths[shape] = [
+                np.einsum_path("...i,...j->...ij", v[..., 1:self.dim.value + 1], vels, optimize='optimal')[0],
+                np.einsum_path("...i,jk->...ijk", p, np.identity(self.dim.value), optimize='optimal')[0],
+                np.einsum_path("...,...i->...i", Etot + p, vels, optimize='optimal')[0],
+            ]
+
+        result[..., 1:self.dim.value + 1, :] = np.einsum("...i,...j->...ij", v[..., 1:self.dim.value + 1], vels,
+                                                         optimize=self.paths[shape][0]) \
+                                               + np.einsum("...i,jk->...ijk", p, np.identity(self.dim.value),
+                                                           optimize=self.paths[shape][1])
+        result[..., -1, :] = np.einsum("...,...i->...i", Etot + p, vels, optimize=self.paths[shape][2])
 
         if self.add_viscosity >= 0 and visc:
             if self.dim != Dimension.twoD:
@@ -537,6 +548,7 @@ class EulerScalarAdvect(Euler):
         super().__init__(gamma, dim, extra_comp=1, add_viscosity=add_viscosity, c1=c1, c2=c2, hx=hx,
                          hy=hy, mu=mu)  # nr of dims velocities + density plus energy_new
         self.comp_names = ["density", *[f"momenta_{dim}" for dim in "xyz"[:dim.value]], "Energy", "X"]
+        self.paths = dict()
 
     def pres(self, v):
         dens = v[..., 0]
@@ -555,10 +567,23 @@ class EulerScalarAdvect(Euler):
         result = np.empty((*v.shape, self.dim.value))
 
         result[..., 0, :] = v[..., 1:self.dim.value + 1]
-        result[..., 1:self.dim.value + 1, :] = np.einsum("...i,...j->...ij", v[..., 1:self.dim.value + 1], vels) \
-                                               + np.einsum("...i,jk->...ijk", p, np.identity(self.dim.value))
-        result[..., -2, :] = np.einsum("...,...i->...i", Etot + p, vels)
-        result[..., -1, :] = np.einsum("...,...i->...i", X, v[..., 1:self.dim.value + 1])
+
+        shape = v.shape
+        if shape not in self.paths.keys():
+            self.paths[shape] = [
+                np.einsum_path("...i,...j->...ij", v[..., 1:self.dim.value + 1], vels, optimize='optimal')[0],
+                np.einsum_path("...i,jk->...ijk", p, np.identity(self.dim.value), optimize='optimal')[0],
+                np.einsum_path("...,...i->...i", Etot + p, vels, optimize='optimal')[0],
+                np.einsum_path("...,...i->...i", X, v[..., 1:self.dim.value + 1], optimize='optimal')[0]
+            ]
+
+        result[..., 1:self.dim.value + 1, :] = np.einsum("...i,...j->...ij", v[..., 1:self.dim.value + 1], vels,
+                                                         optimize=self.paths[shape][0]) \
+                                               + np.einsum("...i,jk->...ijk", p, np.identity(self.dim.value),
+                                                           optimize=self.paths[shape][1])
+        result[..., -2, :] = np.einsum("...,...i->...i", Etot + p, vels, optimize=self.paths[shape][2])
+        result[..., -1, :] = np.einsum("...,...i->...i", X, v[..., 1:self.dim.value + 1],
+                                       optimize=self.paths[shape][3])
 
         if self.add_viscosity >= 0 and visc:
             if self.dim != Dimension.twoD:

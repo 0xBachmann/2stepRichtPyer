@@ -20,7 +20,7 @@ log("calculate initial conditions")
 
 stepper = Richtmyer2stepImplicit(F, np.array([Lx, Ly]), resolution, eps=1e-10)  # , lerp=-1)  # works: 1, 3. doesn't: 0, 2
 domain = np.array([Lx, Ly])
-# stepper = Richtmyer2step(F, domain, resolution, lerp=False)
+# stepper = Richtmyer2step(F, domain, resolution, lerp=-1)
 
 center = np.array([Lx / 2, Ly / 2])
 avg_coords = [avg_x(coord) for coord in stepper.coords]

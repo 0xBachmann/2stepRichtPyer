@@ -139,7 +139,7 @@
 - [ ] decide for fixed notation concerning scalar vs vector valued functions
 - [ ] richtmyer instead of richtmeyer
 - [ ] whenever author check for et al.
-- [ ] precalc optimal einsum
+- [x] precalc optimal einsum
 - [ ] link github
 - [ ] go through references and maybe cite sections
 - [ ] whenever two authors replace and by \\&
