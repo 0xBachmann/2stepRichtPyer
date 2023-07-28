@@ -54,7 +54,7 @@
 - [x] jacobian for scalar advect Euler
   - [ ] try sparse matrix
     - only manual newton -> not working somehow
-- [ ] ekin conservation
+- [x] ekin conservation
   - kyrlov not working
   - now hybr with own J
   - maybe because M is not small enough
@@ -65,16 +65,17 @@
 - [ ] derivation for c
 - [x] rewrite lsa
 - [x] revisit order of operators in explicit scheme
-- [ ] better guess for big time step? (just big explicit?)
+- [x] better guess for big time step? (just big explicit?)
   - try it
-    - not so good
+    - doesn't work
 - [ ] add numba
   - big pain with all the classes
+    - no
 - [x] angular momenta conservation
   - almost conserved
-- [ ] artificial viscosity
+- [x] artificial viscosity
   - get whole number values not by averaging
-- [ ] lerp between two fluxes
+- [x] lerp between two fluxes
   - eta seems to be 0
   - maybe take artificial velocity as second flux?
   - check conservative of order1
@@ -85,66 +86,69 @@
 - [x] curl
 - [x] check conservation LF
   - tot conserved, Ekin -> 0
-- [ ] non averaged grid in viscosity
-- [ ] test normal mach number as eta
-  - works well, but add filter
+- [x] non averaged grid in viscosity
+- [x] test normal mach number as eta
+  - [ ] works well, but add filter
+    - future work
 - [ ] fix `[..., np.newaxis]` bug
-- [ ] combine eta & visc
+- [x] combine eta & visc
 - [x] bomb next to gresho
   - works
 - [x] riemann 1D
-- [ ] artificial viscosity instead of "physical"?
+- [x] artificial viscosity instead of "physical"?
 - [x] rusanov check
   - seems to work now
   - [x] now do lerp of fluxes instead solutions
-- [ ] entropy K = p / rho^gamma
+- [x] entropy K = p / rho^gamma
   - not good for contact disc
-- [ ] laney 22.3 553 (swanson turkel shock switch)
-  - not better than shock detection
-- [ ] better filtering for eta
+- [ x laney 22.3 553 (swanson turkel shock switch)
+  - better than shock detection
+- [x] better filtering for eta
   - somehow right disc is not detected well ???
 - [x] replace `\ref` by `\cref`
   - `\cref` or `\Cref`?
-- [ ] make sure afte e.g. `\ ` is
+- [x] make sure after e.g. `\ ` is
 - [ ] check punctuation in equations
-- [ ] ask about references of what he showed
+- [x] ask about references of what he showed
   - "exact" solution
-- [ ] fix two step or two-step
+- [x] fix two step or two-step
   - two-step, as markdown suggests
 - [ ] check timetense ie present vs past
 - [x] double sided vs one-sided?
   - one-sided
-- [ ] remove all occurences of we
+- [x] remove all occurences of we
 - [x] gresho mach increases...
   - check formula with käppeli, scaling not very clear...
 - [ ] conserved vs primitive tell that primitive measured, hence often init or smth are given that way
-- [ ] tikzit staggered mesh 2d
-- [ ] in riemann section tell about scalar vs vector, meybe bit more fundamental
+- [x] tikzit staggered mesh 2d
+- [ ] in riemann section tell about scalar vs vector, maybe bit more fundamental
+  - # TODO
 - [x] show why two-step is lax wendroff, define A just as some matrix
   - is the reasoning sensible?
-- [ ] code
+- [x] code
   - solvers
   - python
   - numpy vectorized
   - maybe einsum flux
-- [ ] visc, add new pressure to energy conservation qeq
-- [ ] is able to solve navier stokes -> good because turns parabolic, where timestep low but implicit
-- [ ] low mach is incompressible bc expand of 1/Mach
-- [ ] angular momenta explicit calculation
+- [x] visc, add new pressure to energy conservation qeq
+- [x] is able to solve navier stokes -> good because turns parabolic, where timestep low but implicit
+  - nvm
+- [x] low mach is incompressible bc expand of 1/Mach
+- [x] angular momenta explicit calculation
   - show why angular momenta conserving with calc
-- [ ] show a bit code for explicit
+- [x] show a bit code for explicit
   - even though only python, some vectorization techniques used, numpy, einsum
 - [ ] maybe better if different eta in each direction?
   - refer to kelvin helmholtz
 - [ ] decide for fixed notation concerning scalar vs vector valued functions
-- [ ] richtmyer instead of richtmeyer
-- [ ] whenever author check for et al.
+- [x] Richtmyer instead of Richtmeyer
+- [x] whenever author check for et al.
 - [x] precalc optimal einsum
-- [ ] link github
+- [x] link github
 - [ ] go through references and maybe cite sections
 - [ ] whenever two authors replace and by \\&
 - [ ] acknowledgements
-- [ ] fix timestep constraint in code
+- [x] fix timestep constraint in code
 
 ### infos for flaff
 - commas
