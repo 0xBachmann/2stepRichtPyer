@@ -24,7 +24,7 @@ for r in range(2, 17):
     T = [1 / (w0[1]), 1 / (w0[1] + a), 1 / (w0[1] - a)]
 
     for i in range(3):
-        stepper = Richtmyer2stepImplicit(F, np.array([L]), np.array([r]))
+        stepper = Richtmyer2step(F, np.array([L]), np.array([r]))
         stepper.initial_cond(lambda x: waves[i](x))
 
         time = 0.

@@ -57,7 +57,7 @@ class Solver:
 
     def cfl(self):
         prime = self.pde.max_speed(self.grid[self.no_ghost])
-        a = np.max(np.reshape(np.abs(prime), (np.product(self.ncellsxyz), self.dim.value)), axis=0)
+        a = np.max(np.reshape(np.abs(prime), (np.prod(self.ncellsxyz), self.dim.value)), axis=0)
         dts = self.dxyz / (2 * a)  # TODO (2 bc half step)
         # TODO correct for diagonal?
         return np.min(dts)
@@ -107,6 +107,8 @@ class Richtmyer2step(Solver):
 
     def step(self, dt):
         assert isinstance(self.pde, Euler)
+        if self.dim != Dimension.twoD:
+            raise ValueError("currently only 2D is supported")
 
         def div_fluxes(fluxes: tuple[np.ndarray]) -> np.ndarray:
             if self.dim == Dimension.oneD:
@@ -269,7 +271,7 @@ class Richtmyer2stepImplicit(Solver):
 
                 JF, JG = self.pde.jacobian(avg_t[self.no_ghost])
 
-                ncells = np.product(self.ncellsxyz)
+                ncells = np.prod(self.ncellsxyz)
                 ncomp = self.pde.ncomp
 
                 JF = block_diag(*JF.reshape((ncells, ncomp, ncomp)))
@@ -322,7 +324,7 @@ class Richtmyer2stepImplicit(Solver):
 
                 JF, JG = self.pde.jacobian(avg_t[self.no_ghost])
 
-                ncells = np.product(self.ncellsxyz)
+                ncells = np.prod(self.ncellsxyz)
                 ncomp = self.pde.ncomp
 
                 JF = block_diag(*JF.reshape((ncells, ncomp, ncomp)))
@@ -403,7 +405,7 @@ class Richtmyer2stepImplicit(Solver):
         else:
             F_value, J_value = FJ(self.grid_no_ghost.ravel())
             F_norm = np.linalg.norm(F_value)
-            while self.eps * np.product(self.ncellsxyz) < F_norm:
+            while self.eps * np.prod(self.ncellsxyz) < F_norm:
                 if self.use_sparse:
                     J_value = sparse.csr_matrix(J_value)  # , blocksize=(self.pde.ncomp, self.pde.ncomp))
                     self.grid_no_ghost -= sparse.linalg.spsolve(J_value, F_value).reshape(self.grid_no_ghost.shape)

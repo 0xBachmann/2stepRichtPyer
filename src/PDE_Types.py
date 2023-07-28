@@ -41,7 +41,7 @@ class LinearAdvection(PDE):
         return np.full((*v.shape[0:self.dim.value], *self.a.shape), self.a)
 
     def jacobian(self, v: np.ndarray) -> tuple[np.ndarray, ...]:
-        return tuple(np.full(np.product(*v.shape[:self.dim.value]), self.a[i]) for i in range(self.dim.value))
+        return tuple(np.full(np.prod(*v.shape[:self.dim.value]), self.a[i]) for i in range(self.dim.value))
 
 
 class BurgersEq(PDE):
