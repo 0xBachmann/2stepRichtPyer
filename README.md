@@ -1,9 +1,9 @@
-# Structure preserving Lax-Wendroff schemes for low Mach number flows
+# 2stepRichtPyer
 
-Bachelor Thesis from [Jonas Bachmann](mailto:jonas.bachmann@inf.ethz.ch).
+Bachelor Thesis [Structure preserving Lax-Wendroff schemes for low Mach number flows](Structure-preserving-Lax-Wendroff-schemes-for-low-Mach-number-flows) from [Jonas Bachmann](mailto:jonas.bachmann@inf.ethz.ch).
 
 ## Setup
-To set up, simply execute `pip install -e .`.
+Simply execute `pip install -e .` to set up the project.
 For storing trajectories instead of keeping them in memory, FFmpeg is required.
 
 
