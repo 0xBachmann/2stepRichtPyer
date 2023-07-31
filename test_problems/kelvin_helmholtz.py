@@ -15,12 +15,24 @@ domain = np.array([[0, 1], [0, 1]])
 resolution = np.array([128] * DIM.value)
 
 h = ((domain[:, 1] - domain[:, 0]) / resolution).ravel()
-F = EulerScalarAdvect(5. / 3, dim=DIM, c1=1., c2=1., hx=h[0], hy=h[1], add_viscosity=-1, mu=0.001)
+
+
+M = 1.
+pr = 2.5
+
+rhor = 1.
+xr = 1.
+cr = np.sqrt(pr / rhor)
+ur = M * cr
+tr = xr / ur
+
+c = M / 6
+F = EulerScalarAdvect(5. / 3, dim=DIM, c1=c/10, c2=c, hx=h[0], hy=h[1], add_viscosity=-1, mu=0.001)
 
 log("calculate initial conditions")
 
 # stepper = Richtmyer2stepImplicit(F, domain, resolution, eps=1e-9)
-stepper = Richtmyer2step(F, domain, resolution, lerp=-1)
+stepper = Richtmyer2step(F, domain, resolution, lerp=3)
 
 center = np.array([0.5, 0.5])
 
@@ -38,15 +50,6 @@ def kh_with_scalar(x: np.ndarray, F, Mr, pr=2.5, rhor=1., primitives=False, mode
     else:
         return F.primitive_to_conserved(primitive)
 
-
-M = 0.01
-pr = 2.5
-
-rhor = 1.
-xr = 1.
-cr = np.sqrt(pr / rhor)
-ur = M * cr
-tr = xr / ur
 
 stepper.initial_cond(lambda x: kh_with_scalar(x, F, Mr=M, rhor=rhor, pr=pr))
 

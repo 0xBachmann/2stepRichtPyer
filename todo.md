@@ -121,8 +121,7 @@
   - check formula with käppeli, scaling not very clear...
 - [ ] conserved vs primitive tell that primitive measured, hence often init or smth are given that way
 - [x] tikzit staggered mesh 2d
-- [ ] in riemann section tell about scalar vs vector, maybe bit more fundamental
-  - # TODO
+- [x] in riemann section tell about scalar vs vector, maybe bit more fundamental
 - [x] show why two-step is lax wendroff, define A just as some matrix
   - is the reasoning sensible?
 - [x] code
@@ -140,7 +139,7 @@
   - even though only python, some vectorization techniques used, numpy, einsum
 - [ ] maybe better if different eta in each direction?
   - refer to kelvin helmholtz
-- [ ] decide for fixed notation concerning scalar vs vector valued functions
+- [x] decide for fixed notation concerning scalar vs vector valued functions
 - [x] Richtmyer instead of Richtmeyer
 - [x] whenever author check for et al.
 - [x] precalc optimal einsum
@@ -149,6 +148,9 @@
 - [ ] whenever two authors replace and by \\&
 - [ ] acknowledgements
 - [x] fix timestep constraint in code
+- [x] timestep vs time step
+  - timestep
+- [ ] punctuation of formulas
 
 ### infos for flaff
 - commas

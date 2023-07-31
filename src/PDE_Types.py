@@ -170,7 +170,7 @@ class Euler(PDE):
         thetay = np.abs((c[:, 2:, ...] - 2 * c[:, 1:-1, ...] + c[:, :-2, ...]) /
                         ((1. - w) * (np.abs(c[:, 2:, ...] - c[:, 1:-1, ...]) + np.abs(c[:, 1:-1, ...] - c[:, :-2, ...]))
                          + w * (np.abs(c[:, 2:, ...]) + 2 * np.abs(c[:, 1:-1, ...]) + np.abs(c[:, :-2, ...])) + d))
-        eta = (thetax[:, 1:-1, ...] + thetay[1:-1, ...]) * 2.5  # factor possible
+        eta = (thetax[:, 1:-1, ...] + thetay[1:-1, ...])  # factor possible
         return np.clip(eta, a_min=0, a_max=1)
 
     def eta_entropy(self, v: np.ndarray, dx, dy) -> np.ndarray:
